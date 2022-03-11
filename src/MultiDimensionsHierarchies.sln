@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32228.430
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiDimensionsHierarchies", "MultiDimensionsHierarchies\MultiDimensionsHierarchies.csproj", "{9701A95F-6272-4438-AA89-41A99BD02E81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestMultiDimensionsHierarchies", "TestMultiDimensionsHierarchies\TestMultiDimensionsHierarchies.csproj", "{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9701A95F-6272-4438-AA89-41A99BD02E81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9701A95F-6272-4438-AA89-41A99BD02E81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9701A95F-6272-4438-AA89-41A99BD02E81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9701A95F-6272-4438-AA89-41A99BD02E81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C88303C2-B7EE-4274-A2F5-568439AF5859}
+	EndGlobalSection
+EndGlobal
