@@ -69,7 +69,7 @@ namespace MultiDimensionsHierarchies.Core
 
         public Seq<Bone> GetLeaves()
         {
-            var leaves = FetchLeaves().Memo();
+            var leaves = BuildLeaves().Memo();
             return leaves();
         }
 
@@ -85,14 +85,16 @@ namespace MultiDimensionsHierarchies.Core
             return elements();
         }
 
-        private Func<Seq<Bone>> FetchLeaves()
-            => () =>
-            {
-                if ( HasChild() )
-                    return Children.SelectMany( child => child.GetLeaves() ).ToSeq();
+        private Func<Seq<Bone>> BuildLeaves()
+            => () => FetchLeaves().ToSeq();
 
-                return new Seq<Bone> { this };
-            };
+        private IEnumerable<Bone> FetchLeaves()
+        {
+            if ( HasChild() )
+                return Children.SelectMany( child => child.GetLeaves() );
+
+            return new[] { this };
+        }
 
         private Func<Seq<Bone>> FetchDescendants()
             => () => BuildDescendants().ToSeq();
@@ -148,6 +150,11 @@ namespace MultiDimensionsHierarchies.Core
 
         public override string ToString()
             => $"{Label} in {DimensionName}";
+
+        public string GetFullPath()
+            => Parent
+                .Some( parent => string.Join( ">" , parent.GetFullPath() , Label ) )
+                .None( () => Label );
     }
 
     public static class BoneExtensions

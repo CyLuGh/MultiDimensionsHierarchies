@@ -211,5 +211,6 @@ public class DimensionFactoryTests
 
         parentDimension.Frame.Length.Should().Be( 2 );
         parentDimension.GetFlatList().Length.Should().Be( 13 );
+        parentDimension.GetLeaves().Length.Should().Be( 8 );
     }
 }

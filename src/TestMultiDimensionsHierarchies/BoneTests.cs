@@ -70,4 +70,11 @@ public class BoneTests
         var root = GetThreeLevelsBone();
         root.Children[0].Children[0].GetAncestors().Length.Should().Be( 3 );
     }
+
+    [Fact]
+    public void TestLeaves()
+    {
+        var parent = GetSimpleBone();
+        parent.GetLeaves().Length.Should().Be( 2 );
+    }
 }
