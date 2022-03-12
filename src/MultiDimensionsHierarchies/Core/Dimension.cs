@@ -15,7 +15,7 @@ namespace MultiDimensionsHierarchies.Core
             return elements();
         }
 
-        public Dimension( string name , IEnumerable<Bone> bones )
+        internal Dimension( string name , IEnumerable<Bone> bones )
         {
             Name = name;
             Frame = new Seq<Bone>( bones );

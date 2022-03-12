@@ -6,10 +6,10 @@ namespace TestMultiDimensionsHierarchies;
 
 public class BoneTests
 {
-    private Bone GetSingleBone()
-        => new Bone( "Singleton" , "Test dimension" );
+    private static Bone GetSingleBone()
+        => new( "Singleton" , "Test dimension" );
 
-    private Bone GetSimpleBone()
+    private static Bone GetSimpleBone()
     {
         var child1 = new Bone( "Child 1" , "Test dimension" );
         var child2 = new Bone( "Child 2" , "Test dimension" );
@@ -19,7 +19,7 @@ public class BoneTests
         return parent;
     }
 
-    private Bone GetThreeLevelsBone()
+    private static Bone GetThreeLevelsBone()
     {
         var grandChild11 = new Bone( "Grand Child 1.1" , "Test dimension" );
         var grandChild12 = new Bone( "Grand Child 1.2" , "Test dimension" );

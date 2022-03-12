@@ -49,7 +49,10 @@ namespace MultiDimensionsHierarchies.Core
                     children ?? Children
                 );
 
-            bone.Children = bone.Children.Select( c => c.With( parent: bone ) ).ToSeq();
+            bone.Children = bone.Children.Select( c => c.With( parent: bone ) )
+                .GroupBy( x => x )
+                .Select( g => g.Key.With( children: g.SelectMany( o => o.Children ).ToSeq() ) )
+                .ToSeq();
 
             return bone;
         }
@@ -116,7 +119,7 @@ namespace MultiDimensionsHierarchies.Core
 
         public bool Equals( Bone other )
         {
-            if ( ReferenceEquals( null , other ) ) return false;
+            if ( other is null ) return false;
             if ( ReferenceEquals( this , other ) ) return true;
             return string.Equals( Label , other.Label )
                 && string.Equals( DimensionName , other.DimensionName )
@@ -125,7 +128,7 @@ namespace MultiDimensionsHierarchies.Core
 
         public override bool Equals( object obj )
         {
-            if ( ReferenceEquals( null , obj ) ) return false;
+            if ( obj is null ) return false;
             if ( ReferenceEquals( this , obj ) ) return true;
             if ( obj.GetType() != this.GetType() ) return false;
             return Equals( (Bone) obj );

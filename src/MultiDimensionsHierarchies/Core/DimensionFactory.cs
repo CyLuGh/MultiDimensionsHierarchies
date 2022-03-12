@@ -25,10 +25,10 @@ namespace MultiDimensionsHierarchies.Core
 
             if ( parentKeys.Length == 0 ) /* This is a flat list */
             {
-                foreach ( var bone in hashMap
+                foreach ( var (Key, Value) in hashMap
                     .Select( x => (x.Key, Value: new Bone( labeller( x.Value ) , dimensionName )) ) )
                 {
-                    results = results.Add( bone.Key , bone.Value );
+                    results = results.Add( Key , Value );
                 }
             }
             else
@@ -40,11 +40,11 @@ namespace MultiDimensionsHierarchies.Core
 
                 var createdIds = new Seq<TB>();
 
-                foreach ( var group in elements.GroupBy( x => parentKeySelector( x ) )
-                    .Where( g => g.Key.IsSome ) )
+                foreach ( var group in elements.GroupBy( x => parentKeySelector( x ) ) )
                 {
                     var res = BuildBone( dimensionName , hashMap , group.ToSeq() , group.Key , labeller );
-                    results = res.Some( r => results.AddOrUpdate( r.Key , r.Value ) )
+                    results = res
+                        .Some( r => results.AddOrUpdate( r.Key , r.Value ) )
                         .None( () => results );
 
                     createdIds = res.Some( r => createdIds.Add( r.Key ) )
@@ -67,7 +67,9 @@ namespace MultiDimensionsHierarchies.Core
                             .Select( x => x.Value ).ToSeq();
                         var res = BuildBone( dimensionName , hashMap , seq , group.Key , labeller );
                         results = res.Some( r => results
-                                .AddOrUpdate( r.Key , r.Value )
+                                .AddOrUpdate( r.Key ,
+                                    existing => existing.With( children: existing.Children.Concat( r.Value.Children ) ) ,
+                                    r.Value )
                                 .RemoveRange( keys ) )
                             .None( () => results );
 
@@ -78,6 +80,51 @@ namespace MultiDimensionsHierarchies.Core
             }
 
             return new Dimension( dimensionName , results.Values.Where( x => x.Parent.IsNone ) );
+        }
+
+        public static Dimension BuildWithChildLink<TA, TB>(
+            string dimensionName ,
+            IEnumerable<TA> items ,
+            Func<TA , TB> keySelector ,
+            Func<TA , Option<TB>> childKeySelector ,
+            Func<TA , string> labeller )
+        {
+            var multiChildItems = items.GroupBy( item => (Key: keySelector( item ), Label: labeller( item )) )
+                .Select( g => (g.Key.Key, g.Key.Label,
+                    ChildrenIds: g.Select( i => childKeySelector( i )
+                            .Some( o => o )
+                            .None( () => default( TB ) ) )
+                        .Where( o => !o.Equals( default( TB ) ) ).ToArray()) );
+
+            return BuildWithMultipleChildrenLink(
+                dimensionName ,
+                multiChildItems ,
+                o => o.Key ,
+                o => o.ChildrenIds ,
+                o => o.Label
+           );
+        }
+
+        public static Dimension BuildWithMultipleChildrenLink<TA, TB>(
+            string dimensionName ,
+            IEnumerable<TA> items ,
+            Func<TA , TB> keySelector ,
+            Func<TA , IEnumerable<TB>> childrenKeysSelector ,
+            Func<TA , string> labeller )
+        {
+            var seq = items.ToSeq();
+            var parentLinks = seq.Select( o => (Key: keySelector( o ),
+                Label: labeller( o ),
+                ParentId: seq.Find( x => childrenKeysSelector( x ).Contains( keySelector( o ) ) )
+                    .Some( s => Option<TB>.Some( keySelector( s ) ) )
+                    .None( () => Option<TB>.None )
+                ) );
+
+            return BuildWithParentLink( dimensionName ,
+                parentLinks ,
+                o => o.Key ,
+                o => o.ParentId ,
+                o => o.Label );
         }
 
         private static Option<(TB Key, Bone Value)> BuildBone<TA, TB>(
