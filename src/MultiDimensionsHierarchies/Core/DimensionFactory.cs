@@ -12,9 +12,11 @@ namespace MultiDimensionsHierarchies.Core
             IEnumerable<TA> items ,
             Func<TA , TB> keySelector ,
             Func<TA , Option<TB>> parentKeySelector ,
-            Func<TA , string> labeller
+            Func<TA , string> labeller ,
+            Func<TA , double> weighter = null
             )
         {
+            weighter ??= _ => 1d;
             var results = HashMap.create<TB , Bone>();
 
             /* Put all items in a map */
@@ -42,7 +44,7 @@ namespace MultiDimensionsHierarchies.Core
 
                 foreach ( var group in elements.GroupBy( x => parentKeySelector( x ) ) )
                 {
-                    var res = BuildBone( dimensionName , hashMap , group.ToSeq() , group.Key , labeller );
+                    var res = BuildBone( dimensionName , hashMap , group.ToSeq() , group.Key , labeller , weighter );
                     results = res
                         .Some( r => results.AddOrUpdate( r.Key , r.Value ) )
                         .None( () => results );
@@ -65,7 +67,7 @@ namespace MultiDimensionsHierarchies.Core
                         var keys = group.Select( x => keySelector( x ) ).ToSeq();
                         var seq = results.Where( x => keys.Contains( x.Key ) )
                             .Select( x => x.Value ).ToSeq();
-                        var res = BuildBone( dimensionName , hashMap , seq , group.Key , labeller );
+                        var res = BuildBone( dimensionName , hashMap , seq , group.Key , labeller , weighter );
                         results = res.Some( r => results
                                 .AddOrUpdate( r.Key ,
                                     existing => existing.With( children: existing.Children.Concat( r.Value.Children ) ) ,
@@ -90,7 +92,9 @@ namespace MultiDimensionsHierarchies.Core
             Func<TA , string> labeller )
         {
             var multiChildItems = items.GroupBy( item => (Key: keySelector( item ), Label: labeller( item )) )
-                .Select( g => (g.Key.Key, g.Key.Label,
+                .Select( g => (
+                    g.Key.Key,
+                    g.Key.Label,
                     ChildrenIds: g.Select( i => childKeySelector( i )
                             .Some( o => o )
                             .None( () => default( TB ) ) )
@@ -124,7 +128,8 @@ namespace MultiDimensionsHierarchies.Core
                 parentLinks ,
                 o => o.Key ,
                 o => o.ParentId ,
-                o => o.Label );
+                o => o.Label ,
+                o => 1d );
         }
 
         private static Option<(TB Key, Bone Value)> BuildBone<TA, TB>(
@@ -132,13 +137,14 @@ namespace MultiDimensionsHierarchies.Core
             HashMap<TB , TA> hashMap ,
             Seq<TA> items ,
             Option<TB> parentKey ,
-            Func<TA , string> labeller )
+            Func<TA , string> labeller ,
+            Func<TA , double> weighter )
                 => parentKey.Some( pk =>
                 {
-                    var childrenBones = items.Select( l => new Bone( labeller( l ) , dimensionName ) )
+                    var childrenBones = items.Select( l => new Bone( labeller( l ) , dimensionName , weighter( l ) ) )
                         .ToArray();
                     var parent = hashMap[pk];
-                    return Option<(TB, Bone)>.Some( (pk, new Bone( labeller( parent ) , dimensionName , childrenBones )) );
+                    return Option<(TB, Bone)>.Some( (pk, new Bone( labeller( parent ) , dimensionName , weighter( parent ) , childrenBones )) );
                 } ).None( () => Option<(TB, Bone)>.None );
 
         private static Option<(TB Key, Bone Value)> BuildBone<TA, TB>(
@@ -146,11 +152,12 @@ namespace MultiDimensionsHierarchies.Core
             HashMap<TB , TA> hashMap ,
             Seq<Bone> childrenBones ,
             Option<TB> parentKey ,
-            Func<TA , string> labeller )
+            Func<TA , string> labeller ,
+            Func<TA , double> weighter )
                 => parentKey.Some( pk =>
                 {
                     var parent = hashMap[pk];
-                    return Option<(TB, Bone)>.Some( (pk, new Bone( labeller( parent ) , dimensionName , childrenBones.ToArray() )) );
+                    return Option<(TB, Bone)>.Some( (pk, new Bone( labeller( parent ) , dimensionName , weighter( parent ) , childrenBones.ToArray() )) );
                 } ).None( () => Option<(TB, Bone)>.None );
     }
 }

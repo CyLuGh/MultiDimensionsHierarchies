@@ -29,7 +29,7 @@ namespace MultiDimensionsHierarchies.Core
         }
 
         private Func<Seq<Bone>> FetchFlatList()
-            => () => Frame.GetDescendants().ToSeq();
+            => () => Frame.FlatList().ToSeq();
 
         private Func<Seq<Bone>> FetchLeaves()
             => () => Frame.SelectMany( d => d.GetLeaves() ).ToSeq();

@@ -11,6 +11,7 @@ namespace MultiDimensionsHierarchies.Core
 
         public string DimensionName { get; }
         public string Label { get; }
+        public double Weight { get; } = 1d;
         public Option<Bone> Parent { get; }
         public Seq<Bone> Children { get; private set; }
 
@@ -34,19 +35,36 @@ namespace MultiDimensionsHierarchies.Core
             Children = children;
         }
 
+        public Bone( string label , string dimensionName , Option<Bone> parent , Seq<Bone> children , double weight )
+            : this( label , dimensionName , parent , children )
+        {
+            Weight = weight;
+        }
+
         public Bone( string label , string dimensionName , params Bone[] children )
-            : this( label , dimensionName )
+            : this( label , dimensionName , 1d , children )
+        { }
+
+        public Bone( string label , string dimensionName , double weight , params Bone[] children )
+            : this( label , dimensionName , weight )
         {
             Children = new Seq<Bone>( children.Select( c => c.With( parent: this ) ) );
         }
 
-        public Bone With( string label = null , string dimensionName = null , Bone parent = null , Seq<Bone>? children = null )
+        public Bone( string label , string dimensionName , double weight )
+            : this( label , dimensionName )
+        {
+            Weight = weight;
+        }
+
+        public Bone With( string label = null , string dimensionName = null , Bone parent = null , Seq<Bone>? children = null , double weight = double.NaN )
         {
             var bone = new Bone(
                     label ?? Label ,
                     dimensionName ?? DimensionName ,
                     parent ?? Parent ,
-                    children ?? Children
+                    children ?? Children ,
+                    double.IsNaN( weight ) ? Weight : weight
                 );
 
             bone.Children = bone.Children.Select( c => c.With( parent: bone ) )
@@ -66,6 +84,14 @@ namespace MultiDimensionsHierarchies.Core
         public Bone GetRoot()
             => Parent.Some( p => p )
                 .None( () => this );
+
+        public double GetResultingWeight( Bone source )
+        {
+            if ( source.Equals( this ) )
+                return 1d;
+
+            return Weight * Parent.Some( p => p.GetResultingWeight( source ) ).None( () => 1d );
+        }
 
         public Seq<Bone> GetLeaves()
         {
@@ -159,7 +185,7 @@ namespace MultiDimensionsHierarchies.Core
 
     public static class BoneExtensions
     {
-        public static Seq<Bone> GetDescendants( this IEnumerable<Bone> bones )
+        public static Seq<Bone> FlatList( this IEnumerable<Bone> bones )
             => bones.SelectMany( b => b.GetDescendants() ).ToSeq();
     }
 }
