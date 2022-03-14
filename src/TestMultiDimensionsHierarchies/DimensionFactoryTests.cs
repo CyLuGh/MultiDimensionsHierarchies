@@ -65,9 +65,9 @@ public class DimensionFactoryTests
         yield return new ParentHierarchyInput<int> { Id = 6 , Label = "Grand Child 2.1" , ParentId = 3 };
     }
 
-    private static IEnumerable<ParentHierarchyInput<string>> GetParentLinkHierarchy()
+    internal static IEnumerable<ParentHierarchyInput<string>> GetParentLinkHierarchy()
     {
-        yield return new ParentHierarchyInput<string> { Id = "1" , Label = "Root 1" };
+        yield return new ParentHierarchyInput<string> { Id = "1" , Label = "1" };
 
         yield return new ParentHierarchyInput<string> { Id = "1.1" , Label = "1.1" , ParentId = "1" };
         yield return new ParentHierarchyInput<string> { Id = "1.1.1" , Label = "1.1.1" , ParentId = "1.1" };
@@ -78,7 +78,7 @@ public class DimensionFactoryTests
         yield return new ParentHierarchyInput<string> { Id = "1.2.1" , Label = "1.2.1" , ParentId = "1.2" };
         yield return new ParentHierarchyInput<string> { Id = "1.2.2" , Label = "1.2.2" , ParentId = "1.2" };
 
-        yield return new ParentHierarchyInput<string> { Id = "2" , Label = "Root 2" };
+        yield return new ParentHierarchyInput<string> { Id = "2" , Label = "2" };
 
         yield return new ParentHierarchyInput<string> { Id = "2.1" , Label = "2.1" , ParentId = "2" };
         yield return new ParentHierarchyInput<string> { Id = "2.2" , Label = "2.2" , ParentId = "2" };
@@ -206,7 +206,7 @@ public class DimensionFactoryTests
             "Test dimension" ,
             GetParentLinkHierarchy() ,
             o => o.Id ,
-            o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string>.None ,
+            o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None ,
             o => o.Label );
 
         parentDimension.Frame.Length.Should().Be( 2 );

@@ -28,6 +28,9 @@ namespace MultiDimensionsHierarchies.Core
             return leaves();
         }
 
+        public Option<Bone> Find( string label )
+            => Frame.FlatList().Find( b => b.Label.Equals( label ) );
+
         private Func<Seq<Bone>> FetchFlatList()
             => () => Frame.FlatList().ToSeq();
 

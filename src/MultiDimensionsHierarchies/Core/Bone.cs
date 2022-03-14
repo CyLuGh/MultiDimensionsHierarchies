@@ -82,7 +82,7 @@ namespace MultiDimensionsHierarchies.Core
         public bool HasParent() => Parent.IsSome;
 
         public Bone GetRoot()
-            => Parent.Some( p => p )
+            => Parent.Some( p => p.GetRoot() )
                 .None( () => this );
 
         public double GetResultingWeight( Bone source )

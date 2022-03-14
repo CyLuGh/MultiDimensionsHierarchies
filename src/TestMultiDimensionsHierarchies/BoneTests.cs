@@ -77,4 +77,13 @@ public class BoneTests
         var parent = GetSimpleBone();
         parent.GetLeaves().Length.Should().Be( 2 );
     }
+
+    [Fact]
+    public void TestRoot()
+    {
+        var root = GetThreeLevelsBone();
+
+        root.GetDescendants().Find( b => b.Label.Equals( "Grand Child 1.2" ) )
+            .IfSome( b => { b.GetRoot().Should().BeSameAs( root ); } );
+    }
 }
