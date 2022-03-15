@@ -48,6 +48,8 @@ namespace MultiDimensionsHierarchies.Core
             return new Skeleton( Bones.Where( x => !searched.Contains( x.DimensionName ) ).ToArray() );
         }
 
+        public bool HasUnknown() => Bones.Any( x => x.Equals( Bone.None ) );
+
         public bool IsLeaf()
             => Bones.All( b => b.IsLeaf() );
 
@@ -215,5 +217,30 @@ namespace MultiDimensionsHierarchies.Core
                      var parts = x.Split( '|' );
                      return new Bone( parts[1] , parts[0] );
                  } ) );
+
+        public static Skeleton ParseCompleteString( string input , Seq<Dimension> dimensions )
+        {
+            
+            var skeleton = new Skeleton(
+                    input.Split( ':' ).Select( x =>
+                    {
+                        var f = Prelude.Try( () => {
+                            var parts = x.Split( '|' );
+                            return Arr.create( parts[0] , parts[1] );
+                        } );
+
+                        return f.Match( parts => dimensions
+                            .Find( o => o.Name.Equals( parts[0] ) )
+                                .Some( dim => dim.Find( parts[1] ).Some( b => b ).None( () => Bone.None ) )
+                                .None( () => Bone.None ) ,
+                            _ => Bone.None );
+                    } )
+                );
+
+            if ( skeleton.HasUnknown() )
+                throw new KeyNotFoundException("Parsed items don't match dimensions definitions.");
+
+            return skeleton;
+        }
     }
 }
