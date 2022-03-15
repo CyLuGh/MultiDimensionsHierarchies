@@ -86,6 +86,23 @@ public class DimensionFactoryTests
         yield return new ParentHierarchyInput<string> { Id = "2.4" , Label = "2.4" , ParentId = "2" };
     }
 
+    internal static IEnumerable<ChildHierarchyInput<string>> GetImplicitChildrenHierarchy()
+    {
+        yield return new ChildHierarchyInput<string> { Label = "ALL" , ChildId = "A" };
+        yield return new ChildHierarchyInput<string> { Label = "ALL" , ChildId = "B" };
+
+        yield return new ChildHierarchyInput<string> { Label = "A" , ChildId = "AA" };
+        yield return new ChildHierarchyInput<string> { Label = "A" , ChildId = "AB" };
+
+        yield return new ChildHierarchyInput<string> { Label = "B" , ChildId = "BA" };
+    }
+
+    internal static IEnumerable<ParentHierarchyInput<string>> GetImplicitParentHierarchy()
+    {
+        yield return new ParentHierarchyInput<string> { Label = "AA" , ParentId = "A" };
+        yield return new ParentHierarchyInput<string> { Label = "BB" , ParentId = "B" };
+    }
+
     [Fact]
     public void TestBuildWithParentLinkSimple()
     {
@@ -212,5 +229,32 @@ public class DimensionFactoryTests
         parentDimension.Frame.Length.Should().Be( 2 );
         parentDimension.GetFlatList().Length.Should().Be( 13 );
         parentDimension.GetLeaves().Length.Should().Be( 8 );
+    }
+
+    [Fact]
+    public void TestImplicitChildren()
+    {
+        var dimension = DimensionFactory.BuildWithChildLink(
+            "Test implicit" ,
+            GetImplicitChildrenHierarchy() ,
+            o => o.Label ,
+            o => o.ChildId );
+
+        dimension.Frame.Length.Should().Be( 1 );
+        dimension.GetFlatList().Length.Should().Be( 6 );
+        dimension.GetLeaves().Length.Should().Be( 3 );
+    }
+
+    [Fact]
+    public void TestImplicitParent()
+    {
+        var dimension = DimensionFactory.BuildWithParentLink(
+            "Test implicit" ,
+            GetImplicitParentHierarchy() ,
+            o => o.Label ,
+            o => o.ParentId );
+
+        dimension.Frame.Length.Should().Be( 2 );
+        dimension.GetFlatList().Length.Should().Be( 4 );
     }
 }
