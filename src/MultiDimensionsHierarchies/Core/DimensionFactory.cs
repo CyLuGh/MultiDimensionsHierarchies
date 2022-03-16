@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace MultiDimensionsHierarchies.Core
 {
-    public class DimensionFactory
+    public static class DimensionFactory
     {
         public static Dimension BuildWithParentLink<TA, TB>(
             string dimensionName ,

@@ -12,7 +12,7 @@ namespace TestMultiDimensionsHierarchies;
 
 public class SkeletonTests
 {
-    private static Dimension GetDimension( string dimensionName )
+    internal static Dimension GetDimension( string dimensionName )
         => DimensionFactory.BuildWithParentLink(
             dimensionName ,
             DimensionFactoryTests.GetParentLinkHierarchy() ,
