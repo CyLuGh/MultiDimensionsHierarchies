@@ -25,11 +25,13 @@ namespace MultiDimensionsHierarchies.Core
 
             var keys = HashSet.createRange( seqItems.Select( i => i.Key ) );
             foreach ( var key in seqItems.Select( i => i.ParentKey ) )
+            {
                 key.IfSome( k =>
                 {
                     if ( !keys.Contains( k ) )
                         seqItems = seqItems.Add( (Key: k, Label: k.ToString(), ParentKey: Option<TB>.None, Weight: 1d) );
                 } );
+            }
 
             return Build(
                 dimensionName ,
@@ -56,18 +58,20 @@ namespace MultiDimensionsHierarchies.Core
 
             var keys = HashSet.createRange( seqItems.Select( i => i.Key ) );
             foreach ( var key in seqItems.Select( i => i.ChildKey ) )
+            {
                 key.IfSome( k =>
                 {
                     if ( !keys.Contains( k ) )
                         seqItems = seqItems.Add( (Key: k, Label: k.ToString(), ChildKey: Option<TB>.None) );
                 } );
+            }
 
             var multiChildItems = seqItems.GroupBy( item => (item.Key, item.Label) )
                 .Select( g => (
                     g.Key.Key,
                     g.Key.Label,
                     ChildrenIds: g.Select( i => i.ChildKey
-                            .MatchUnsafe( o => o , () => default( TB ) ) )
+                            .MatchUnsafe( o => o , () => default ) )
                         .Where( o => o?.Equals( default( TB ) ) == false ).ToArray()) );
 
             return BuildWithMultipleChildrenLink(

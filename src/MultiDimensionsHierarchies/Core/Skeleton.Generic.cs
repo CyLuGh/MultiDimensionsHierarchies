@@ -49,5 +49,8 @@ namespace MultiDimensionsHierarchies.Core
 
         public Skeleton<T> Except( params string[] dimensions )
             => new( Value , Key.Except( dimensions ) );
+
+        public Skeleton<T> With( T value = default , Skeleton key = null )
+            => new( value.Equals( default ) ? Value : value , key ?? Key );
     }
 }

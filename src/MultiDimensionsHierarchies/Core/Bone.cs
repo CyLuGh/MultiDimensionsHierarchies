@@ -140,8 +140,7 @@ namespace MultiDimensionsHierarchies.Core
         {
             yield return this;
 
-            foreach ( var b in Parent.Some( p => p.GetAncestors() )
-                .None( () => new Seq<Bone>() ) )
+            foreach ( var b in Parent.Some( p => p.GetAncestors() ).None( () => new Seq<Bone>() ) )
                 yield return b;
         }
 

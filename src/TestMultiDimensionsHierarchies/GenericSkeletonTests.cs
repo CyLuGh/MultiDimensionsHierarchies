@@ -2,10 +2,7 @@
 using LanguageExt;
 using MultiDimensionsHierarchies.Core;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace TestMultiDimensionsHierarchies;
@@ -46,5 +43,25 @@ public class GenericSkeletonTests
         act = () => new Skeleton<double>( boneA1 , boneA2 );
         act.Should().Throw<ArgumentException>()
             .WithMessage( "A bone with the same dimension name has been defined more than once!" );
+    }
+
+    [Fact]
+    public void TestAggregate()
+    {
+        var boneA = new Bone( "A1" , "Dimension A" );
+        var boneB = new Bone( "B1" , "Dimension B" );
+
+        var skeleton = new Skeleton<int?>( 14 , boneB , boneA );
+        var skeleton2 = new Skeleton<int?>( 10 , boneB , boneA );
+
+        var sum = new[] { skeleton , skeleton2 }.Aggregate( values => values.Sum() );
+
+        sum.IsSome.Should().BeTrue();
+        sum.IfSome( s =>
+        {
+            s.Value.Should().Be( 24 );
+            s.Bones[0].Should().BeSameAs( boneA );
+            s.Bones[1].Should().BeSameAs( boneB );
+        } );
     }
 }
