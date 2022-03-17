@@ -8,17 +8,22 @@ namespace MultiDimensionsHierarchies.Core
     public class Skeleton<T>
     {
         public Skeleton Key { get; }
-        public T Value { get; set; }
+        public Option<T> Value { get; set; }
+        public T ValueUnsafe => Value.MatchUnsafe( v => v , () => default );
 
         public Arr<Bone> Bones => Key.Bones;
 
         public Skeleton( Skeleton key )
         {
             Key = key;
-            Value = default;
+            Value = Option<T>.None;
         }
 
-        public Skeleton( T value , Skeleton key ) : this( key )
+        public Skeleton( T value , Skeleton key ) : this( Option<T>.Some( value ) , key )
+        {
+        }
+
+        public Skeleton( Option<T> value , Skeleton key ) : this( key )
         {
             Value = value;
         }
@@ -50,7 +55,16 @@ namespace MultiDimensionsHierarchies.Core
         public Skeleton<T> Except( params string[] dimensions )
             => new( Value , Key.Except( dimensions ) );
 
-        public Skeleton<T> With( T value = default , Skeleton key = null )
-            => new( value.Equals( default ) ? Value : value , key ?? Key );
+        public Skeleton<T> With( Option<T> value = default , Skeleton key = null )
+            => new( value.Some( _ => value ).None( () => Value ) , key ?? Key );
+
+        public bool IsLeaf()
+            => Bones.All( b => b.IsLeaf() );
+
+        public bool IsRoot()
+            => Bones.All( b => !b.HasParent() );
+
+        public override string ToString()
+            => $"{Key} [{Value}]";
     }
 }

@@ -140,6 +140,8 @@ public class SkeletonFactoryTests
                 b.Should().BeSameAs( d );
             } ) );
 
-        skeletons[0].Value.Should().Be( 4.6 );
+        skeletons[0].Value.IsSome.Should().BeTrue();
+        skeletons[0].Value.IfSome( v => v.Should().Be( 4.6 ) );
+        skeletons[0].ValueUnsafe.Should().Be( 4.6 );
     }
 }

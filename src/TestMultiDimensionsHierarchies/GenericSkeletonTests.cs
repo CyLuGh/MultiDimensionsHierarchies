@@ -9,13 +9,10 @@ namespace TestMultiDimensionsHierarchies;
 
 public class GenericSkeletonTests
 {
-    private static Dimension GetDimension( string dimensionName )
-        => DimensionFactory.BuildWithParentLink(
-            dimensionName ,
-            DimensionFactoryTests.GetParentLinkHierarchy() ,
-            x => x.Id ,
-            o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None ,
-            x => x.Label );
+    internal class TestObject
+    {
+        internal int Value { get; set; }
+    }
 
     [Fact]
     public void TestSkeleton()
@@ -51,15 +48,125 @@ public class GenericSkeletonTests
         var boneA = new Bone( "A1" , "Dimension A" );
         var boneB = new Bone( "B1" , "Dimension B" );
 
-        var skeleton = new Skeleton<int?>( 14 , boneB , boneA );
-        var skeleton2 = new Skeleton<int?>( 10 , boneB , boneA );
+        var skeleton = new Skeleton<int>( 14 , boneB , boneA );
+        var skeleton2 = new Skeleton<int>( 10 , boneB , boneA );
+        var skeleton3 = new Skeleton<int>( 5 , boneB , boneA );
+        var skeleton4 = new Skeleton<int>( 1 , boneB , boneA );
+
+        var sum = new[] { skeleton , skeleton2 , skeleton3 , skeleton4 }
+            .Aggregate( ( a , b ) => a + b );
+        sum.IsSome.Should().BeTrue();
+        sum.IfSome( s =>
+        {
+            s.Value.IsSome.Should().BeTrue();
+            s.Value.IfSome( v => v.Should().Be( 30 ) );
+            s.Bones[0].Should().BeSameAs( boneA );
+            s.Bones[1].Should().BeSameAs( boneB );
+        } );
+
+        skeleton = new Skeleton<int>( boneA , boneB );
+        sum = new[] { skeleton , skeleton2 , skeleton3 , skeleton4 }
+            .Aggregate( ( a , b ) => a + b );
+        sum.IsSome.Should().BeTrue();
+        sum.IfSome( s =>
+        {
+            s.Value.IsSome.Should().BeTrue();
+            s.Value.IfSome( v => v.Should().Be( 16 ) );
+            s.Bones[0].Should().BeSameAs( boneA );
+            s.Bones[1].Should().BeSameAs( boneB );
+        } );
+
+        skeleton2 = new Skeleton<int>( boneA , boneB );
+        skeleton3 = new Skeleton<int>( boneA , boneB );
+        skeleton4 = new Skeleton<int>( boneA , boneB );
+        sum = new[] { skeleton , skeleton2 , skeleton3 , skeleton4 }
+            .Aggregate( ( a , b ) => a + b );
+        sum.IsSome.Should().BeTrue();
+        sum.IfSome( s =>
+        {
+            s.Value.IsSome.Should().BeTrue();
+            s.Value.IfSome( v => v.Should().Be( 0 ) );
+        } );
+
+        // Test with some nullable T
+        var skelTest1 = new Skeleton<TestObject>( new TestObject { Value = 1 } , boneA , boneB );
+        var skelTest2 = new Skeleton<TestObject>( new TestObject { Value = 4 } , boneA , boneB );
+        var skelTest3 = new Skeleton<TestObject>( new TestObject { Value = 9 } , boneA , boneB );
+
+        var aggregator = ( TestObject a , TestObject b )
+            => new TestObject { Value = ( a?.Value ?? 0 ) + ( b?.Value ?? 0 ) };
+
+        var sumTest = new[] { skelTest1 , skelTest2 , skelTest3 }.Aggregate( aggregator );
+        sumTest.IsSome.Should().BeTrue();
+        sumTest.IfSome( s =>
+        {
+            s.Value.IsSome.Should().BeTrue();
+            s.Value.IfSome( v => v.Value.Should().Be( 14 ) );
+        } );
+
+        skelTest1 = new Skeleton<TestObject>( boneA , boneB );
+        sumTest = new[] { skelTest1 , skelTest2 , skelTest3 }.Aggregate( aggregator );
+        sumTest.IsSome.Should().BeTrue();
+        sumTest.IfSome( s =>
+        {
+            s.Value.IsSome.Should().BeTrue();
+            s.Value.IfSome( v => v.Value.Should().Be( 13 ) );
+        } );
+
+        skelTest2 = new Skeleton<TestObject>( boneA , boneB );
+        skelTest3 = new Skeleton<TestObject>( boneA , boneB );
+        sumTest = new[] { skelTest1 , skelTest2 , skelTest3 }.Aggregate( aggregator );
+        sumTest.IsSome.Should().BeTrue();
+        sumTest.IfSome( s =>
+        {
+            s.Value.IsSome.Should().BeFalse();
+        } );
+    }
+
+    [Fact]
+    public void TestGroupAggregate()
+    {
+        var boneA = new Bone( "A1" , "Dimension A" );
+        var boneB = new Bone( "B1" , "Dimension B" );
+
+        var skeleton = new Skeleton<int>( 14 , boneB , boneA );
+        var skeleton2 = new Skeleton<int>( 10 , boneB , boneA );
 
         var sum = new[] { skeleton , skeleton2 }.Aggregate( values => values.Sum() );
 
         sum.IsSome.Should().BeTrue();
         sum.IfSome( s =>
         {
-            s.Value.Should().Be( 24 );
+            s.Value.IsSome.Should().BeTrue();
+            s.Value.IfSome( v => v.Should().Be( 24 ) );
+            s.Bones[0].Should().BeSameAs( boneA );
+            s.Bones[1].Should().BeSameAs( boneB );
+        } );
+
+        var boneTotA = new Bone( "AAA" , "Dimension A" );
+        var boneTotB = new Bone( "BBB" , "Dimension B" );
+
+        var skeletonTot = new Skeleton( boneTotA , boneTotB );
+        sum = new[] { skeleton , skeleton2 }.Aggregate( skeletonTot , values => values.Sum() );
+        sum.IsSome.Should().BeTrue();
+        sum.IfSome( s =>
+        {
+            s.Value.IsSome.Should().BeTrue();
+            s.Value.IfSome( v => v.Should().Be( 24 ) );
+            s.Bones[0].Should().NotBeSameAs( boneA );
+            s.Bones[1].Should().NotBeSameAs( boneB );
+            s.Bones[0].Should().BeSameAs( boneTotA );
+            s.Bones[1].Should().BeSameAs( boneTotB );
+        } );
+
+        skeleton = new Skeleton<int>( boneB , boneA );
+        skeleton2 = new Skeleton<int>( boneB , boneA );
+        sum = new[] { skeleton , skeleton2 }.Aggregate( values => values.Sum() );
+        sum.IsSome.Should().BeTrue();
+        sum.IfSome( s =>
+        {
+            s.Value.IsSome.Should().BeTrue();
+            s.Value.IfSome( v => v.Should().Be( default ) );
             s.Bones[0].Should().BeSameAs( boneA );
             s.Bones[1].Should().BeSameAs( boneB );
         } );
