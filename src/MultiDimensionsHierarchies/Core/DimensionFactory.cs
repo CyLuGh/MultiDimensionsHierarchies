@@ -105,12 +105,12 @@ namespace MultiDimensionsHierarchies.Core
                 o => o.Key ,
                 o => o.ParentId ,
                 o => o.Label ,
-                o => 1d );
+                _ => 1d );
         }
 
         private static Option<(TB Key, Bone Value)> BuildBone<TA, TB>(
             string dimensionName ,
-            HashMap<TB , TA> hashMap ,
+            LanguageExt.HashSet<(TB Key , TA Item)> hashSet ,
             Seq<TA> items ,
             Option<TB> parentKey ,
             Func<TA , string> labeller ,
@@ -119,21 +119,23 @@ namespace MultiDimensionsHierarchies.Core
                 {
                     var childrenBones = items.Select( l => new Bone( labeller( l ) , dimensionName , weighter( l ) ) )
                         .ToArray();
-                    var parent = hashMap[pk];
-                    return Option<(TB, Bone)>.Some( (pk, new Bone( labeller( parent ) , dimensionName , weighter( parent ) , childrenBones )) );
+                    return hashSet.Find( x => x.Key.Equals( pk ) )
+                        .Some( parent => Option<(TB, Bone)>.Some( (pk, new Bone( labeller( parent.Item ) , dimensionName , weighter( parent.Item ) , childrenBones )) ) )
+                        .None( () => Option<(TB, Bone)>.None );
                 } ).None( () => Option<(TB, Bone)>.None );
 
         private static Option<(TB Key, Bone Value)> BuildBone<TA, TB>(
             string dimensionName ,
-            HashMap<TB , TA> hashMap ,
+            LanguageExt.HashSet<(TB Key, TA Item)> hashSet ,
             Seq<Bone> childrenBones ,
             Option<TB> parentKey ,
             Func<TA , string> labeller ,
             Func<TA , double> weighter )
                 => parentKey.Some( pk =>
                 {
-                    var parent = hashMap[pk];
-                    return Option<(TB, Bone)>.Some( (pk, new Bone( labeller( parent ) , dimensionName , weighter( parent ) , childrenBones.ToArray() )) );
+                    return hashSet.Find( x => x.Key.Equals( pk ) )
+                        .Some( parent => Option<(TB, Bone)>.Some( (pk, new Bone( labeller( parent.Item ) , dimensionName , weighter( parent.Item ) , childrenBones.ToArray() )) ) )
+                        .None( () => Option<(TB, Bone)>.None );
                 } ).None( () => Option<(TB, Bone)>.None );
 
         private static Dimension Build<TA, TB>(
@@ -148,24 +150,23 @@ namespace MultiDimensionsHierarchies.Core
             weighter ??= _ => 1d;
             var results = HashMap.create<TB , Bone>();
 
-            /* Put all items in a map */
-            var hashMap = HashMap.createRange( items.Select( i => (keySelector( i ), i) ) );
+            var test = items.Select( i => (keySelector( i ), i) ).Distinct().ToArray();
 
-            var parentKeys = new LanguageExt.HashSet<Option<TB>>( hashMap.Values.Select( x => parentKeySelector( x ) )
-                .Where( o => o.IsSome ) );
+            var hashSet = HashSet.createRange( items.Select( i => (Key: keySelector( i ), Value: i) ) );
+            var parentKeys = HashSet.createRange( hashSet.Select( x => parentKeySelector( x.Value ) ).Somes() );
 
             if ( parentKeys.Length == 0 ) /* This is a flat list */
             {
-                foreach ( var (Key, Value) in hashMap
+                foreach ( var (Key, Bone) in hashSet
                     .Select( x => (x.Key, Value: new Bone( labeller( x.Value ) , dimensionName )) ) )
                 {
-                    results = results.Add( Key , Value );
+                    results = results.Add( Key , Bone );
                 }
             }
             else
             {
                 /* For leaves */
-                var elements = hashMap.Where( x => !parentKeys.Contains( x.Key ) )
+                var elements = hashSet.Where( x => !parentKeys.Contains( x.Key ) )
                     .Select( x => x.Value )
                     .ToArray();
 
@@ -173,7 +174,7 @@ namespace MultiDimensionsHierarchies.Core
 
                 foreach ( var group in elements.GroupBy( x => parentKeySelector( x ) ) )
                 {
-                    var res = BuildBone( dimensionName , hashMap , group.ToSeq() , group.Key , labeller , weighter );
+                    var res = BuildBone( dimensionName , hashSet , group.ToSeq() , group.Key , labeller , weighter );
                     results = res
                         .Some( r => results.AddOrUpdate( r.Key , r.Value ) )
                         .None( () => results );
@@ -184,7 +185,7 @@ namespace MultiDimensionsHierarchies.Core
 
                 while ( createdIds.Length > 0 )
                 {
-                    elements = hashMap.Where( x => createdIds.Contains( x.Key ) )
+                    elements = hashSet.Where( x => createdIds.Contains( x.Key ) )
                         .Select( x => x.Value )
                         .ToArray();
 
@@ -196,7 +197,7 @@ namespace MultiDimensionsHierarchies.Core
                         var keys = group.Select( x => keySelector( x ) ).ToSeq();
                         var seq = results.Where( x => keys.Contains( x.Key ) )
                             .Select( x => x.Value ).ToSeq();
-                        var res = BuildBone( dimensionName , hashMap , seq , group.Key , labeller , weighter );
+                        var res = BuildBone( dimensionName , hashSet , seq , group.Key , labeller , weighter );
                         results = res.Some( r => results
                                 .AddOrUpdate( r.Key ,
                                     existing => existing.With( children: existing.Children.Concat( r.Value.Children ) ) ,

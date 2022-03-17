@@ -87,7 +87,7 @@ namespace MultiDimensionsHierarchies.Core
         {
             var boneLabel = parser( input , dimensionName );
             var bone = dimensions.Find( d => d.Name.Equals( dimensionName ) )
-                .Some( d => d.GetFlatList().Find( b => b.Label.Equals( boneLabel ) )
+                .Some( d => d.Flatten().Find( b => b.Label.Equals( boneLabel ) )
                      .Some( b => b )
                      .None( () => Bone.None ) )
                 .None( () => Bone.None );

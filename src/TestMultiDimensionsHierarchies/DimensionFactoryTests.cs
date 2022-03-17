@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using LanguageExt;
 using MultiDimensionsHierarchies.Core;
+using System;
 using System.Collections.Generic;
 using Xunit;
 
@@ -99,8 +100,49 @@ public class DimensionFactoryTests
 
     internal static IEnumerable<ParentHierarchyInput<string>> GetImplicitParentHierarchy()
     {
-        yield return new ParentHierarchyInput<string> { Label = "AA" , ParentId = "A" };
+        yield return new ParentHierarchyInput<string> { Label = "AA1" , ParentId = "A" };
+        yield return new ParentHierarchyInput<string> { Label = "AA2" , ParentId = "A" };
         yield return new ParentHierarchyInput<string> { Label = "BB" , ParentId = "B" };
+    }
+
+    internal static IEnumerable<ParentHierarchyInput<string>> GetImplicitDuplicateParentHierarchy()
+    {
+        yield return new ParentHierarchyInput<string> { Label = "AA" , ParentId = "A" };
+        yield return new ParentHierarchyInput<string> { Label = "AA2" , ParentId = "A" };
+        yield return new ParentHierarchyInput<string> { Label = "AA" , ParentId = "B" };
+        yield return new ParentHierarchyInput<string> { Label = "AA2" , ParentId = "B" };
+    }
+
+    internal static IEnumerable<ParentHierarchyInput<string>> GetImplicitParentDiamondHierarchy()
+    {
+        yield return new ParentHierarchyInput<string> { Label = "AI" , ParentId = "ALL" };
+        yield return new ParentHierarchyInput<string> { Label = "AII" , ParentId = "ALL" };
+        yield return new ParentHierarchyInput<string> { Label = "AIII" , ParentId = "ALL" };
+        yield return new ParentHierarchyInput<string> { Label = "AIV" , ParentId = "ALL" };
+
+        yield return new ParentHierarchyInput<string> { Label = "Axxx" , ParentId = "AI" };
+
+        yield return new ParentHierarchyInput<string> { Label = "I" , ParentId = "ALL" };
+        yield return new ParentHierarchyInput<string> { Label = "II" , ParentId = "ALL" };
+        yield return new ParentHierarchyInput<string> { Label = "III" , ParentId = "ALL" };
+        yield return new ParentHierarchyInput<string> { Label = "IV" , ParentId = "ALL" };
+
+        yield return new ParentHierarchyInput<string> { Label = "Axxx" , ParentId = "I" };
+    }
+
+    private static IEnumerable<ParentHierarchyInput<int>> GetParentDiamondSample()
+    {
+        yield return new ParentHierarchyInput<int> { Id = 11 , Label = "ALL" };
+        yield return new ParentHierarchyInput<int> { Id = 1 , Label = "AI" , ParentId = 11 };
+        yield return new ParentHierarchyInput<int> { Id = 2 , Label = "AII" , ParentId = 11 };
+        yield return new ParentHierarchyInput<int> { Id = 3 , Label = "AIII" , ParentId = 11 };
+        yield return new ParentHierarchyInput<int> { Id = 4 , Label = "AIV" , ParentId = 11 };
+        yield return new ParentHierarchyInput<int> { Id = 5 , Label = "Axxx" , ParentId = 1 };
+        yield return new ParentHierarchyInput<int> { Id = 6 , Label = "I" , ParentId = 11 };
+        yield return new ParentHierarchyInput<int> { Id = 7 , Label = "II" , ParentId = 11 };
+        yield return new ParentHierarchyInput<int> { Id = 8 , Label = "III" , ParentId = 11 };
+        yield return new ParentHierarchyInput<int> { Id = 9 , Label = "IV" , ParentId = 11 };
+        yield return new ParentHierarchyInput<int> { Id = 10 , Label = "Axxx" , ParentId = 6 };
     }
 
     [Fact]
@@ -213,7 +255,7 @@ public class DimensionFactoryTests
 
         dimension.Should().NotBeNull();
         dimension.Frame.Length.Should().Be( 1 );
-        dimension.GetFlatList().Length.Should().Be( 6 );
+        dimension.Flatten().Length.Should().Be( 6 );
     }
 
     [Fact]
@@ -227,7 +269,7 @@ public class DimensionFactoryTests
             o => o.Label );
 
         parentDimension.Frame.Length.Should().Be( 2 );
-        parentDimension.GetFlatList().Length.Should().Be( 13 );
+        parentDimension.Flatten().Length.Should().Be( 13 );
         parentDimension.GetLeaves().Length.Should().Be( 8 );
     }
 
@@ -241,7 +283,7 @@ public class DimensionFactoryTests
             o => o.ChildId );
 
         dimension.Frame.Length.Should().Be( 1 );
-        dimension.GetFlatList().Length.Should().Be( 6 );
+        dimension.Flatten().Length.Should().Be( 6 );
         dimension.GetLeaves().Length.Should().Be( 3 );
     }
 
@@ -255,6 +297,58 @@ public class DimensionFactoryTests
             o => o.ParentId );
 
         dimension.Frame.Length.Should().Be( 2 );
-        dimension.GetFlatList().Length.Should().Be( 4 );
+        dimension.Flatten().Length.Should().Be( 5 );
+    }
+
+    [Fact]
+    public void TestCheck()
+    {
+        var dimension = DimensionFactory.BuildWithParentLink(
+            "Test dimension" ,
+            GetParentLinkHierarchy() ,
+            o => o.Id ,
+            o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None ,
+            o => o.Label );
+
+        dimension.Check().IsRight.Should().BeTrue();
+    }
+
+    [Fact]
+    public void TestCheckMultiLabel()
+    {
+        var dimension = DimensionFactory.BuildWithParentLink(
+            "Test dimension" ,
+            GetImplicitDuplicateParentHierarchy() ,
+            o => o.Label ,
+            o => o.ParentId );
+
+        var check = Prelude.memo( () => dimension.Check() );
+        check().IsLeft.Should().BeTrue();
+        check().IfLeft( l => l.Should().Be( $"Same label is defined several times in the dimension, this may lead to false results if hierarchy is parsed from string inputs." ) );
+
+        dimension = DimensionFactory.BuildWithParentLink(
+           "Test dimension" ,
+           GetImplicitParentDiamondHierarchy() ,
+           o => o.Label ,
+           o => o.ParentId );
+
+        check = Prelude.memo( () => dimension.Check() );
+        check().IsLeft.Should().BeTrue();
+        check().IfLeft( l => l.Should().Be( $"Same label is defined several times in the dimension, this may lead to false results if hierarchy is parsed from string inputs.{Environment.NewLine}Hierarchies may include some diamond shapes!" ) );
+    }
+
+    [Fact]
+    public void TestCheckDiamond()
+    {
+        var dimension = DimensionFactory.BuildWithParentLink(
+            "Test dimension" ,
+            GetParentDiamondSample() ,
+            x => x.Id ,
+            x => x.ParentId != 0 ? x.ParentId : Option<int>.None ,
+            x => x.Label );
+
+        var check = Prelude.memo( () => dimension.Check() );
+        check().IsLeft.Should().BeTrue();
+        check().IfLeft( l => l.Should().Be( $"Same label is defined several times in the dimension, this may lead to false results if hierarchy is parsed from string inputs.{Environment.NewLine}Hierarchies may include some diamond shapes!" ) );
     }
 }

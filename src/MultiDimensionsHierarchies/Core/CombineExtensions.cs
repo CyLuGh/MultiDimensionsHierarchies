@@ -11,7 +11,7 @@ namespace MultiDimensionsHierarchies.Core
         public static IEnumerable<Skeleton> Combine( this IEnumerable<Dimension> dimensions , bool onlyRoots = false )
             => onlyRoots ?
                 dimensions.Select( d => d.Frame.Where( b => !b.HasParent() ).ToList() ).Combine()
-              : dimensions.Select( d => d.Frame.FlatList().ToArray() ).Combine();
+              : dimensions.Select( d => d.Frame.Flatten().ToArray() ).Combine();
 
         public static IEnumerable<Skeleton> Combine( this IEnumerable<IEnumerable<Bone>> dimensions )
             => dimensions.Cartesian( x => new Skeleton( x.ToArray() ) );

@@ -5,19 +5,50 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
 namespace MultiDimensionsHierarchies
 {
-    public enum Method { Heuristic, Targeted }
+    /// <summary>
+    /// Defines aggregation algorithm.
+    /// </summary>
+    public enum Method
+    {
+        /// <summary>
+        /// Computes all aggregates from source data in a bottom-top way.
+        /// </summary>
+        Heuristic,
+        /// <summary>
+        /// Computes limited aggregates in top-down way.
+        /// </summary>
+        Targeted
+    }
     //public enum CollectionMode { Skeleton, FullId, ShortId }
 
     public static class Aggregator
     {
+        /// <summary>
+        /// Apply aggregator to inputs according to included hierarchies.
+        /// </summary>
+        /// <typeparam name="T">Data kind</typeparam>
+        /// <param name="method">Aggregation algorithm</param>
+        /// <param name="inputs">Source data, including their hierarchy</param>
+        /// <param name="aggregator">How to aggregate <typeparamref name="T"/> and <typeparamref name="T"/></param>
+        /// <param name="groupAggregator">(Optional) How to aggregate a collection of T <typeparamref name="T"/></param>
+        /// <returns>AggregationResult which contains execution status and results if process OK.</returns>
         public static AggregationResult<T> Aggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs ,
             Func<T , T , T> aggregator , Func<IEnumerable<T> , T> groupAggregator = null )
             => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , groupAggregator );
 
+        /// <summary>
+        /// Apply aggregator to inputs according to included hierarchies.
+        /// </summary>
+        /// <typeparam name="T">Data kind</typeparam>
+        /// <param name="method">Aggregation algorithm</param>
+        /// <param name="inputs">Source data, including their hierarchy</param>
+        /// <param name="aggregator">How to aggregate <typeparamref name="T"/> and <typeparamref name="T"/></param>
+        /// <param name="targets">Defined keys to compute, needed for <paramref name="Targeted"/> method</param>
+        /// <param name="groupAggregator">(Optional) How to aggregate a collection of T <typeparamref name="T"/></param>
+        /// <returns>AggregationResult which contains execution status and results if process OK.</returns>
         public static AggregationResult<T> Aggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs ,
             Func<T , T , T> aggregator , IEnumerable<Skeleton> targets , Func<IEnumerable<T> , T> groupAggregator = null )
         {
@@ -35,12 +66,12 @@ namespace MultiDimensionsHierarchies
             return method switch
             {
                 Method.Targeted => TargetedAggregate( seqInputs , seqTargets , groupAggregator ),
-                Method.Heuristic => HeuristicAggregate( seqInputs , aggregator ),
+                Method.Heuristic => HeuristicAggregate( seqInputs , aggregator , seqTargets ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
 
-        private static AggregationResult<T> HeuristicAggregate<T>( Seq<Skeleton<T>> baseData , Func<T , T , T> aggregator )
+        private static AggregationResult<T> HeuristicAggregate<T>( Seq<Skeleton<T>> baseData , Func<T , T , T> aggregator , Seq<Skeleton> targets )
         {
             var f = Prelude.Try( () =>
             {
@@ -60,9 +91,15 @@ namespace MultiDimensionsHierarchies
                         }
                     } );
 
+                var res = results.Select( kvp => new Skeleton<T>( kvp.Value , kvp.Key ) ).ToSeq();
+                if ( targets.Count > 0 )
+                {
+                    res = res.Where( s => targets.Contains( s.Key ) );
+                }
+
                 stopWatch.Stop();
 
-                return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results.Select( kvp => new Skeleton<T>( kvp.Value , kvp.Key ) ) , "Process OK" );
+                return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , res , "Process OK" );
             } );
 
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );

@@ -181,10 +181,4 @@ namespace MultiDimensionsHierarchies.Core
                 .Some( parent => string.Join( ">" , parent.GetFullPath() , Label ) )
                 .None( () => Label );
     }
-
-    public static class BoneExtensions
-    {
-        public static Seq<Bone> FlatList( this IEnumerable<Bone> bones )
-            => bones.SelectMany( b => b.GetDescendants() ).ToSeq();
-    }
 }

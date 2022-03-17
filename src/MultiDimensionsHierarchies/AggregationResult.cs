@@ -7,7 +7,7 @@ namespace MultiDimensionsHierarchies
 {
     public enum AggregationStatus
     {
-        NO_RUN, OK, ERROR
+        NO_RUN, OK, ERROR, WARN
     }
 
     public class AggregationResult<T>

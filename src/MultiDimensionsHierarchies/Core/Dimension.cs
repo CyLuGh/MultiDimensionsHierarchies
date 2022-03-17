@@ -16,7 +16,7 @@ namespace MultiDimensionsHierarchies.Core
             Frame = new Seq<Bone>( bones );
         }
 
-        public Seq<Bone> GetFlatList()
+        public Seq<Bone> Flatten()
         {
             var elements = FetchFlatList().Memo();
             return elements();
@@ -28,11 +28,14 @@ namespace MultiDimensionsHierarchies.Core
             return leaves();
         }
 
+        public Either<string , bool> Check()
+            => Frame.Check();
+
         public Option<Bone> Find( string label )
-            => Frame.FlatList().Find( b => b.Label.Equals( label ) );
+            => Frame.Flatten().Find( b => b.Label.Equals( label ) );
 
         private Func<Seq<Bone>> FetchFlatList()
-            => () => Frame.FlatList().ToSeq();
+            => () => Frame.Flatten().ToSeq();
 
         private Func<Seq<Bone>> FetchLeaves()
             => () => Frame.SelectMany( d => d.GetLeaves() ).ToSeq();
