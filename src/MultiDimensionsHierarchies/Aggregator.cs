@@ -78,35 +78,43 @@ namespace MultiDimensionsHierarchies
                     .Where( g => g.Distinct().Count() == 1 )
                     .Select( g => g.First() )
                     .ToSeq();
-                var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();
-                var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, b.GetDescendants()) ).ToHashMap();
 
-                var simplifiedData = baseData
-                    .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
-                    .Select( d => d.Except( uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray() ) )
-                    .GroupBy( x => x.Key )
-                    .Select( g => g.Aggregate( g.Key , groupAggregator ) )
-                    .ToSeq();
-
-                var simplifiedTargets = targets.Select( s => s.Except( uniqueDimensions ) );
-
-                var results = simplifiedTargets.Select( t =>
+                var simplifiedTargets = targets;
+                var simplifiedData = baseData;
+                if ( uniqueTargetBaseBones.Any() )
                 {
-                    var composingData = simplifiedData;
+                    var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();
+                    var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, b.GetDescendants()) ).ToHashMap();
 
-                    foreach ( var bone in t.Bones )
+                    simplifiedData = baseData
+                       .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
+                       .Select( d => d.Except( uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray() ) )
+                       .GroupBy( x => x.Key )
+                       .Select( g => g.Aggregate( g.Key , groupAggregator ) )
+                       .ToSeq();
+
+                    simplifiedTargets = targets.Select( s => s.Except( uniqueDimensions ) );
+                }
+
+                var results = simplifiedTargets
+                    .AsParallel()
+                    .Select( t =>
                     {
-                        var expectedBones = bone.GetDescendants();
-                        var unneededKeys = simplifiedData.Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
-                                                                                                    .Some( b => !expectedBones.Contains( b ) )
-                                                                                                    .None( () => false )
-                                                                    )
-                            .Select( s => s.Key );
-                        composingData = composingData.Except( composingData.Where( o => unneededKeys.Contains( o.Key ) ) ).ToSeq();
-                    }
+                        var composingData = simplifiedData;
 
-                    return composingData.Aggregate( t , groupAggregator );
-                } );
+                        foreach ( var bone in t.Bones )
+                        {
+                            var expectedBones = bone.GetDescendants();
+                            var unneededKeys = simplifiedData.Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
+                                                                                                        .Some( b => !expectedBones.Contains( b ) )
+                                                                                                        .None( () => false )
+                                                                        )
+                                .Select( s => s.Key );
+                            composingData = composingData.Except( composingData.Where( o => unneededKeys.Contains( o.Key ) ) ).ToSeq();
+                        }
+
+                        return composingData.Aggregate( t , groupAggregator );
+                    } );
 
                 results = results.Select( r => r.Add( uniqueTargetBaseBones ) );
                 stopWatch.Stop();

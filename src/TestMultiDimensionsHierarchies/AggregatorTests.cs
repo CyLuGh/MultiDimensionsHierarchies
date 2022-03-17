@@ -194,26 +194,25 @@ public class AggregatorTests
         result.Results.Length.Should().Be( targets.Length );
     }
 
-    //[Fact]
-    //public void TestTargeted2DimensionsSimplifiedData()
-    //{
-    //    var dimensions = new[] { "Dim A" , "Dim B" };
-    //    var skeletons = GetLeavesSample( dimensions )
-    //        .Where( b => b.Bones.Find( o => o.DimensionName.Equals( "Dim A" ) && o.Label.Equals( "2.1" ) ).IsSome );
-    //    var targets = GetTargets( dimensions );
-    //    targets = Seq.create(
-    //        targets.Find( "1" , "2" ) , targets.Find( "2" , "2" )
-    //        ).Somes();
-    //    var result = Aggregator.Aggregate( Method.Targeted , skeletons , ( a , b ) => a + b , targets );
+    [Fact]
+    public void TestTargeted5DimensionsSubSelect()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+        var skeletons = GetLeavesSample( dimensions );
+        var targets = GetTargets( dimensions );
+        targets = Seq.create(
+            targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
+            ).Somes();
+        var result = Aggregator.Aggregate( Method.Targeted , skeletons , ( a , b ) => a + b , targets );
 
-    //    result.Status.Should().Be( AggregationStatus.OK );
-    //    var r2 = result.Results.Find( "2" , "2" );
-    //    r2.IsSome.Should().BeTrue();
-    //    r2.IfSome( r =>
-    //    {
-    //        r.Value.IsSome.Should().BeTrue();
-    //        r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 3 , dimensions.Length , 4 ) ) );
-    //    } );
-    //    result.Results.Length.Should().Be( targets.Length );
-    //}
+        result.Status.Should().Be( AggregationStatus.OK );
+        var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
+        r2.IsSome.Should().BeTrue();
+        r2.IfSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+        } );
+        result.Results.Length.Should().Be( targets.Length );
+    }
 }
