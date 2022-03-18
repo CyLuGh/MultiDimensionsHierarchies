@@ -26,6 +26,22 @@ public class AggregatorTests
             } )
             .ToSeq();
 
+    internal Seq<Skeleton<int>> GetSample( params string[] dimensions )
+        => dimensions.Select( d => SkeletonTests.GetDimension( d ) )
+            .Combine()
+            .Select( s =>
+            {
+                int value = 0;
+                foreach ( var bone in s.Bones )
+                {
+                    foreach ( var part in bone.Label.Split( '.' ) )
+                        if ( int.TryParse( part , out int v ) )
+                            value += v;
+                }
+                return new Skeleton<int>( value , s );
+            } )
+            .ToSeq();
+
     internal Seq<Skeleton> GetTargets( params string[] dimensions )
         => dimensions.Select( d => SkeletonTests.GetDimension( d ) )
             .Combine().Where( s => !s.IsLeaf() )
@@ -55,6 +71,36 @@ public class AggregatorTests
     }
 
     [Fact]
+    public void TestHeuristic1DimensionMultiLevelData()
+    {
+        var dimensions = new[] { "Dim A" };
+        var skeletons = GetSample( dimensions );
+        var result = Aggregator.Aggregate( Method.Heuristic , skeletons , ( a , b ) => a + b );
+
+        result.Status.Should().Be( AggregationStatus.OK );
+        var r1 = result.Results.Find( "1" );
+        r1.IsSome.Should().BeTrue();
+        r1.IfSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 26 , dimensions.Length , 8 ) ) );
+
+            var test = r.Key.Complexity;
+        } );
+
+        var r2 = result.Results.Find( "2" );
+        r2.IsSome.Should().BeTrue();
+        r2.IfSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 20 , dimensions.Length , 5 ) ) );
+
+            var test = r.Key.Complexity;
+        } );
+        result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
+    }
+
+    [Fact]
     public void TestHeuristic2Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
@@ -71,6 +117,32 @@ public class AggregatorTests
         } );
 
         result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , 2 ) );
+        result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
+    }
+
+    [Fact]
+    public void TestHeuristic2DimensionMultiLevelData()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" };
+        var skeletons = GetSample( dimensions );
+        var result = Aggregator.Aggregate( Method.Heuristic , skeletons , ( a , b ) => a + b );
+
+        result.Status.Should().Be( AggregationStatus.OK );
+        var r1 = result.Results.Find( "1" , "1" );
+        r1.IsSome.Should().BeTrue();
+        r1.IfSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 26 , dimensions.Length , 8 ) ) );
+        } );
+
+        var r2 = result.Results.Find( "2" , "2" );
+        r2.IsSome.Should().BeTrue();
+        r2.IfSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 20 , dimensions.Length , 5 ) ) );
+        } );
         result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
     }
 
@@ -108,6 +180,30 @@ public class AggregatorTests
             r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
         } );
         result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
+    }
+
+    [Fact]
+    public void TestHeuristic5DimensionsWithTargets()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+        var skeletons = GetLeavesSample( dimensions );
+
+        var targets = GetTargets( dimensions );
+        targets = Seq.create(
+            targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
+            ).Somes();
+
+        var result = Aggregator.Aggregate( Method.Heuristic , skeletons , ( a , b ) => a + b , targets );
+
+        result.Status.Should().Be( AggregationStatus.OK );
+        var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
+        r2.IsSome.Should().BeTrue();
+        r2.IfSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+        } );
+        result.Results.Length.Should().Be( targets.Length );
     }
 
     [Fact]

@@ -8,7 +8,7 @@ namespace MultiDimensionsHierarchies.Core
     public static class BoneExtensions
     {
         public static Seq<Bone> Flatten( this IEnumerable<Bone> bones )
-            => bones.SelectMany( b => b.GetDescendants() ).ToSeq();
+            => bones.SelectMany( b => b.Descendants() ).ToSeq();
 
         public static Either<string , bool> Check( this IEnumerable<Bone> bones )
         {
@@ -21,7 +21,7 @@ namespace MultiDimensionsHierarchies.Core
             if ( flattened.GroupBy( b => b.Label )
                 .Where( g => g.Count() > 1 )
                 .Any( g =>
-                    g.Select( b => b.GetAncestors() )
+                    g.Select( b => b.Ancestors() )
                         .Aggregate( ( prvSeq , nxtSeq ) => prvSeq.Intersect( nxtSeq ).ToSeq() )
                         .Any() ) )
             {

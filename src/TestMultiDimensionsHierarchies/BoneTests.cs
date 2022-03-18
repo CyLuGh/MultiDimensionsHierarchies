@@ -54,28 +54,28 @@ public class BoneTests
     public void TestDescendants()
     {
         var parent = GetSimpleBone();
-        parent.GetDescendants().Length.Should().Be( 3 );
+        parent.Descendants().Length.Should().Be( 3 );
 
         var root = GetThreeLevelsBone();
-        root.GetDescendants().Length.Should().Be( 6 );
+        root.Descendants().Length.Should().Be( 6 );
     }
 
     [Fact]
     public void TestAncestors()
     {
         var parent = GetSimpleBone();
-        parent.GetAncestors().Length.Should().Be( 1 );
-        parent.Children[0].GetAncestors().Length.Should().Be( 2 );
+        parent.Ancestors().Length.Should().Be( 1 );
+        parent.Children[0].Ancestors().Length.Should().Be( 2 );
 
         var root = GetThreeLevelsBone();
-        root.Children[0].Children[0].GetAncestors().Length.Should().Be( 3 );
+        root.Children[0].Children[0].Ancestors().Length.Should().Be( 3 );
     }
 
     [Fact]
     public void TestLeaves()
     {
         var parent = GetSimpleBone();
-        parent.GetLeaves().Length.Should().Be( 2 );
+        parent.Leaves().Length.Should().Be( 2 );
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class BoneTests
     {
         var root = GetThreeLevelsBone();
 
-        root.GetDescendants().Find( b => b.Label.Equals( "Grand Child 1.2" ) )
-            .IfSome( b => { b.GetRoot().Should().BeSameAs( root ); } );
+        root.Descendants().Find( b => b.Label.Equals( "Grand Child 1.2" ) )
+            .IfSome( b => { b.Root().Should().BeSameAs( root ); } );
     }
 }

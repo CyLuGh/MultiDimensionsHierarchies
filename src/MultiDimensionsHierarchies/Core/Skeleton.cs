@@ -4,7 +4,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace MultiDimensionsHierarchies.Core
 {
@@ -56,16 +55,20 @@ namespace MultiDimensionsHierarchies.Core
         public bool IsRoot()
             => Bones.All( b => !b.HasParent() );
 
-        public Skeleton GetRoot()
-            => new( Bones.Select( b => b.GetRoot() ) );
+        public Skeleton Root()
+            => new( Bones.Select( b => b.Root() ) );
 
-        public Seq<Skeleton> GetLeaves()
-            => Bones.AsParallel().Select( b => b.GetLeaves().ToArray() ).Combine().ToSeq();
+        public Seq<Skeleton> Leaves()
+            => Bones.AsParallel().Select( b => b.Leaves().ToArray() ).Combine().ToSeq();
 
-        public Seq<Skeleton> GetAncestors()
-           => Bones.AsParallel().Select( x => x.GetAncestors().ToArray() )
+        public Seq<Skeleton> Ancestors()
+           => Bones.AsParallel().Select( x => x.Ancestors().ToArray() )
                 .Cartesian( x => new Skeleton( x.ToArray() ) )
                 .ToSeq();
+
+        public int Complexity
+            => Bones.Select( b => b.Leaves().Sum( l => l.Depth ) )
+                .Aggregate( 1 , ( prv , nxt ) => prv * nxt );
 
         public bool HasDimension( string dimension , params string[] values )
             => Bones.Find( b => b.DimensionName.Equals( dimension ) )
@@ -75,12 +78,12 @@ namespace MultiDimensionsHierarchies.Core
         public bool HasDimensions( Dictionary<string , string[]> dimensions )
             => dimensions.All( kvp => HasDimension( kvp.Key , kvp.Value ) );
 
-        public double GetResultingWeight( Skeleton ancestor )
+        public double ResultingWeight( Skeleton ancestor )
         {
             // TODO: add dimensions check
             var sBones = ancestor.Bones.ToDictionary( x => x.DimensionName );
             return Bones
-                .Select( b => b.GetResultingWeight( sBones[b.DimensionName] ) )
+                .Select( b => b.ResultingWeight( sBones[b.DimensionName] ) )
                 .Aggregate( 1d , ( s , w ) => s * w );
         }
 
@@ -132,7 +135,7 @@ namespace MultiDimensionsHierarchies.Core
         /// Create local dimensional hierarchy.
         /// </summary>
         /// <returns></returns>
-        public Dimension[] GetDimensionsSubset()
+        public Dimension[] DimensionsSubset()
             => Bones.Select( b => new Dimension( b.DimensionName , new[] { b } ) ).ToArray();
 
         public Skeleton StripHierarchies()
@@ -149,15 +152,15 @@ namespace MultiDimensionsHierarchies.Core
 
         public override string ToString() => string.Join( ":" , Bones );
 
-        public string GetFullPath()
-            => string.Join( ":" , Bones.Select( b => b.GetFullPath() ) );
+        public string FullPath()
+            => string.Join( ":" , Bones.Select( b => b.FullPath() ) );
 
         public Arr<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<Skeleton> sourceSkeletons )
         {
             var targetSkeleton = Update( dimensions );
 
             var bones = targetSkeleton.Bones.ToDictionary( b => b.DimensionName ,
-                b => new System.Collections.Generic.HashSet<string>( b.GetDescendants().Select( x => x.Label ) ) );
+                b => new System.Collections.Generic.HashSet<string>( b.Descendants().Select( x => x.Label ) ) );
 
             var composingElements = new System.Collections.Generic.HashSet<Skeleton>( sourceSkeletons );
 
@@ -220,11 +223,11 @@ namespace MultiDimensionsHierarchies.Core
 
         public static Skeleton ParseCompleteString( string input , Seq<Dimension> dimensions )
         {
-            
             var skeleton = new Skeleton(
                     input.Split( ':' ).Select( x =>
                     {
-                        var f = Prelude.Try( () => {
+                        var f = Prelude.Try( () =>
+                        {
                             var parts = x.Split( '|' );
                             return Arr.create( parts[0] , parts[1] );
                         } );
@@ -238,7 +241,7 @@ namespace MultiDimensionsHierarchies.Core
                 );
 
             if ( skeleton.HasUnknown() )
-                throw new KeyNotFoundException("Parsed items don't match dimensions definitions.");
+                throw new KeyNotFoundException( "Parsed items don't match dimensions definitions." );
 
             return skeleton;
         }

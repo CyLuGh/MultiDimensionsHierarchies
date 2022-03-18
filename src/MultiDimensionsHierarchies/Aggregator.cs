@@ -82,7 +82,7 @@ namespace MultiDimensionsHierarchies
                     .AsParallel()
                     .ForAll( skeleton =>
                     {
-                        foreach ( var ancestor in skeleton.Key.GetAncestors() )
+                        foreach ( var ancestor in skeleton.Key.Ancestors() )
                         {
                             results.AddOrUpdate( ancestor , skeleton.Value ,
                                 ( _ , data ) =>
@@ -121,7 +121,7 @@ namespace MultiDimensionsHierarchies
                 if ( uniqueTargetBaseBones.Any() )
                 {
                     var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();
-                    var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, b.GetDescendants()) ).ToHashMap();
+                    var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, b.Descendants()) ).ToHashMap();
 
                     simplifiedData = baseData
                        .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
@@ -141,7 +141,7 @@ namespace MultiDimensionsHierarchies
 
                         foreach ( var bone in t.Bones )
                         {
-                            var expectedBones = bone.GetDescendants();
+                            var expectedBones = bone.Descendants();
                             var unneededKeys = simplifiedData.Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
                                                                                                         .Some( b => !expectedBones.Contains( b ) )
                                                                                                         .None( () => false )

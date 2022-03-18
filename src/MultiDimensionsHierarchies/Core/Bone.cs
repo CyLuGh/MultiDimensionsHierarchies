@@ -81,66 +81,48 @@ namespace MultiDimensionsHierarchies.Core
 
         public bool HasParent() => Parent.IsSome;
 
-        public Bone GetRoot()
-            => Parent.Some( p => p.GetRoot() )
+        public int Depth =>
+            1 + Parent.Some( p => p.Depth ).None( () => 0 );
+
+        public Bone Root()
+            => Parent.Some( p => p.Root() )
                 .None( () => this );
 
-        public double GetResultingWeight( Bone source )
+        public double ResultingWeight( Bone source )
         {
             if ( source.Equals( this ) )
                 return 1d;
 
-            return Weight * Parent.Some( p => p.GetResultingWeight( source ) ).None( () => 1d );
+            return Weight * Parent.Some( p => p.ResultingWeight( source ) ).None( () => 1d );
         }
 
-        public Seq<Bone> GetLeaves()
-        {
-            var leaves = BuildLeaves().Memo();
-            return leaves();
-        }
+        public Seq<Bone> Leaves() => FetchLeaves().ToSeq();
 
-        public Seq<Bone> GetDescendants()
-        {
-            var elements = FetchDescendants().Memo();
-            return elements();
-        }
+        public Seq<Bone> Descendants() => BuildDescendants().ToSeq();
 
-        public Seq<Bone> GetAncestors()
-        {
-            var elements = FetchHierarchy().Memo();
-            return elements();
-        }
-
-        private Func<Seq<Bone>> BuildLeaves()
-            => () => FetchLeaves().ToSeq();
+        public Seq<Bone> Ancestors() => BuildHierarchy().ToSeq();
 
         private IEnumerable<Bone> FetchLeaves()
         {
             if ( HasChild() )
-                return Children.SelectMany( child => child.GetLeaves() );
+                return Children.SelectMany( child => child.Leaves() );
 
             return new[] { this };
         }
-
-        private Func<Seq<Bone>> FetchDescendants()
-            => () => BuildDescendants().ToSeq();
 
         private IEnumerable<Bone> BuildDescendants()
         {
             yield return this;
 
-            foreach ( var child in Children.SelectMany( c => c.GetDescendants() ) )
+            foreach ( var child in Children.SelectMany( c => c.Descendants() ) )
                 yield return child;
         }
-
-        private Func<Seq<Bone>> FetchHierarchy()
-            => () => BuildHierarchy().ToSeq();
 
         private IEnumerable<Bone> BuildHierarchy()
         {
             yield return this;
 
-            foreach ( var b in Parent.Some( p => p.GetAncestors() ).None( () => new Seq<Bone>() ) )
+            foreach ( var b in Parent.Some( p => p.Ancestors() ).None( () => new Seq<Bone>() ) )
                 yield return b;
         }
 
@@ -176,9 +158,9 @@ namespace MultiDimensionsHierarchies.Core
         public override string ToString()
             => $"{Label} in {DimensionName}";
 
-        public string GetFullPath()
+        public string FullPath()
             => Parent
-                .Some( parent => string.Join( ">" , parent.GetFullPath() , Label ) )
+                .Some( parent => string.Join( ">" , parent.FullPath() , Label ) )
                 .None( () => Label );
     }
 }

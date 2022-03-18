@@ -38,6 +38,6 @@ namespace MultiDimensionsHierarchies.Core
             => () => Frame.Flatten().ToSeq();
 
         private Func<Seq<Bone>> FetchLeaves()
-            => () => Frame.SelectMany( d => d.GetLeaves() ).ToSeq();
+            => () => Frame.SelectMany( d => d.Leaves() ).ToSeq();
     }
 }

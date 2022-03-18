@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32228.430
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiDimensionsHierarchies", "MultiDimensionsHierarchies\MultiDimensionsHierarchies.csproj", "{9701A95F-6272-4438-AA89-41A99BD02E81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultiDimensionsHierarchies", "MultiDimensionsHierarchies\MultiDimensionsHierarchies.csproj", "{9701A95F-6272-4438-AA89-41A99BD02E81}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestMultiDimensionsHierarchies", "TestMultiDimensionsHierarchies\TestMultiDimensionsHierarchies.csproj", "{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestMultiDimensionsHierarchies", "TestMultiDimensionsHierarchies\TestMultiDimensionsHierarchies.csproj", "{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo", "Demo\Demo.csproj", "{E4C4EA39-5E0A-48EC-B921-E9B242EF6BA6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{405C29F7-D7C7-4CB6-A3D4-A047A74871CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4C4EA39-5E0A-48EC-B921-E9B242EF6BA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4C4EA39-5E0A-48EC-B921-E9B242EF6BA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4C4EA39-5E0A-48EC-B921-E9B242EF6BA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4C4EA39-5E0A-48EC-B921-E9B242EF6BA6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

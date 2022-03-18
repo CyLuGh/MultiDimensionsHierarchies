@@ -85,7 +85,7 @@ public class SkeletonTests
                     {
                         var skeleton = new Skeleton( boneA , boneB );
 
-                        var ancestors = skeleton.GetAncestors();
+                        var ancestors = skeleton.Ancestors();
                         ancestors.Length.Should().Be( 4 );
                     } );
 
@@ -94,14 +94,14 @@ public class SkeletonTests
                     {
                         var skeleton = new Skeleton( boneA , boneB );
 
-                        var ancestors = skeleton.GetAncestors();
+                        var ancestors = skeleton.Ancestors();
                         ancestors.Length.Should().Be( 6 );
 
                         dimC.Find( "1.1.1.1" )
                             .IfSome( boneC =>
                             {
                                 skeleton = new Skeleton( boneA , boneB , boneC );
-                                ancestors = skeleton.GetAncestors();
+                                ancestors = skeleton.Ancestors();
                                 ancestors.Length.Should().Be( 24 );
                             } );
                     } );
@@ -123,7 +123,7 @@ public class SkeletonTests
                     {
                         var skeleton = new Skeleton( boneA , boneB );
 
-                        var root = skeleton.GetRoot();
+                        var root = skeleton.Root();
                         root.Bones[0]
                             .ToString().Should().Be( dimA.Find( "2" ).Some( b => b.ToString() ).None( () => "" ) );
 
@@ -138,7 +138,7 @@ public class SkeletonTests
                             .IfSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
-                                var root = skeleton.GetRoot();
+                                var root = skeleton.Root();
 
                                 root.Bones[0].Should().BeSameAs(
                             dimA.Find( "2" ).Some( b => b ).None( () => Bone.None ) );
@@ -168,7 +168,7 @@ public class SkeletonTests
                             .IfSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneC , boneA , boneB );
-                                var leaves = skeleton.GetLeaves();
+                                var leaves = skeleton.Leaves();
 
                                 leaves.Length.Should().Be( 8 );
                             } );
@@ -252,14 +252,14 @@ public class SkeletonTests
 
         var skeleton = new Skeleton( sBoneA , sBoneB , sBoneC );
         /* Bones don't have a hierarchy */
-        skeleton.GetAncestors().Length.Should().Be( 1 );
+        skeleton.Ancestors().Length.Should().Be( 1 );
 
         var updated = skeleton.Update( dimA );
         /* Dimension Dim A is updated with a hierarchy */
-        updated.GetAncestors().Length.Should().Be( 2 );
+        updated.Ancestors().Length.Should().Be( 2 );
 
         updated = skeleton.Update( dimA , dimB , dimC );
-        var ancestors = updated.GetAncestors().ToArray();
+        var ancestors = updated.Ancestors().ToArray();
         ancestors.Length.Should().Be( 12 );
     }
 
@@ -280,11 +280,11 @@ public class SkeletonTests
                             .IfSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
-                                var ancestors = skeleton.GetAncestors();
+                                var ancestors = skeleton.Ancestors();
                                 ancestors.Length.Should().Be( 24 );
 
                                 var replaced = skeleton.Replace( new Bone( "42" , "Dim C" ) );
-                                ancestors = replaced.GetAncestors();
+                                ancestors = replaced.Ancestors();
                                 ancestors.Length.Should().Be( 6 );
                             } );
                     } );
@@ -308,15 +308,15 @@ public class SkeletonTests
                             .IfSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
-                                var ancestors = skeleton.GetAncestors();
+                                var ancestors = skeleton.Ancestors();
                                 ancestors.Length.Should().Be( 6 );
-                                var leaves = skeleton.GetLeaves();
+                                var leaves = skeleton.Leaves();
                                 leaves.Length.Should().Be( 8 );
 
                                 var stripped = skeleton.StripHierarchies();
-                                ancestors = stripped.GetAncestors();
+                                ancestors = stripped.Ancestors();
                                 ancestors.Length.Should().Be( 1 );
-                                leaves = stripped.GetLeaves();
+                                leaves = stripped.Leaves();
                                 leaves.Length.Should().Be( 1 );
                             } );
                     } );
