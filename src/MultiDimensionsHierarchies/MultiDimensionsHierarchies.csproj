@@ -5,6 +5,14 @@
 		<LangVersion>9.0</LangVersion>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<PackageOutputPath>./nupkg</PackageOutputPath>
+
+		<Authors>Demortier Jeremy</Authors>
+		<Description>Aggregator for multidimensional hierarchies</Description>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="LanguageExt.Core" Version="4.0.4" />
 		<PackageReference Include="morelinq" Version="3.3.2" />
