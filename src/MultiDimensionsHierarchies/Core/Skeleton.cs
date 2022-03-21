@@ -67,7 +67,7 @@ namespace MultiDimensionsHierarchies.Core
                 .ToSeq();
 
         public int Complexity
-            => Bones.Select( b => b.Leaves().Sum( l => l.Depth ) )
+            => Bones.Select( b => b.Complexity )
                 .Aggregate( 1 , ( prv , nxt ) => prv * nxt );
 
         public bool HasDimension( string dimension , params string[] values )
@@ -110,7 +110,9 @@ namespace MultiDimensionsHierarchies.Core
         {
             if ( dimensions.Length != Bones.Count
                 || !dimensions.All( d => Bones.Any( b => b.DimensionName.Equals( d.Name ) ) ) )
+            {
                 throw new ArgumentException( "Dimensions count doesn't match bones!" );
+            }
 
             var skel = this;
 

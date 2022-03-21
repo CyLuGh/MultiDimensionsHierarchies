@@ -270,7 +270,7 @@ public class DimensionFactoryTests
 
         parentDimension.Frame.Length.Should().Be( 2 );
         parentDimension.Flatten().Length.Should().Be( 13 );
-        parentDimension.GetLeaves().Length.Should().Be( 8 );
+        parentDimension.Leaves().Length.Should().Be( 8 );
     }
 
     [Fact]
@@ -284,7 +284,7 @@ public class DimensionFactoryTests
 
         dimension.Frame.Length.Should().Be( 1 );
         dimension.Flatten().Length.Should().Be( 6 );
-        dimension.GetLeaves().Length.Should().Be( 3 );
+        dimension.Leaves().Length.Should().Be( 3 );
     }
 
     [Fact]
@@ -324,7 +324,7 @@ public class DimensionFactoryTests
 
         var check = Prelude.memo( () => dimension.Check() );
         check().IsLeft.Should().BeTrue();
-        check().IfLeft( l => l.Should().Be( $"Same label is defined several times in the dimension, this may lead to false results if hierarchy is parsed from string inputs." ) );
+        check().IfLeft( l => l.Should().Be( "Same label is defined several times in the dimension, this may lead to false results if hierarchy is parsed from string inputs." ) );
 
         dimension = DimensionFactory.BuildWithParentLink(
            "Test dimension" ,

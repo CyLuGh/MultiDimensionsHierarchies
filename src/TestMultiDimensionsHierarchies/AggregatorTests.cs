@@ -10,7 +10,7 @@ namespace TestMultiDimensionsHierarchies;
 
 public class AggregatorTests
 {
-    internal Seq<Skeleton<int>> GetLeavesSample( params string[] dimensions )
+    internal static Seq<Skeleton<int>> GetLeavesSample( params string[] dimensions )
         => dimensions.Select( d => SkeletonTests.GetDimension( d ) )
             .Combine().Where( s => s.IsLeaf() )
             .Select( s =>
@@ -19,14 +19,16 @@ public class AggregatorTests
                 foreach ( var bone in s.Bones )
                 {
                     foreach ( var part in bone.Label.Split( '.' ) )
+                    {
                         if ( int.TryParse( part , out int v ) )
                             value += v;
+                    }
                 }
                 return new Skeleton<int>( value , s );
             } )
             .ToSeq();
 
-    internal Seq<Skeleton<int>> GetSample( params string[] dimensions )
+    internal static Seq<Skeleton<int>> GetSample( params string[] dimensions )
         => dimensions.Select( d => SkeletonTests.GetDimension( d ) )
             .Combine()
             .Select( s =>
@@ -35,19 +37,21 @@ public class AggregatorTests
                 foreach ( var bone in s.Bones )
                 {
                     foreach ( var part in bone.Label.Split( '.' ) )
+                    {
                         if ( int.TryParse( part , out int v ) )
                             value += v;
+                    }
                 }
                 return new Skeleton<int>( value , s );
             } )
             .ToSeq();
 
-    internal Seq<Skeleton> GetTargets( params string[] dimensions )
+    internal static Seq<Skeleton> GetTargets( params string[] dimensions )
         => dimensions.Select( d => SkeletonTests.GetDimension( d ) )
             .Combine().Where( s => !s.IsLeaf() )
             .ToSeq();
 
-    internal int GetExpectedResult( int expectedSingle , int dimensionCount , int itemsCount )
+    internal static int GetExpectedResult( int expectedSingle , int dimensionCount , int itemsCount )
         => expectedSingle
         * dimensionCount // Because of how we assign values to leaves
         * (int) Math.Pow( itemsCount , dimensionCount - 1 );
@@ -84,8 +88,6 @@ public class AggregatorTests
         {
             r.Value.IsSome.Should().BeTrue();
             r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 26 , dimensions.Length , 8 ) ) );
-
-            var test = r.Key.Complexity;
         } );
 
         var r2 = result.Results.Find( "2" );
@@ -94,8 +96,6 @@ public class AggregatorTests
         {
             r.Value.IsSome.Should().BeTrue();
             r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 20 , dimensions.Length , 5 ) ) );
-
-            var test = r.Key.Complexity;
         } );
         result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
     }
@@ -118,6 +118,9 @@ public class AggregatorTests
 
         result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , 2 ) );
         result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
+
+        var cplx = dimensions.Select( d => SkeletonTests.GetDimension( d ) ).Complexity();
+        result.Results.LongCount().Should().Be( cplx );
     }
 
     [Fact]
@@ -180,6 +183,9 @@ public class AggregatorTests
             r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
         } );
         result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
+
+        var cplx = dimensions.Select( d => SkeletonTests.GetDimension( d ) ).Complexity();
+        result.Results.LongCount().Should().Be( cplx );
     }
 
     [Fact]

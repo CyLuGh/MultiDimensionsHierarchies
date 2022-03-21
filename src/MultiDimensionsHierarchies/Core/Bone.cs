@@ -84,6 +84,9 @@ namespace MultiDimensionsHierarchies.Core
         public int Depth =>
             1 + Parent.Some( p => p.Depth ).None( () => 0 );
 
+        public int Complexity =>
+            1 + Children.Sum( c => c.Complexity );
+
         public Bone Root()
             => Parent.Some( p => p.Root() )
                 .None( () => this );

@@ -26,6 +26,9 @@ var parser = ( Sample1Item item , string s )
         _ => string.Empty
     };
 
+var complexity = new[] { countriesDimension , dimensionA , dimensionB }.Complexity();
+AnsiConsole.MarkupLine( "Those dimensions could lead up to [red bold]{0}[/] results." , complexity );
+
 var eval = ( Sample1Item item ) => item.Amount;
 
 var skeletons = SkeletonFactory.BuildSkeletons( sample1 , parser , eval , new[] { countriesDimension , dimensionA , dimensionB } );
@@ -40,9 +43,7 @@ var targetedResult = Aggregator.Aggregate( Method.Targeted , skeletons , ( a , b
 
 AnsiConsole.WriteLine( targetedResult.Duration.ToString() );
 
-
-
-T[] ReadFile<T>( string path )
+static T[] ReadFile<T>( string path )
 {
     if ( string.IsNullOrWhiteSpace( path ) || !File.Exists( path ) )
         return Array.Empty<T>();

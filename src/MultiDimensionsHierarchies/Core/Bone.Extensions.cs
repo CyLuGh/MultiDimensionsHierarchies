@@ -19,9 +19,7 @@ namespace MultiDimensionsHierarchies.Core
                 checks.Enqueue( "Same label is defined several times in the dimension, this may lead to false results if hierarchy is parsed from string inputs." );
 
             if ( flattened.GroupBy( b => b.Label )
-                .Where( g => g.Count() > 1 )
-                .Any( g =>
-                    g.Select( b => b.Ancestors() )
+                .Any( g => g.Count() > 1 && g.Select( b => b.Ancestors() )
                         .Aggregate( ( prvSeq , nxtSeq ) => prvSeq.Intersect( nxtSeq ).ToSeq() )
                         .Any() ) )
             {
