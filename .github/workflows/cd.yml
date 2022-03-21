@@ -3,8 +3,8 @@ name: MultiDimensionsHierarchies Deployment
 on: 
   push:
     tags:
-      - v0.*
-      - v1.*
+      - 0.*
+      - 1.*
 
 env:
   configuration: Release
@@ -39,8 +39,6 @@ jobs:
 
       - uses: little-core-labs/get-git-tag@v3.0.1
         id: tagName
-        with:
-          tagRegex: "v(*)"
 
       - name: Pack
         run: dotnet pack -p:PackageVersion=${{ steps.tagName.outputs.tag }} --configuration=Release --verbosity=minimal --no-build
