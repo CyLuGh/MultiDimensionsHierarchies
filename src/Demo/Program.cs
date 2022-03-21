@@ -8,9 +8,7 @@ using MultiDimensionsHierarchies.Core;
 using Spectre.Console;
 using System.Globalization;
 
-AnsiConsole.MarkupLine( "Welcome to [underline red]MultiDimensionsHierarchies[/] demo" );
-
-//AnsiConsole.Write( new FigletText( "MultiDimensionsHierarchies demo" ).LeftAligned() );
+AnsiConsole.Write( new FigletText( "MDH demo" ).LeftAligned() );
 
 var countries = ReadFile<Zone>( "samples/countries.csv" );
 var countriesDimension = DimensionFactory.BuildWithParentLink( "Countries" , countries , o => o.GeoZone , o => o.ParentZone );
