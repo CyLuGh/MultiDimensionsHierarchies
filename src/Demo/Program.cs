@@ -10,38 +10,98 @@ using System.Globalization;
 
 AnsiConsole.Write( new FigletText( "MDH demo" ).LeftAligned() );
 
-var countries = ReadFile<Zone>( "samples/countries.csv" );
-var countriesDimension = DimensionFactory.BuildWithParentLink( "Countries" , countries , o => o.GeoZone , o => o.ParentZone );
-var dimensionA = DimensionFactory.BuildWithParentLink( "DimA" , GetParentLinkHierarchy() , o => o.Id , o => o.ParentId );
-var dimensionB = DimensionFactory.BuildWithParentLink( "DimB" , GetParentLinkHierarchy() , o => o.Id , o => o.ParentId );
-
-var sample1 = ReadFile<Sample1Item>( "samples/sample1.csv" );
-
 var parser = ( Sample1Item item , string s )
     => s switch
     {
-        "DimA" => item.DimA,
-        "DimB" => item.DimB,
+        "Dim A" => item.DimA,
+        "Dim B" => item.DimB,
+        "Dim C" => item.DimC,
         "Countries" => item.Country,
         _ => string.Empty
     };
-
-var complexity = new[] { countriesDimension , dimensionA , dimensionB }.Complexity();
-AnsiConsole.MarkupLine( "Those dimensions could lead up to [red bold]{0}[/] results." , complexity );
-
 var eval = ( Sample1Item item ) => item.Amount;
 
-var skeletons = SkeletonFactory.BuildSkeletons( sample1 , parser , eval , new[] { countriesDimension , dimensionA , dimensionB } );
-var heuristicResult = Aggregator.Aggregate( Method.Heuristic , skeletons , ( a , b ) => a + b );
+var (countriesDimension, sampleDimension, complexity, heuristicResult, targetedResult) = AnsiConsole.Status()
+    .AutoRefresh( true )
+    .Spinner( Spinner.Known.Dots )
+    .Start( "Executing demo..." , ctx =>
+    {
+        ctx.Status = "Reading countries hierarchy input file";
+        var countries = ReadFile<Zone>( "samples/countries.csv" );
 
-AnsiConsole.WriteLine( heuristicResult.Duration.ToString() );
+        ctx.Status = "Building countries hierarchy";
+        var countriesDimension = DimensionFactory.BuildWithParentLink( "Countries" , countries , o => o.GeoZone , o => o.ParentZone );
 
-var targets = Seq.create(
-    new Skeleton( Seq.create( dimensionA.Find( "1.1" ) , dimensionB.Find( "2.1" ) , countriesDimension.Find( "EU" ) ).Somes() )
-    );
-var targetedResult = Aggregator.Aggregate( Method.Targeted , skeletons , ( a , b ) => a + b , targets );
+        ctx.Status = "Building other dimensions";
+        var dimInputs = new[] { "Dim A" , "Dim B" , "Dim C" };
+        var otherDimensions = dimInputs.Select( s => DimensionFactory.BuildWithParentLink( s , GetParentLinkHierarchy() , o => o.Id , o => o.ParentId ) ).ToArray();
 
-AnsiConsole.WriteLine( targetedResult.Duration.ToString() );
+        var dimensions = otherDimensions.Concat( new[] { countriesDimension } ).ToSeq();
+
+        ctx.Status = "Computing complexity";
+        var complexity = dimensions.Complexity();
+
+        ctx.Status = "Reading data file";
+        var sample1 = ReadFile<Sample1Item>( "samples/sample1.csv" );
+
+        ctx.Status = "Building data infor";
+        var skeletons = SkeletonFactory.BuildSkeletons( sample1 , parser , eval , dimensions );
+
+        ctx.Status = "Computing aggregates with Heuristic method";
+        var heuristicResult = Aggregator.Aggregate( Method.Heuristic , skeletons , ( a , b ) => a + b );
+
+        ctx.Status = "Computing aggregates with Targeted method";
+        var targets = dimensions.Combine().FindAll( ("1.1", "Dim A") , ("2.1", "Dim B") , ("2", "Dim C") , ("EU", "Countries") );
+        var targetedResult = Aggregator.Aggregate( Method.Targeted , skeletons , ( a , b ) => a + b , targets );
+
+        return (countriesDimension, otherDimensions[0], complexity, heuristicResult, targetedResult);
+    } );
+
+if ( AnsiConsole.Confirm( "Would you like to see the hierarchies?" ) )
+{
+    DisplayDimension( countriesDimension );
+    DisplayDimension( sampleDimension );
+}
+
+AnsiConsole.MarkupLine( "Those dimensions could lead up to [red bold]{0}[/] results." , complexity );
+
+
+var hTable = new Table();
+hTable.AddColumn( "Method" ).AddColumn( "Status" ).AddColumn( "Results" ).AddColumn( "Duration" );
+hTable.AddRow( "Heuristic" , $"{heuristicResult.Status}" , $"{heuristicResult.Results.Length} results" , $"{heuristicResult.Duration}" );
+foreach ( var r in heuristicResult.Results )
+    hTable.AddRow( "" , "" , $"{r}" , "" );
+
+AnsiConsole.Write( hTable );
+
+var tTable = new Table();
+tTable.AddColumn( "Method" ).AddColumn( "Status" ).AddColumn( "Results" ).AddColumn( "Duration" );
+tTable.AddRow( "Targeted" , $"{targetedResult.Status}" , $"{targetedResult.Results.Length} results" , $"{targetedResult.Duration}" );
+foreach ( var r in targetedResult.Results )
+    tTable.AddRow( "" , "" , $"{r}" , "" );
+
+AnsiConsole.Write( tTable );
+
+static void DisplayDimension( Dimension dim )
+{
+    var tree = new Tree( dim.Name );
+
+    foreach ( var root in dim.Frame.OrderBy( x => x.Label ) )
+    {
+        var node = tree.AddNode( root.Label );
+        foreach ( var child in root.Children.OrderBy( x => x.Label ) )
+            AddNode( node , child );
+    }
+
+    AnsiConsole.Write( tree );
+}
+
+static void AddNode( TreeNode node , Bone bone )
+{
+    var newNode = node.AddNode( bone.Label );
+    foreach ( var child in bone.Children )
+        AddNode( newNode , child );
+}
 
 static T[] ReadFile<T>( string path )
 {

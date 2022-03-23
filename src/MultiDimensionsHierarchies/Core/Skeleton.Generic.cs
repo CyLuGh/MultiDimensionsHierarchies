@@ -1,7 +1,5 @@
 ﻿using LanguageExt;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace MultiDimensionsHierarchies.Core
 {
@@ -65,6 +63,6 @@ namespace MultiDimensionsHierarchies.Core
             => Bones.All( b => !b.HasParent() );
 
         public override string ToString()
-            => $"{Key} [{Value}]";
+            => $"{Key} => {Value.Some( v => v.ToString() ).None( () => "/" )}";
     }
 }
