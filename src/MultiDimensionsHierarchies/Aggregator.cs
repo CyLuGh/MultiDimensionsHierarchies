@@ -35,6 +35,7 @@ namespace MultiDimensionsHierarchies
         /// <param name="inputs">Source data, including their hierarchy</param>
         /// <param name="aggregator">How to aggregate <typeparamref name="T"/> and <typeparamref name="T"/></param>
         /// <param name="groupAggregator">(Optional) How to aggregate a collection of T <typeparamref name="T"/></param>
+        /// <param name="weightEffect">(Optional) How weight should be applied to T</param>
         /// <returns>AggregationResult which contains execution status and results if process OK.</returns>
         public static AggregationResult<T> Aggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs ,
             Func<T , T , T> aggregator , Func<IEnumerable<T> , T> groupAggregator = null , Func<T , double , T> weightEffect = null )
@@ -49,6 +50,7 @@ namespace MultiDimensionsHierarchies
         /// <param name="aggregator">How to aggregate <typeparamref name="T"/> and <typeparamref name="T"/></param>
         /// <param name="targets">Defined keys to compute, needed for <paramref name="Targeted"/> method</param>
         /// <param name="groupAggregator">(Optional) How to aggregate a collection of T <typeparamref name="T"/></param>
+        /// <param name="weightEffect">(Optional) How weight should be applied to T</param>
         /// <returns>AggregationResult which contains execution status and results if process OK.</returns>
         public static AggregationResult<T> Aggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs ,
             Func<T , T , T> aggregator , IEnumerable<Skeleton> targets , Func<IEnumerable<T> , T> groupAggregator = null ,

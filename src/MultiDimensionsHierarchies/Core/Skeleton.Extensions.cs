@@ -77,5 +77,21 @@ namespace MultiDimensionsHierarchies.Core
         public static Seq<Skeleton<T>> FindAll<T>( this IEnumerable<Skeleton<T>> skeletons , params (string label, string dimensionName)[] bones )
             => skeletons.Where( s => bones.All( b => s.Bones.Find( x => x.DimensionName.Equals( b.dimensionName ) && x.Label.Equals( b.label ) ).IsSome ) )
             .ToSeq();
+
+        public static Seq<Skeleton> FindAll( this IEnumerable<Skeleton> skeletons , params string[][] labels )
+            => labels.SelectMany( ls => skeletons.ToSeq().FindAll( ls ) )
+            .ToSeq();
+
+        public static Seq<Skeleton> FindAll( this IEnumerable<Skeleton> skeletons , params (string label, string dimensionName)[][] bones )
+            => bones.SelectMany( bs => skeletons.ToSeq().FindAll( bs ) )
+            .ToSeq();
+
+        public static Seq<Skeleton<T>> FindAll<T>( this IEnumerable<Skeleton<T>> skeletons , params string[][] labels )
+            => labels.SelectMany( ls => skeletons.ToSeq().FindAll( ls ) )
+            .ToSeq();
+
+        public static Seq<Skeleton<T>> FindAll<T>( this IEnumerable<Skeleton<T>> skeletons , params (string label, string dimensionName)[][] bones )
+            => bones.SelectMany( bs => skeletons.ToSeq().FindAll( bs ) )
+            .ToSeq();
     }
 }

@@ -415,7 +415,7 @@ public class SkeletonTests
         var dimC = GetDimensionWithRedundantLabel( "Dim C" );
 
         var skels = Arr.create( dimA , dimB , dimC )
-            .Combine();
+            .Combine().ToSeq();
 
         var items = skels.FindAll( "1" , "0" , "1" );
         items.Length.Should().Be( 2 );
@@ -443,5 +443,26 @@ public class SkeletonTests
                     s.ResultingWeight( r ).Should().Be( .125 );
                 } );
         } );
+    }
+
+    [Fact]
+    public void TestFind()
+    {
+        var dimA = GetDimensionWithRedundantLabel( "Dim A" );
+        var dimB = GetDimensionWithRedundantLabel( "Dim B" );
+        var dimC = GetDimensionWithRedundantLabel( "Dim C" );
+        var dimD = GetDimensionWithRedundantLabel( "Dim D" );
+
+        var skels = Arr.create( dimA , dimB , dimC , dimD )
+            .Combine().ToSeq();
+
+        var items = skels.FindAll( new[] { "1" , "1" , "1" , "0" } , new[] { "2" , "1" , "1" , "0" } );
+        items.Length.Should().Be( 4 );
+
+        var items2 = skels.FindAll( new[] { ("1", "Dim A") , ("1", "Dim B") , ("1", "Dim C") , ("0", "Dim D") } ,
+            new[] { ("2", "Dim A") , ("1", "Dim B") , ("1", "Dim C") , ("0", "Dim D") } );
+        items2.Length.Should().Be( 4 );
+
+        items.SequenceEqual( items2 ).Should().BeTrue();
     }
 }
