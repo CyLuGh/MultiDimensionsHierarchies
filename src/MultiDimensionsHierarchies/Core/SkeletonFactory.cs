@@ -69,9 +69,10 @@ namespace MultiDimensionsHierarchies.Core
                 dimensionsOfInterest = seqDimensions.Select( d => d.Name ).ToArray();
             }
 
-            return inputs.Select( input =>
+            return inputs.SelectMany( input =>
             {
-                var bones = dimensionsOfInterest.Select( d => FindBone( input , parser , d , seqDimensions ) ).ToArray();
+                var bones = dimensionsOfInterest.Select( d => FindBones( input , parser , d , seqDimensions ) )
+                    .ToArray();
 
                 if ( bones.Lefts().Any() )
                 {
@@ -79,7 +80,9 @@ namespace MultiDimensionsHierarchies.Core
                     throw new ApplicationException( $"Couldn't find some dimensions values: {missing}" );
                 }
 
-                return new Skeleton<U>( evaluator( input ) , bones.Rights() );
+                return bones.Rights()
+                   .Cartesian( bones => bones )
+                   .Select( set => new Skeleton<U>( evaluator( input ) , set ) );
             } );
         }
 
@@ -98,6 +101,17 @@ namespace MultiDimensionsHierarchies.Core
             return bone;
         }
 
-      
+        internal static Either<string , Bone[]> FindBones<T>( T input , Func<T , string , string> parser , string dimensionName , Seq<Dimension> dimensions )
+        {
+            var boneLabel = parser( input , dimensionName );
+            var bones = dimensions.Find( d => d.Name.Equals( dimensionName ) )
+                .Some( d => d.Flatten().Where( b => b.Label.Equals( boneLabel ) ).ToArray() )
+                .None( () => Array.Empty<Bone>() );
+
+            if ( bones.Length == 0 )
+                return $"Couldn't find {boneLabel} in dimension {dimensionName}";
+
+            return bones;
+        }
     }
 }

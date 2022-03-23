@@ -1,4 +1,5 @@
 using FluentAssertions;
+using LanguageExt.UnitTesting;
 using MultiDimensionsHierarchies.Core;
 using Xunit;
 
@@ -26,6 +27,20 @@ public class BoneTests
         var grandChild21 = new Bone( "Grand Child 2.1" , "Test dimension" );
 
         var child1 = new Bone( "Child 1" , "Test dimension" , grandChild11 , grandChild12 );
+        var child2 = new Bone( "Child 2" , "Test dimension" , grandChild21 );
+
+        var root = new Bone( "Root" , "Test dimension" , child1 , child2 );
+
+        return root;
+    }
+
+    private static Bone GetThreeLevelsBoneWithWeight()
+    {
+        var grandChild11 = new Bone( "Grand Child 1.1" , "Test dimension" , .5 );
+        var grandChild12 = new Bone( "Grand Child 1.2" , "Test dimension" );
+        var grandChild21 = new Bone( "Grand Child 2.1" , "Test dimension" );
+
+        var child1 = new Bone( "Child 1" , "Test dimension" , .9 , grandChild11 , grandChild12 );
         var child2 = new Bone( "Child 2" , "Test dimension" , grandChild21 );
 
         var root = new Bone( "Root" , "Test dimension" , child1 , child2 );
@@ -84,6 +99,25 @@ public class BoneTests
         var root = GetThreeLevelsBone();
 
         root.Descendants().Find( b => b.Label.Equals( "Grand Child 1.2" ) )
-            .IfSome( b => { b.Root().Should().BeSameAs( root ); } );
+            .ShouldBeSome( b => { b.Root().Should().BeSameAs( root ); } );
+    }
+
+    [Fact]
+    public void TestWeights()
+    {
+        var root = GetThreeLevelsBoneWithWeight();
+
+        var gc = root.Descendants().Find( b => b.Label.Equals( "Grand Child 1.1" ) );
+        var c = root.Descendants().Find( b => b.Label.Equals( "Child 1" ) );
+        gc.ShouldBeSome( bgc =>
+        {
+            bgc.ResultingWeight( bgc ).Should().Be( 1d );
+            c.ShouldBeSome( bc =>
+            {
+                bgc.ResultingWeight( bc ).Should().Be( 0.5 );
+                bc.ResultingWeight( root ).Should().Be( .9 );
+                bgc.ResultingWeight( root ).Should().Be( 0.45 );
+            } );
+        } );
     }
 }

@@ -81,6 +81,9 @@ namespace MultiDimensionsHierarchies.Core
 
         public bool HasParent() => Parent.IsSome;
 
+        public bool HasWeightElement()
+            => Descendants().Any( b => b.Weight != 1d );
+
         public int Depth =>
             1 + Parent.Some( p => p.Depth ).None( () => 0 );
 
@@ -91,12 +94,23 @@ namespace MultiDimensionsHierarchies.Core
             => Parent.Some( p => p.Root() )
                 .None( () => this );
 
-        public double ResultingWeight( Bone source )
+        public double ResultingWeight( Bone sourceAncestor )
         {
-            if ( source.Equals( this ) )
+            if ( sourceAncestor.Equals( this ) )
                 return 1d;
 
-            return Weight * Parent.Some( p => p.ResultingWeight( source ) ).None( () => 1d );
+            if ( !Ancestors().Contains( sourceAncestor ) )
+                return 0d;
+
+            return Weight * Parent.Some( p => p.ResultingWeightUnchecked( sourceAncestor ) ).None( () => 1d );
+        }
+
+        private double ResultingWeightUnchecked( Bone sourceAncestor )
+        {
+            if ( sourceAncestor.Equals( this ) )
+                return 1d;
+
+            return Weight * Parent.Some( p => p.ResultingWeightUnchecked( sourceAncestor ) ).None( () => 1d );
         }
 
         public Seq<Bone> Leaves() => FetchLeaves().ToSeq();

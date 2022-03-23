@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using LanguageExt.UnitTesting;
 using MultiDimensionsHierarchies.Core;
 using System;
 using Xunit;
@@ -109,10 +110,33 @@ public class SkeletonFactoryTests
 
         skeletons[0].Bones.Length.Should().Be( 3 );
         skeletons[0].Bones.Find( b => b.DimensionName.Equals( "Dimension A" ) )
-            .IfSome( b => dimA.Find( "2.1" ).IfSome( d =>
+            .ShouldBeSome( b => dimA.Find( "2.1" ).ShouldBeSome( d => b.Should().BeSameAs( d ) ) );
+    }
+
+    [Fact]
+    public void TestRedundantItems()
+    {
+        var dimA = SkeletonTests.GetDimensionWithRedundantLabel( "Dimension A" );
+        var dimB = SkeletonTests.GetDimensionWithRedundantLabel( "Dimension B" );
+        var dimC = SkeletonTests.GetDimensionWithRedundantLabel( "Dimension C" );
+
+        var items = new[] { "1.1:2.1:1.1.1" , "1.2:2.4:2.1" };
+        var partitioner = ( string s ) => s.Split( ':' );
+        var selectioner = ( string[] parts , string dim )
+            => dim switch
             {
-                b.Should().BeSameAs( d );
-            } ) );
+                "Dimension A" => parts[1],
+                "Dimension B" => parts[2],
+                "Dimension C" => parts[0],
+                _ => string.Empty,
+            };
+
+        var skeletons = SkeletonFactory.BuildSkeletons( items , partitioner , selectioner , new[] { dimA , dimB , dimC } );
+        skeletons.Length.Should().Be( 2 );
+
+        items = new[] { "1.1:0:1.1.1" , "1.2:2.4:2.1" };
+        skeletons = SkeletonFactory.BuildSkeletons( items , partitioner , selectioner , new[] { dimA , dimB , dimC } );
+        skeletons.Length.Should().Be( 3 );
     }
 
     [Fact]

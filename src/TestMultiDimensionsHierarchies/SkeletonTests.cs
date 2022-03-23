@@ -1,11 +1,9 @@
 ﻿using FluentAssertions;
 using LanguageExt;
+using LanguageExt.UnitTesting;
 using MultiDimensionsHierarchies.Core;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace TestMultiDimensionsHierarchies;
@@ -19,6 +17,15 @@ public class SkeletonTests
             x => x.Id ,
             o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None ,
             x => x.Label );
+
+    internal static Dimension GetDimensionWithRedundantLabel( string dimensionName )
+        => DimensionFactory.BuildWithParentLink(
+            dimensionName ,
+            DimensionFactoryTests.GetRedundantDefinitionSample() ,
+            x => x.Id ,
+            o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None ,
+            x => x.Label ,
+            x => x.Weight );
 
     [Fact]
     public void TestSkeleton()
@@ -398,5 +405,43 @@ public class SkeletonTests
                             } );
                     } );
             } );
+    }
+
+    [Fact]
+    public void TestWeights()
+    {
+        var dimA = GetDimensionWithRedundantLabel( "Dim A" );
+        var dimB = GetDimensionWithRedundantLabel( "Dim B" );
+        var dimC = GetDimensionWithRedundantLabel( "Dim C" );
+
+        var skels = Arr.create( dimA , dimB , dimC )
+            .Combine();
+
+        var items = skels.FindAll( "1" , "0" , "1" );
+        items.Length.Should().Be( 2 );
+
+        var root = skels.Find( "1" , "1" , "1" );
+        root.ShouldBeSome( r =>
+        {
+            r.Descendants().Find( "1" , "0" , "1" )
+                .ShouldBeSome( s =>
+                {
+                    s.ResultingWeight( r ).Should().Be( .5 );
+                    var other = items.First( s => !s.Root().Equals( r ) );
+                    other.ResultingWeight( r ).Should().Be( 0 );
+                } );
+
+            r.Descendants().Find( "1" , "0" , "0" )
+                .ShouldBeSome( s =>
+                {
+                    s.ResultingWeight( r ).Should().Be( .25 );
+                } );
+
+            r.Descendants().Find( "0" , "0" , "0" )
+                .ShouldBeSome( s =>
+                {
+                    s.ResultingWeight( r ).Should().Be( .125 );
+                } );
+        } );
     }
 }

@@ -66,6 +66,11 @@ namespace MultiDimensionsHierarchies.Core
                 .Cartesian( x => new Skeleton( x.ToArray() ) )
                 .ToSeq();
 
+        public Seq<Skeleton> Descendants()
+            => Bones.AsParallel().Select( x => x.Descendants().ToArray() )
+                .Cartesian( x => new Skeleton( x.ToArray() ) )
+                .ToSeq();
+
         public int Complexity
             => Bones.Select( b => b.Complexity )
                 .Aggregate( 1 , ( prv , nxt ) => prv * nxt );

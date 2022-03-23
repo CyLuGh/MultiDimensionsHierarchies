@@ -145,6 +145,31 @@ public class DimensionFactoryTests
         yield return new ParentHierarchyInput<int> { Id = 10 , Label = "Axxx" , ParentId = 6 };
     }
 
+    internal static IEnumerable<ParentHierarchyInput<string>> GetRedundantDefinitionSample()
+    {
+        yield return new ParentHierarchyInput<string> { Id = "1" , Label = "1" }; // 1 - 26 - 17
+
+        yield return new ParentHierarchyInput<string> { Id = "1.1" , Label = "1.1" , ParentId = "1" }; // 2 - 13 - 4
+        yield return new ParentHierarchyInput<string> { Id = "1.1.1" , Label = "1.1.1" , ParentId = "1.1" }; // 3 - 7 - 4
+        yield return new ParentHierarchyInput<string> { Id = "1.1.2" , Label = "1.1.2" , ParentId = "1.1" }; // 4
+        yield return new ParentHierarchyInput<string> { Id = "1.1.1.1" , Label = "1.1.1.1" , ParentId = "1.1.1" }; // 4
+
+        yield return new ParentHierarchyInput<string> { Id = "1.2" , Label = "1.2" , ParentId = "1" }; // 3 - 12 - 9
+        yield return new ParentHierarchyInput<string> { Id = "1.2.1" , Label = "1.2.1" , ParentId = "1.2" }; // 4
+        yield return new ParentHierarchyInput<string> { Id = "1.2.2" , Label = "1.2.2" , ParentId = "1.2" }; // 5
+
+        yield return new ParentHierarchyInput<string> { Id = "1.2.0" , Label = "0" , ParentId = "1.2" , Weight = .5 }; // 0
+
+        yield return new ParentHierarchyInput<string> { Id = "2" , Label = "2" }; // 2 - 20 - 18
+
+        yield return new ParentHierarchyInput<string> { Id = "2.1" , Label = "2.1" , ParentId = "2" }; // 3
+        yield return new ParentHierarchyInput<string> { Id = "2.2" , Label = "2.2" , ParentId = "2" }; // 4
+        yield return new ParentHierarchyInput<string> { Id = "2.3" , Label = "2.3" , ParentId = "2" }; // 5
+        yield return new ParentHierarchyInput<string> { Id = "2.4" , Label = "2.4" , ParentId = "2" }; // 6
+
+        yield return new ParentHierarchyInput<string> { Id = "2.0" , Label = "0" , ParentId = "2" , Weight = .5 }; // 0
+    }
+
     [Fact]
     public void TestBuildWithParentLinkSimple()
     {

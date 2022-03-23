@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TestMultiDimensionsHierarchies;
 
@@ -10,6 +6,7 @@ public abstract class HierarchyInput<T>
 {
     public T? Id { get; set; }
     public string? Label { get; set; }
+    public double Weight { get; set; } = 1d;
 
     public override string ToString()
         => $"{Id} {Label}";

@@ -1,4 +1,5 @@
 ﻿using LanguageExt;
+using MoreLinq;
 using MultiDimensionsHierarchies.Core;
 using System;
 using System.Collections.Concurrent;
@@ -36,8 +37,8 @@ namespace MultiDimensionsHierarchies
         /// <param name="groupAggregator">(Optional) How to aggregate a collection of T <typeparamref name="T"/></param>
         /// <returns>AggregationResult which contains execution status and results if process OK.</returns>
         public static AggregationResult<T> Aggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs ,
-            Func<T , T , T> aggregator , Func<IEnumerable<T> , T> groupAggregator = null )
-            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , groupAggregator );
+            Func<T , T , T> aggregator , Func<IEnumerable<T> , T> groupAggregator = null , Func<T , double , T> weightEffect = null )
+            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , groupAggregator , weightEffect );
 
         /// <summary>
         /// Apply aggregator to inputs according to included hierarchies.
@@ -50,7 +51,8 @@ namespace MultiDimensionsHierarchies
         /// <param name="groupAggregator">(Optional) How to aggregate a collection of T <typeparamref name="T"/></param>
         /// <returns>AggregationResult which contains execution status and results if process OK.</returns>
         public static AggregationResult<T> Aggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs ,
-            Func<T , T , T> aggregator , IEnumerable<Skeleton> targets , Func<IEnumerable<T> , T> groupAggregator = null )
+            Func<T , T , T> aggregator , IEnumerable<Skeleton> targets , Func<IEnumerable<T> , T> groupAggregator = null ,
+            Func<T , double , T> weightEffect = null )
         {
             var seqTargets = targets.ToSeq();
 
@@ -60,18 +62,23 @@ namespace MultiDimensionsHierarchies
             /* Aggregate base data that might have common keys */
             groupAggregator ??= ( items ) => items.Aggregate( aggregator );
             var seqInputs = inputs.GroupBy( x => x.Key )
-                .Select( g => g.Aggregate( g.Key , groupAggregator ) )
+                .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
                 .ToSeq();
+
+            weightEffect ??= ( t , _ ) => t;
 
             return method switch
             {
-                Method.Targeted => TargetedAggregate( seqInputs , seqTargets , groupAggregator ),
-                Method.Heuristic => HeuristicAggregate( seqInputs , aggregator , seqTargets ),
+                Method.Targeted => TargetedAggregate( seqInputs , seqTargets , groupAggregator , weightEffect ),
+                Method.Heuristic => HeuristicAggregate( seqInputs , aggregator , seqTargets , weightEffect ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
 
-        private static AggregationResult<T> HeuristicAggregate<T>( Seq<Skeleton<T>> baseData , Func<T , T , T> aggregator , Seq<Skeleton> targets )
+        private static AggregationResult<T> HeuristicAggregate<T>( Seq<Skeleton<T>> baseData ,
+                                                                  Func<T , T , T> aggregator ,
+                                                                  Seq<Skeleton> targets ,
+                                                                  Func<T , double , T> weightEffect )
         {
             var f = Prelude.Try( () =>
             {
@@ -84,10 +91,14 @@ namespace MultiDimensionsHierarchies
                     {
                         foreach ( var ancestor in skeleton.Key.Ancestors() )
                         {
+                            var weight = skeleton.Key.ResultingWeight( ancestor );
                             results.AddOrUpdate( ancestor , skeleton.Value ,
                                 ( _ , data ) =>
-                                    data.Some( d => skeleton.Value.Some( s => aggregator( d , s ) ).None( () => d ) )
-                                        .None( () => skeleton.Value.Some( s => s ).None( () => default ) ) );
+                                    data.Some( d => skeleton.Value
+                                            .Some( s => aggregator( d , weightEffect( s , weight ) ) )
+                                            .None( () => d ) )
+                                        .None( () => skeleton.Value.Some( s => s )
+                                                                   .None( () => default ) ) );
                         }
                     } );
 
@@ -105,14 +116,17 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        private static AggregationResult<T> TargetedAggregate<T>( Seq<Skeleton<T>> baseData , Seq<Skeleton> targets , Func<IEnumerable<T> , T> groupAggregator )
+        private static AggregationResult<T> TargetedAggregate<T>( Seq<Skeleton<T>> baseData ,
+                                                                 Seq<Skeleton> targets ,
+                                                                 Func<IEnumerable<T> , T> groupAggregator ,
+                                                                 Func<T , double , T> weightEffect )
         {
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
                 var uniqueTargetBaseBones = targets.SelectMany( t => t.Bones )
                     .GroupBy( b => b.DimensionName )
-                    .Where( g => g.Distinct().Count() == 1 )
+                    .Where( g => g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) )
                     .Select( g => g.First() )
                     .ToSeq();
 
@@ -127,7 +141,7 @@ namespace MultiDimensionsHierarchies
                        .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
                        .Select( d => d.Except( uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray() ) )
                        .GroupBy( x => x.Key )
-                       .Select( g => g.Aggregate( g.Key , groupAggregator ) )
+                       .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
                        .ToSeq();
 
                     simplifiedTargets = targets.Select( s => s.Except( uniqueDimensions ) );
@@ -150,7 +164,7 @@ namespace MultiDimensionsHierarchies
                             composingData = composingData.Except( composingData.Where( o => unneededKeys.Contains( o.Key ) ) ).ToSeq();
                         }
 
-                        return composingData.Aggregate( t , groupAggregator );
+                        return composingData.Aggregate( t , groupAggregator , weightEffect );
                     } );
 
                 results = results.Select( r => r.Add( uniqueTargetBaseBones ) );
