@@ -158,10 +158,10 @@ namespace MultiDimensionsHierarchies
                         foreach ( var bone in t.Bones )
                         {
                             var expectedBones = bone.Descendants();
-                            var unneededKeys = simplifiedData.Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
-                                                                                                        .Some( b => !expectedBones.Contains( b ) )
-                                                                                                        .None( () => false )
-                                                                        )
+                            var unneededKeys = simplifiedData
+                                .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
+                                                                .Some( b => !expectedBones.Contains( b ) )
+                                                                .None( () => false ) )
                                 .Select( s => s.Key );
                             composingData = composingData.Except( composingData.Where( o => unneededKeys.Contains( o.Key ) ) ).ToSeq();
                         }
@@ -169,7 +169,7 @@ namespace MultiDimensionsHierarchies
                         return composingData.Aggregate( t , groupAggregator , weightEffect );
                     } );
 
-                results = results.Select( r => r.Add( uniqueTargetBaseBones ) );
+                results = results.AsParallel().Select( r => r.Add( uniqueTargetBaseBones ) );
                 stopWatch.Stop();
 
                 return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
