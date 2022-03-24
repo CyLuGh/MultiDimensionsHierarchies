@@ -94,25 +94,6 @@ namespace MultiDimensionsHierarchies.Core
             => Parent.Some( p => p.Root() )
                 .None( () => this );
 
-        public double ResultingWeight( Bone sourceAncestor )
-        {
-            if ( sourceAncestor.Equals( this ) )
-                return 1d;
-
-            if ( !Ancestors().Contains( sourceAncestor ) )
-                return 0d;
-
-            return Weight * Parent.Some( p => p.ResultingWeightUnchecked( sourceAncestor ) ).None( () => 1d );
-        }
-
-        private double ResultingWeightUnchecked( Bone sourceAncestor )
-        {
-            if ( sourceAncestor.Equals( this ) )
-                return 1d;
-
-            return Weight * Parent.Some( p => p.ResultingWeightUnchecked( sourceAncestor ) ).None( () => 1d );
-        }
-
         public Seq<Bone> Leaves() => FetchLeaves().ToSeq();
 
         public Seq<Bone> Descendants() => BuildDescendants().ToSeq();
@@ -179,5 +160,33 @@ namespace MultiDimensionsHierarchies.Core
             => Parent
                 .Some( parent => string.Join( ">" , parent.FullPath() , Label ) )
                 .None( () => Label );
+
+        public static double ComputeResultingWeight( Bone current , Bone ancestor , Func<Bone , Bone , double> f )
+            => f( current , ancestor );
+
+        public static double ComputeResultingWeight( Bone current , Bone ancestor )
+            => DetermineWeight( current , ancestor );
+
+        internal static Func<Bone , Bone , double> DetermineWeight =
+            ( currentBone , ancestorBone ) =>
+            {
+                if ( currentBone.Equals( ancestorBone ) )
+                    return 1d; /* Always weight 1 when compared to itself */
+
+                var ancestors = currentBone.Ancestors();
+                if ( !ancestors.Contains( ancestorBone ) )
+                    return 0d; /* Shouldn't have any weight to an unrelated element */
+
+                var weight = 1d;
+                var processedBone = currentBone;
+
+                do
+                {
+                    weight *= processedBone.Weight;
+                    processedBone = processedBone.Parent.Some( p => p ).None( () => ancestorBone );
+                } while ( !processedBone.Equals( ancestorBone ) );
+
+                return weight;
+            };
     }
 }

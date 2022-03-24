@@ -18,4 +18,10 @@
 		<PackageReference Include="morelinq" Version="3.3.2" />
 	</ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>TestMultiDimensionsHierarchies</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
 </Project>

@@ -64,7 +64,7 @@ namespace MultiDimensionsHierarchies
             /* Aggregate base data that might have common keys */
             groupAggregator ??= ( items ) => items.Aggregate( aggregator );
             var seqInputs = inputs.GroupBy( x => x.Key )
-                .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
+                .Select( g => g.Aggregate( g.Key , groupAggregator ) )
                 .ToSeq();
 
             weightEffect ??= ( t , _ ) => t;
@@ -93,7 +93,8 @@ namespace MultiDimensionsHierarchies
                     {
                         foreach ( var ancestor in skeleton.Key.Ancestors() )
                         {
-                            var weight = skeleton.Key.ResultingWeight( ancestor );
+                            //var weight = skeleton.Key.ResultingWeight( ancestor );
+                            var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
                             results.AddOrUpdate( ancestor , skeleton.Value ,
                                 ( _ , data ) =>
                                     data.Some( d => skeleton.Value
