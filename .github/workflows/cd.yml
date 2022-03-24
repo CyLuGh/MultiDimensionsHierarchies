@@ -1,6 +1,6 @@
 name: MultiDimensionsHierarchies Deployment
 
-on: 
+on:
   push:
     tags:
       - 0.*
@@ -10,7 +10,6 @@ env:
   configuration: Release
 
 jobs:
-  
   build:
     runs-on: windows-latest
 
