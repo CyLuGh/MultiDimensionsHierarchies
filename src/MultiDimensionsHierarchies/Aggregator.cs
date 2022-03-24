@@ -63,21 +63,21 @@ namespace MultiDimensionsHierarchies
 
             /* Aggregate base data that might have common keys */
             groupAggregator ??= ( items ) => items.Aggregate( aggregator );
-            var seqInputs = inputs.GroupBy( x => x.Key )
-                .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
-                .ToSeq();
+            var groupedInputs = inputs.GroupBy( x => x.Key )
+                .Select( g => g.Aggregate( g.Key , groupAggregator ) )
+                .ToArray();
 
             weightEffect ??= ( t , _ ) => t;
 
             return method switch
             {
-                Method.Targeted => TargetedAggregate( seqInputs , seqTargets , groupAggregator , weightEffect ),
-                Method.Heuristic => HeuristicAggregate( seqInputs , aggregator , seqTargets , weightEffect ),
+                Method.Targeted => TargetedAggregate( groupedInputs , seqTargets , groupAggregator , weightEffect ),
+                Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , seqTargets , weightEffect ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
 
-        private static AggregationResult<T> HeuristicAggregate<T>( Seq<Skeleton<T>> baseData ,
+        private static AggregationResult<T> HeuristicAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   Seq<Skeleton> targets ,
                                                                   Func<T , double , T> weightEffect )
@@ -93,7 +93,8 @@ namespace MultiDimensionsHierarchies
                     {
                         foreach ( var ancestor in skeleton.Key.Ancestors() )
                         {
-                            var weight = skeleton.Key.ResultingWeight( ancestor );
+                            //var weight = skeleton.Key.ResultingWeight( ancestor );
+                            var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
                             results.AddOrUpdate( ancestor , skeleton.Value ,
                                 ( _ , data ) =>
                                     data.Some( d => skeleton.Value
@@ -118,7 +119,7 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        private static AggregationResult<T> TargetedAggregate<T>( Seq<Skeleton<T>> baseData ,
+        private static AggregationResult<T> TargetedAggregate<T>( Skeleton<T>[] baseData ,
                                                                  Seq<Skeleton> targets ,
                                                                  Func<IEnumerable<T> , T> groupAggregator ,
                                                                  Func<T , double , T> weightEffect )
@@ -133,7 +134,7 @@ namespace MultiDimensionsHierarchies
                     .ToSeq();
 
                 var simplifiedTargets = targets;
-                var simplifiedData = baseData;
+                var simplifiedData = Seq.createRange( baseData );
                 if ( uniqueTargetBaseBones.Any() )
                 {
                     var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();

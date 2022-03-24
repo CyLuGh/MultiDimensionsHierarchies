@@ -109,15 +109,28 @@ public class BoneTests
 
         var gc = root.Descendants().Find( b => b.Label.Equals( "Grand Child 1.1" ) );
         var c = root.Descendants().Find( b => b.Label.Equals( "Child 1" ) );
-        gc.ShouldBeSome( bgc =>
-        {
-            bgc.ResultingWeight( bgc ).Should().Be( 1d );
-            c.ShouldBeSome( bc =>
-            {
-                bgc.ResultingWeight( bc ).Should().Be( 0.5 );
-                bc.ResultingWeight( root ).Should().Be( .9 );
-                bgc.ResultingWeight( root ).Should().Be( 0.45 );
-            } );
-        } );
+        //gc.ShouldBeSome( bgc =>
+        //{
+        //    bgc.ResultingWeight( bgc ).Should().Be( 1d );
+        //    c.ShouldBeSome( bc =>
+        //    {
+        //        bgc.ResultingWeight( bc ).Should().Be( 0.5 );
+        //        bc.ResultingWeight( root ).Should().Be( .9 );
+        //        bgc.ResultingWeight( root ).Should().Be( 0.45 );
+        //    } );
+        //} );
+
+        var weight = from current in gc
+                     select Bone.ComputeResultingWeight( current , root );
+        weight.ShouldBeSome( w => w.Should().Be( .45 ) );
+
+        weight = from current in c
+                 select Bone.ComputeResultingWeight( current , root );
+        weight.ShouldBeSome( w => w.Should().Be( .9 ) );
+
+        weight = from current in gc
+                 from ancestor in c
+                 select Bone.ComputeResultingWeight( current , ancestor );
+        weight.ShouldBeSome( w => w.Should().Be( .5 ) );
     }
 }

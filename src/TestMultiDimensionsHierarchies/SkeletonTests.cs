@@ -426,21 +426,27 @@ public class SkeletonTests
             r.Descendants().Find( "1" , "0" , "1" )
                 .ShouldBeSome( s =>
                 {
-                    s.ResultingWeight( r ).Should().Be( .5 );
+                    //s.ResultingWeight( r ).Should().Be( .5 );
                     var other = items.First( s => !s.Root().Equals( r ) );
-                    other.ResultingWeight( r ).Should().Be( 0 );
+                    //other.ResultingWeight( r ).Should().Be( 0 );
+
+                    Skeleton.ComputeResultingWeight( s , r ).Should().Be( .5 );
+                    Skeleton.ComputeResultingWeight( s , other ).Should().Be( 0 );
                 } );
 
             r.Descendants().Find( "1" , "0" , "0" )
                 .ShouldBeSome( s =>
                 {
-                    s.ResultingWeight( r ).Should().Be( .25 );
+                    //s.ResultingWeight( r ).Should().Be( .25 );
+                    Skeleton.ComputeResultingWeight( s , r ).Should().Be( .25 );
+
                 } );
 
             r.Descendants().Find( "0" , "0" , "0" )
                 .ShouldBeSome( s =>
                 {
-                    s.ResultingWeight( r ).Should().Be( .125 );
+                    //s.ResultingWeight( r ).Should().Be( .125 );
+                    Skeleton.ComputeResultingWeight( s , r ).Should().Be( .125 );
                 } );
         } );
     }

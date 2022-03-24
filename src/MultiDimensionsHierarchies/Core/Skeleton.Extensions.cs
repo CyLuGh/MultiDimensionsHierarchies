@@ -19,12 +19,15 @@ namespace MultiDimensionsHierarchies.Core
         }
 
         public static Skeleton<T> Aggregate<T>( this IEnumerable<Skeleton<T>> skeletons ,
-            Skeleton key , Func<IEnumerable<T> , T> aggregator , Func<T , double , T> weightEffect = null )
+            Skeleton key , Func<IEnumerable<T> , T> aggregator )
+            => new( aggregator( skeletons.Select( s => s.Value ).Somes() ) , key );
+
+        public static Skeleton<T> Aggregate<T>( this IEnumerable<Skeleton<T>> skeletons ,
+            Skeleton key , Func<IEnumerable<T> , T> aggregator , Func<T , double , T> weightEffect )
         {
-            weightEffect ??= ( t , _ ) => t;
             return new( aggregator( skeletons.Select( o =>
             {
-                var w = o.Key.ResultingWeight( key );
+                var w = Skeleton.ComputeResultingWeight( o.Key , key );
                 return o.Value.Some( v => Option<(T, double)>.Some( (v, w) ) ).None( () => Option<(T, double)>.None );
             } ).Somes()
             .Select( t => weightEffect( t.Item1 , t.Item2 ) ) ) , key );

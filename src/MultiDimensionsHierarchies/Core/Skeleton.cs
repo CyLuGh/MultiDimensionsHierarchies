@@ -10,6 +10,7 @@ namespace MultiDimensionsHierarchies.Core
     public class Skeleton : IEquatable<Skeleton>
     {
         public Arr<Bone> Bones { get; }
+        public Arr<string> Dimensions => Bones.Select( b => b.DimensionName );
 
         public Skeleton( IEnumerable<Bone> bones )
             : this( bones.ToArray() )
@@ -82,15 +83,6 @@ namespace MultiDimensionsHierarchies.Core
 
         public bool HasDimensions( Dictionary<string , string[]> dimensions )
             => dimensions.All( kvp => HasDimension( kvp.Key , kvp.Value ) );
-
-        public double ResultingWeight( Skeleton ancestor )
-        {
-            // TODO: add dimensions check
-            var sBones = ancestor.Bones.ToDictionary( x => x.DimensionName );
-            return Bones
-                .Select( b => b.ResultingWeight( sBones[b.DimensionName] ) )
-                .Aggregate( 1d , ( s , w ) => s * w );
-        }
 
         public Skeleton Update( Dimension dim )
         {
@@ -252,5 +244,28 @@ namespace MultiDimensionsHierarchies.Core
 
             return skeleton;
         }
+
+        public static double ComputeResultingWeight( Skeleton current , Skeleton ancestor , Func<Skeleton , Skeleton , double> f )
+            => f( current , ancestor );
+
+        public static double ComputeResultingWeight( Skeleton current , Skeleton ancestor )
+            => DetermineWeight( current , ancestor );
+
+        internal static Func<Skeleton , Skeleton , double> DetermineWeight =
+            ( current , ancestor ) =>
+            {
+                if ( current.Equals( ancestor ) )
+                    return 1d;
+
+                if ( !current.Dimensions.SequenceEqual( ancestor.Dimensions ) )
+                    return 0d;
+
+                var weight = 1d;
+
+                for ( int i = 0 ; i < current.Bones.Length ; i++ )
+                    weight *= Bone.DetermineWeight( current.Bones[i] , ancestor.Bones[i] );
+
+                return weight;
+            };
     }
 }
