@@ -265,7 +265,7 @@ namespace MultiDimensionsHierarchies.Core
                 var weight = 1d;
 
                 for ( int i = 0 ; i < current.Bones.Length ; i++ )
-                    weight *= Bone.DetermineWeight( current.Bones[i] , ancestor.Bones[i] );
+                    weight *= Bone.ComputeResultingWeight( current.Bones[i] , ancestor.Bones[i] );
 
                 return weight;
             };

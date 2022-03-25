@@ -16,7 +16,6 @@ namespace MultiDimensionsHierarchies.Core
             => dimensions.Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
                 ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) );
 
-
         public static IEnumerable<Skeleton> Extract( this IEnumerable<Skeleton> skeletons , params string[] concepts )
             => skeletons.Select( s => s.Extract( concepts ) ).Distinct();
     }
