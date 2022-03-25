@@ -26,21 +26,15 @@ public class SkeletonFactoryTests
         skeletons.Length.Should().Be( 2 );
 
         skeletons[0].Bones.Length.Should().Be( 2 );
-        skeletons[0].Bones.Find( b => b.DimensionName.Equals( "Dimension A" ) )
-            .IfSome( b => dimA.Find( "1.1" ).IfSome( d =>
-            {
-                b.Should().BeSameAs( d );
-            } ) );
+        skeletons.Find( ("1.1", "Dimension A") , ("2", "Dimension B") )
+            .ShouldBeSome( s => dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) ) );
 
         var skeletons2 = SkeletonFactory.BuildSkeletons( items , parser , new[] { dimA , dimB } );
         skeletons2.Length.Should().Be( 2 );
 
         skeletons2[0].Bones.Length.Should().Be( 2 );
-        skeletons2[0].Bones.Find( b => b.DimensionName.Equals( "Dimension A" ) )
-            .IfSome( b => dimA.Find( "1.1" ).IfSome( d =>
-            {
-                b.Should().BeSameAs( d );
-            } ) );
+        skeletons2.Find( ("1.1", "Dimension A") , ("2", "Dimension B") )
+            .ShouldBeSome( s => dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) ) );
 
         skeletons.Should().BeEquivalentTo( skeletons2 );
     }
@@ -109,8 +103,9 @@ public class SkeletonFactoryTests
         skeletons.Length.Should().Be( 2 );
 
         skeletons[0].Bones.Length.Should().Be( 3 );
-        skeletons[0].Bones.Find( b => b.DimensionName.Equals( "Dimension A" ) )
-            .ShouldBeSome( b => dimA.Find( "2.1" ).ShouldBeSome( d => b.Should().BeSameAs( d ) ) );
+
+        skeletons.Find( "2.1" , "1.1.1" , "1.1" )
+            .ShouldBeSome( s => dimA.Find( "2.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) ) );
     }
 
     [Fact]
@@ -157,15 +152,14 @@ public class SkeletonFactoryTests
         var skeletons = SkeletonFactory.BuildSkeletons( items , parser , evaluator , new[] { dimA , dimB } , new[] { "Dimension A" , "Dimension B" } );
         skeletons.Length.Should().Be( 2 );
 
-        skeletons[0].Bones.Length.Should().Be( 2 );
-        skeletons[0].Bones.Find( b => b.DimensionName.Equals( "Dimension A" ) )
-            .IfSome( b => dimA.Find( "1.1" ).IfSome( d =>
+        skeletons.All( s => s.Bones.Length == 2 ).Should().BeTrue();
+        skeletons.Find( "1.1" , "2" )
+            .ShouldBeSome( s =>
             {
-                b.Should().BeSameAs( d );
-            } ) );
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
 
-        skeletons[0].Value.IsSome.Should().BeTrue();
-        skeletons[0].Value.IfSome( v => v.Should().Be( 4.6 ) );
-        skeletons[0].ValueUnsafe.Should().Be( 4.6 );
+                s.Value.ShouldBeSome( v => v.Should().Be( 4.6 ) );
+                s.ValueUnsafe.Should().Be( 4.6 );
+            } );
     }
 }
