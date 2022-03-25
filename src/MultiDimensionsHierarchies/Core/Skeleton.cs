@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace MultiDimensionsHierarchies.Core
 {
@@ -67,22 +68,33 @@ namespace MultiDimensionsHierarchies.Core
             return _leaves;
         }
 
+        private readonly Mutex _ancestorMutex = new();
         private Seq<Skeleton> _ancestors = Seq.empty<Skeleton>();
         public Seq<Skeleton> Ancestors()
-           => Bones.Select( x => x.Ancestors().ToArray() )
-                .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
-                    ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
-                .ToSeq();
+        {
+            _ancestorMutex.WaitOne();
+            if ( _ancestors.IsEmpty )
+            {
+                _ancestors = Bones.Select( x => x.Ancestors().ToArray() )
+                     .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
+                         ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
+                     .ToSeq();
+            }
+            _ancestorMutex.ReleaseMutex();
 
             return _ancestors;
         }
 
         private Seq<Skeleton> _descendants = Seq.empty<Skeleton>();
         public Seq<Skeleton> Descendants()
-            => Bones.Select( x => x.Descendants().ToArray() )
-                .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
-                    ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
-                .ToSeq();
+        {
+            if ( _descendants.IsEmpty )
+            {
+                _descendants = Bones.Select( x => x.Descendants().ToArray() )
+                    .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
+                        ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
+                    .ToSeq();
+            }
 
             return _descendants;
         }
