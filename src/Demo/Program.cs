@@ -122,8 +122,10 @@ AnsiConsole.MarkupLine( "Let's compute those same keys through the Targeted meth
 var targets = sampleDimensions.Combine()
     .FindAll( new[] { ("WORLD", "Countries") , ("S1", "Sector") , ("Gain", "Flow") } ,
               new[] { ("WORLD", "Countries") , ("S1", "Sector") , ("Loss", "Flow") } ,
+              new[] { ("WORLD", "Countries") , ("S1", "Sector") , ("Balance", "Flow") } ,
               new[] { ("WORLD", "Countries") , ("S2", "Sector") , ("Gain", "Flow") } ,
-              new[] { ("WORLD", "Countries") , ("S2", "Sector") , ("Loss", "Flow") } );
+              new[] { ("WORLD", "Countries") , ("S2", "Sector") , ("Loss", "Flow") } ,
+              new[] { ("WORLD", "Countries") , ("S2", "Sector") , ("Balance", "Flow") } );
 
 var targetedAggregates = AnsiConsole.Status()
     .Start( "Compute all aggregates through Targeted method" ,
@@ -260,17 +262,33 @@ static (double, double) CheckResult( AggregationResult<double> aggregationResult
     return (sumResult, aggResult);
 }
 
+static (double, double) CheckBalance( AggregationResult<double> aggregationResult , IEnumerable<Sample> sample , string sector )
+{
+    var sumResult = sample.AsParallel().Where( s => s.Sector.StartsWith( sector ) && s.Flow == DataFlow.Gain ).Sum( x => x.Value )
+        - sample.AsParallel().Where( s => s.Sector.StartsWith( sector ) && s.Flow == DataFlow.Loss ).Sum( x => x.Value );
+    var aggResult = aggregationResult.Results.Find( ("WORLD", "Countries") , (sector, "Sector") , ("Balance", "Flow") )
+        .Some( r => r.Value.Some( v => v ).None( () => double.NaN ) ).None( () => double.NaN );
+
+    return (sumResult, aggResult);
+}
+
 static void CheckResults( List<Sample> sample , AggregationResult<double> heuristicAggregates )
 {
     var checks = new[] { "S1" , "S2" }
         .SelectMany( s => new[] { (s,DataFlow.Gain,CheckResult( heuristicAggregates , sample , s , DataFlow.Gain )) ,
             (s,DataFlow.Loss,CheckResult( heuristicAggregates , sample , s , DataFlow.Loss ) )} );
 
+    var balances = new[] { "S1" , "S2" }
+        .Select( s => (s, CheckBalance( heuristicAggregates , sample , s )) );
+
     var table = new Table();
     table.AddColumn( "Zone" ).AddColumn( "Sector" ).AddColumn( "Flow" ).AddColumn( "LINQ Sum" ).AddColumn( "Aggregate Result" ).AddColumn( "Difference" );
 
     foreach ( var (sector, flow, (linqRes, aggRes)) in checks )
         table.AddRow( "WORLD" , sector , flow.ToString() , linqRes.ToString() , aggRes.ToString() , ( linqRes - aggRes ).ToString() );
+
+    foreach ( var (sector, (linqRes, aggRes)) in balances )
+        table.AddRow( "WORLD" , sector , "Balance" , linqRes.ToString() , aggRes.ToString() , ( linqRes - aggRes ).ToString() );
 
     AnsiConsole.Write( table );
 }

@@ -63,13 +63,15 @@ namespace MultiDimensionsHierarchies.Core
             => Bones.AsParallel().Select( b => b.Leaves().ToArray() ).Combine().ToSeq();
 
         public Seq<Skeleton> Ancestors()
-           => Bones.AsParallel().Select( x => x.Ancestors().ToArray() )
-                .Cartesian( x => new Skeleton( x.ToArray() ) )
+           => Bones.Select( x => x.Ancestors().ToArray() )
+                .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
+                    ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
                 .ToSeq();
 
         public Seq<Skeleton> Descendants()
-            => Bones.AsParallel().Select( x => x.Descendants().ToArray() )
-                .Cartesian( x => new Skeleton( x.ToArray() ) )
+            => Bones.Select( x => x.Descendants().ToArray() )
+                .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
+                    ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
                 .ToSeq();
 
         public int Complexity

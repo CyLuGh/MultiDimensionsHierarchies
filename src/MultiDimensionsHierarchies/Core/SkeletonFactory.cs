@@ -1,4 +1,5 @@
 ﻿using LanguageExt;
+using MoreLinq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,8 +80,9 @@ namespace MultiDimensionsHierarchies.Core
                 }
 
                 return bones.Rights()
-                   .Cartesian( bones => bones )
-                   .Select( set => new Skeleton<U>( evaluator( input ) , set ) );
+                    .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
+                        ( skels , bs ) => skels.Cartesian( bs , ( s , b ) => s.Add( b ) ) )
+                   .Select( skel => new Skeleton<U>( evaluator( input ) , skel ) );
             } );
         }
 
