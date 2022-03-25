@@ -94,11 +94,29 @@ namespace MultiDimensionsHierarchies.Core
             => Parent.Some( p => p.Root() )
                 .None( () => this );
 
-        public Seq<Bone> Leaves() => FetchLeaves().ToSeq();
+        private Seq<Bone> _leaves = Seq.empty<Bone>();
+        public Seq<Bone> Leaves()
+        {
+            if ( _leaves.IsEmpty )
+                _leaves = Prelude.Atom( FetchLeaves().ToSeq() );
+            return _leaves;
+        }
 
-        public Seq<Bone> Descendants() => BuildDescendants().ToSeq();
+        private Seq<Bone> _descendants = Seq.empty<Bone>();
+        public Seq<Bone> Descendants()
+        {
+            if ( _descendants.IsEmpty )
+                _descendants = Prelude.Atom( BuildDescendants().ToSeq() );
+            return _descendants;
+        }
 
-        public Seq<Bone> Ancestors() => BuildHierarchy().ToSeq();
+        private Seq<Bone> _ancestors = Seq.empty<Bone>();
+        public Seq<Bone> Ancestors()
+        {
+            if ( _ancestors.IsEmpty )
+                _ancestors = Prelude.Atom( BuildHierarchy().ToSeq() );
+            return _ancestors;
+        }
 
         private IEnumerable<Bone> FetchLeaves()
         {
@@ -120,7 +138,7 @@ namespace MultiDimensionsHierarchies.Core
         {
             yield return this;
 
-            foreach ( var b in Parent.Some( p => p.Ancestors() ).None( () => new Seq<Bone>() ) )
+            foreach ( var b in Parent.Some( p => p.Ancestors() ).None( () => Seq.empty<Bone>() ) )
                 yield return b;
         }
 

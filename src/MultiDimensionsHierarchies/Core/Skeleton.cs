@@ -59,20 +59,33 @@ namespace MultiDimensionsHierarchies.Core
         public Skeleton Root()
             => new( Bones.Select( b => b.Root() ) );
 
+        private Seq<Skeleton> _leaves = Seq.empty<Skeleton>();
         public Seq<Skeleton> Leaves()
-            => Bones.AsParallel().Select( b => b.Leaves().ToArray() ).Combine().ToSeq();
+        {
+            if ( _leaves.IsEmpty )
+                _leaves = Prelude.Atom( Bones.AsParallel().Select( b => b.Leaves().ToArray() ).Combine().ToSeq() );
+            return _leaves;
+        }
 
+        private Seq<Skeleton> _ancestors = Seq.empty<Skeleton>();
         public Seq<Skeleton> Ancestors()
            => Bones.Select( x => x.Ancestors().ToArray() )
                 .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
                     ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
                 .ToSeq();
 
+            return _ancestors;
+        }
+
+        private Seq<Skeleton> _descendants = Seq.empty<Skeleton>();
         public Seq<Skeleton> Descendants()
             => Bones.Select( x => x.Descendants().ToArray() )
                 .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
                     ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
                 .ToSeq();
+
+            return _descendants;
+        }
 
         public int Complexity
             => Bones.Select( b => b.Complexity )
