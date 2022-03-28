@@ -2,7 +2,6 @@
 using MoreLinq;
 using MultiDimensionsHierarchies.Core;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -85,51 +84,19 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var results = new ConcurrentDictionary<Skeleton , Option<T>>();
-
-                var test = new ConcurrentBag<(Skeleton Key, Skeleton Ancestor, double Weight)>();
 
                 var res = baseData
                     .AsParallel()
                     .SelectMany( skeleton =>
-                        skeleton.Key.Ancestors().Select( ancestor =>
-                            new Skeleton<T>( weightEffect( skeleton.ValueUnsafe , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
+                        skeleton.Value.Some( v =>
+                                skeleton.Key.Ancestors().Select( ancestor =>
+                                     new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
+                            .None( () => Seq.empty<Skeleton<T>>() ) )
                     .GroupBy( s => s.Key )
                     .Select( g => g.Aggregate( aggregator ) )
                     .Somes()
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .ToArray();
-
-                //baseData
-                //    .AsParallel()
-                //    .ForAll( skeleton =>
-                //    {
-                //        foreach ( var ancestor in skeleton.Key.Ancestors() )
-                //        {
-                //            //var weight = skeleton.Key.ResultingWeight( ancestor );
-                //            var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
-                //            test.Add( (skeleton.Key, ancestor, weight) );
-                //            results.AddOrUpdate( ancestor , skeleton.Value ,
-                //                ( _ , data ) =>
-                //                    data.Some( d => skeleton.Value
-                //                            .Some( s => aggregator( d , weightEffect( s , weight ) ) )
-                //                            .None( () => d ) )
-                //                        .None( () => skeleton.Value.Some( s => s )
-                //                                                   .None( () => default ) ) );
-                //        }
-                //    } );
-
-                //foreach ( var g in test.GroupBy( t => (t.Key, t.Ancestor) )
-                //    .Where( g => g.Count() > 1 ) )
-                //{
-                //    Console.WriteLine( "Found different weights for {0} {1} => {2}" ,
-                //        g.Key.Key , g.Key.Ancestor , string.Join( "|" , g.Select( o => o.Weight ) ) );
-                //}
-
-
-                //var res = results.Select( kvp => new Skeleton<T>( kvp.Value , kvp.Key ) )
-                //    .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
-                //.ToArray();
 
                 stopWatch.Stop();
 
