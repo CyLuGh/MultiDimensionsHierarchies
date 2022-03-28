@@ -92,10 +92,10 @@ namespace MultiDimensionsHierarchies
                                 skeleton.Key.Ancestors().Select( ancestor =>
                                      new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
                             .None( () => Seq.empty<Skeleton<T>>() ) )
+                    .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .GroupBy( s => s.Key )
                     .Select( g => g.Aggregate( aggregator ) )
                     .Somes()
-                    .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .ToArray();
 
                 stopWatch.Stop();

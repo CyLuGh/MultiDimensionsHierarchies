@@ -7,6 +7,7 @@ using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
 using Spectre.Console;
+using System.Diagnostics;
 using System.Globalization;
 
 AnsiConsole.Write( new FigletText( "MDH demo" ).LeftAligned() );
@@ -21,8 +22,12 @@ if ( AnsiConsole.Confirm( "Would you like to see the effect of hierarchies on co
     await Task.Delay( TimeSpan.FromSeconds( 1 ) );
     AnsiConsole.WriteLine( "Let's have a look at a sample to illustrate this." );
 
+    //var dim = AnsiConsole.Status()
+    //    .Start( "Building dimension sample" , _ => DimensionFactory.BuildWithParentLink( "Sample" , GetParentLinkHierarchy() , o => o.Id , o => o.ParentId ) );
+
     var dim = AnsiConsole.Status()
-        .Start( "Building dimension sample" , _ => DimensionFactory.BuildWithParentLink( "Sample" , GetParentLinkHierarchy() , o => o.Id , o => o.ParentId ) );
+        .Start( "Building dimension sample" ,
+            _ => DimensionFactory.BuildWithParentLink( "Sample" , BuildHierarchy( "1" , Option<string>.None , 5 ) , o => o.Id , o => o.ParentId ) );
 
     AnsiConsole.WriteLine();
     DisplayDimension( dim );
@@ -47,9 +52,105 @@ if ( AnsiConsole.Confirm( "Would you like to see the effect of hierarchies on co
     AnsiConsole.WriteLine();
     AnsiConsole.MarkupLine( "The growth is indeed exponential. Manual iteration through these nodes becomes difficult and efficiency tends to disappear. This library aims at making the first easier while not failing too much at the second." );
     await Task.Delay( TimeSpan.FromSeconds( 3 ) );
-    AnsiConsole.WriteLine();
-    AnsiConsole.WriteLine( "Press enter to continue..." );
-    Console.ReadLine();
+
+    if ( AnsiConsole.Confirm( "Would you like to run a test aggregate?" ) )
+    {
+        var dimCount = AnsiConsole.Prompt(
+            new TextPrompt<int>( "How many dimensions should we try?" )
+            .ValidationErrorMessage( "This isn't a valid dimension count." )
+            .Validate( size => size switch
+            {
+                < 1 => Spectre.Console.ValidationResult.Error( "At least 1 dimension is needed!" ),
+                > 4 => Spectre.Console.ValidationResult.Error( "Dimensions shouldn't exceed 4." ),
+                _ => Spectre.Console.ValidationResult.Success()
+            } ) );
+
+        var sampleSize = AnsiConsole.Prompt(
+            new TextPrompt<int>( "How big should sample be?" )
+            .ValidationErrorMessage( "This isn't a valid sample size." )
+            .Validate( size => size switch
+            {
+                < 10 => Spectre.Console.ValidationResult.Error( "Sample size should be at least 10." ),
+                > 10_000_000 => Spectre.Console.ValidationResult.Error( $"Sample size shouldn't exceed {10_000_000:N0} elements, just for patience sake." ),
+                _ => Spectre.Console.ValidationResult.Success()
+            } ) );
+
+        var hRes = AnsiConsole.Progress()
+            //.AutoRefresh( false ) // Turn off auto refresh
+            //.AutoClear( false )   // Do not remove the task list when done
+            .HideCompleted( false )   // Hide tasks as they are completed
+            .Columns( new ProgressColumn[]
+            {
+                new TaskDescriptionColumn(),    // Task description
+                new ProgressBarColumn(),        // Progress bar
+                //new PercentageColumn(),         // Percentage
+                new ElapsedTimeColumn(),        // Elapsed time
+                new SpinnerColumn(),            // Spinner
+            } )
+            .Start( ctx =>
+            {
+                var genDim = ctx.AddTask( "Generate dimensions" , false );
+                var genSample = ctx.AddTask( "Generate sample data" , false );
+                var buildSkels = ctx.AddTask( "Build skeletons" , false );
+                var hAgg = ctx.AddTask( "Execute Heuristic aggregate" , false );
+
+                var labels = dim.Flatten().Select( b => b.Label ).ToList();
+
+                genDim.StartTask();
+                genDim.IsIndeterminate = true;
+                var sDimensions = Enumerable.Range( 0 , dimCount )
+                    .Select( x =>
+                        DimensionFactory.BuildWithParentLink( $"Dimension {(char) ( 'A' + x )}" , BuildHierarchy( "1" , Option<string>.None , 5 ) , o => o.Id , o => o.ParentId ) )
+                    .ToArray();
+                genDim.StopTask();
+                genDim.Value = 100;
+
+                Randomizer.Seed = new Random( 0 );
+                var faker = new Faker();
+
+                genSample.StartTask();
+                genSample.IsIndeterminate = true;
+                var data = Enumerable.Range( 0 , sampleSize )
+                  .AsParallel()
+                  .Select( _ => new { DimA = faker.PickRandom( labels ) , DimB = faker.PickRandom( labels ) , DimC = faker.PickRandom( labels ) , DimD = faker.PickRandom( labels ) , Value = faker.Random.Double() } )
+                  .ToArray();
+                genSample.StopTask();
+                genSample.Value = 100;
+
+                buildSkels.StartTask();
+                buildSkels.IsIndeterminate = true;
+                var sSkels = SkeletonFactory.BuildSkeletons( data , ( x , s ) => s switch
+                    {
+                        "Dimension A" => x.DimA,
+                        "Dimension B" => x.DimB,
+                        "Dimension C" => x.DimC,
+                        "Dimension D" => x.DimD,
+                        _ => string.Empty
+                    } , s => s.Value , sDimensions )
+                   .ToArray();
+                buildSkels.StopTask();
+                buildSkels.Value = 100;
+
+                //var test = sSkels.AncestorsCount();
+                //var test2 = sSkels.GetAncestors().LongCount();
+                //var targets = sDimensions.Combine().AsParallel().Where( s => s.Depth <= 2 ).Distinct().ToArray();
+
+                hAgg.StartTask();
+                hAgg.IsIndeterminate = true;
+                var hRes = Aggregator.Aggregate( Method.Heuristic , sSkels , ( a , b ) => a + b , vals => vals.Sum() );
+                //var hRes = Aggregator.Aggregate( Method.Targeted , sSkels , ( a , b ) => a + b , targets , vals => vals.Sum() );
+                hAgg.StopTask();
+                hAgg.Value = 100;
+
+                return hRes;
+            } );
+
+        AnsiConsole.MarkupLine( "The computation took [orange3]{0}[/] seconds and created [orange3]{1}[/] results." , hRes.Duration , hRes.Results.Length );
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.WriteLine( "Press enter to continue..." );
+        Console.ReadLine();
+    }
 }
 
 AnsiConsole.Clear();
@@ -104,8 +205,12 @@ ShowSample( sample );
 
 await Task.Delay( TimeSpan.FromSeconds( .5 ) );
 
+var skelWatch = Stopwatch.StartNew();
 var skeletons = AnsiConsole.Status()
     .Start( "Build skeletons" , _ => SkeletonFactory.BuildSkeletons( sample , Sample.Parser , s => s.Value , sampleDimensions ).ToArray() );
+skelWatch.Stop();
+AnsiConsole.MarkupLine( "Building skeletons took {0}" , skelWatch.Elapsed );
+await Task.Delay( TimeSpan.FromSeconds( .5 ) );
 
 var heuristicAggregates = AnsiConsole.Status()
     .Start( "Compute all aggregates through Heuristic method" ,
@@ -177,25 +282,24 @@ static T[] ReadFile<T>( string path )
     return csv.GetRecords<T>().ToArray();
 }
 
-static IEnumerable<ParentHierarchyInput<string>> GetParentLinkHierarchy()
+static IEnumerable<ParentHierarchyInput<string>> BuildHierarchy( string id , Option<string> parentId , int maxDepth , int count = 1 )
 {
-    yield return new ParentHierarchyInput<string> { Id = "1" , Label = "1" }; // 1 - 26 - 17
+    var item = new ParentHierarchyInput<string> { Id = id };
 
-    yield return new ParentHierarchyInput<string> { Id = "1.1" , Label = "1.1" , ParentId = "1" }; // 2 - 13 - 4
-    yield return new ParentHierarchyInput<string> { Id = "1.1.1" , Label = "1.1.1" , ParentId = "1.1" }; // 3 - 7 - 4
-    yield return new ParentHierarchyInput<string> { Id = "1.1.2" , Label = "1.1.2" , ParentId = "1.1" }; // 4
-    yield return new ParentHierarchyInput<string> { Id = "1.1.1.1" , Label = "1.1.1.1" , ParentId = "1.1.1" }; // 4
+    parentId.Some( p => { item.ParentId = p; } )
+        .None( () => { } );
 
-    yield return new ParentHierarchyInput<string> { Id = "1.2" , Label = "1.2" , ParentId = "1" }; // 3 - 12 - 9
-    yield return new ParentHierarchyInput<string> { Id = "1.2.1" , Label = "1.2.1" , ParentId = "1.2" }; // 4
-    yield return new ParentHierarchyInput<string> { Id = "1.2.2" , Label = "1.2.2" , ParentId = "1.2" }; // 5
+    yield return item;
 
-    yield return new ParentHierarchyInput<string> { Id = "2" , Label = "2" }; // 2 - 20 - 18
-
-    yield return new ParentHierarchyInput<string> { Id = "2.1" , Label = "2.1" , ParentId = "2" }; // 3
-    yield return new ParentHierarchyInput<string> { Id = "2.2" , Label = "2.2" , ParentId = "2" }; // 4
-    yield return new ParentHierarchyInput<string> { Id = "2.3" , Label = "2.3" , ParentId = "2" }; // 5
-    yield return new ParentHierarchyInput<string> { Id = "2.4" , Label = "2.4" , ParentId = "2" }; // 6
+    if ( count++ < maxDepth )
+    {
+        var limit = Math.Pow( count , 1 );
+        for ( int i = 1 ; i <= limit ; i++ )
+        {
+            foreach ( var child in BuildHierarchy( $"{id}.{i}" , Option<string>.Some( id ) , maxDepth , count ) )
+                yield return child;
+        }
+    }
 }
 
 static Dimension GetFlowDimension()

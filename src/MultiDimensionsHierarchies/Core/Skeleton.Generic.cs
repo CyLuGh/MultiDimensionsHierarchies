@@ -1,4 +1,5 @@
 ﻿using LanguageExt;
+using System;
 using System.Collections.Generic;
 
 namespace MultiDimensionsHierarchies.Core
@@ -64,5 +65,14 @@ namespace MultiDimensionsHierarchies.Core
 
         public override string ToString()
             => $"{Key} => {Value.Some( v => v.ToString() ).None( () => "/" )}";
+
+        public Skeleton<T> Aggregate( Skeleton<T> other , Func<T , T , T> aggregator )
+        {
+            var t = from v in Value
+                    from ov in other.Value
+                    select aggregator( v , ov );
+
+            return With( value: t );
+        }
     }
 }

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace MultiDimensionsHierarchies.Core
 {
@@ -12,6 +11,7 @@ namespace MultiDimensionsHierarchies.Core
     {
         public Arr<Bone> Bones { get; }
         public Arr<string> Dimensions => Bones.Select( b => b.DimensionName );
+        public int Depth => Bones.Max( b => b.Depth );
 
         public Skeleton( IEnumerable<Bone> bones )
             : this( bones.ToArray() )
@@ -68,11 +68,9 @@ namespace MultiDimensionsHierarchies.Core
             return _leaves;
         }
 
-        private readonly Mutex _ancestorMutex = new();
         private Seq<Skeleton> _ancestors = Seq.empty<Skeleton>();
         public Seq<Skeleton> Ancestors()
         {
-            _ancestorMutex.WaitOne();
             if ( _ancestors.IsEmpty )
             {
                 _ancestors = Bones.Select( x => x.Ancestors().ToArray() )
@@ -80,7 +78,6 @@ namespace MultiDimensionsHierarchies.Core
                          ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
                      .ToSeq();
             }
-            _ancestorMutex.ReleaseMutex();
 
             return _ancestors;
         }
