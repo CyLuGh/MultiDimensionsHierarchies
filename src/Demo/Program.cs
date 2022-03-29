@@ -131,14 +131,9 @@ if ( AnsiConsole.Confirm( "Would you like to see the effect of hierarchies on co
                 buildSkels.StopTask();
                 buildSkels.Value = 100;
 
-                //var test = sSkels.AncestorsCount();
-                //var test2 = sSkels.GetAncestors().LongCount();
-                //var targets = sDimensions.Combine().AsParallel().Where( s => s.Depth <= 2 ).Distinct().ToArray();
-
                 hAgg.StartTask();
                 hAgg.IsIndeterminate = true;
                 var hRes = Aggregator.Aggregate( Method.Heuristic , sSkels , ( a , b ) => a + b , vals => vals.Sum() );
-                //var hRes = Aggregator.Aggregate( Method.Targeted , sSkels , ( a , b ) => a + b , targets , vals => vals.Sum() );
                 hAgg.StopTask();
                 hAgg.Value = 100;
 
@@ -286,8 +281,7 @@ static IEnumerable<ParentHierarchyInput<string>> BuildHierarchy( string id , Opt
 {
     var item = new ParentHierarchyInput<string> { Id = id };
 
-    parentId.Some( p => { item.ParentId = p; } )
-        .None( () => { } );
+    parentId.IfSome( p => item.ParentId = p );
 
     yield return item;
 
@@ -304,11 +298,15 @@ static IEnumerable<ParentHierarchyInput<string>> BuildHierarchy( string id , Opt
 
 static Dimension GetFlowDimension()
 {
-    var gainBone = new Bone( "Gain" , "Flow" );
-    var lossBone = new Bone( "Loss" , "Flow" , -1d );
-    var balanceBone = new Bone( "Balance" , "Flow" , gainBone , lossBone );
+    var gain = new { Label = "Gain" , Parent = "Balance" , Weight = 1 };
+    var loss = new { Label = "Loss" , Parent = "Balance" , Weight = -1 };
+    var balance = new { Label = "Balance" , Weight = 1 };
 
-    return DimensionFactory.BuildFromBones( "Flow" , balanceBone );
+    return DimensionFactory.BuildWithParentLink( "Flow" ,
+        new[] { gain , loss } ,
+        x => x.Label ,
+        x => !string.IsNullOrEmpty( x.Parent ) ? x.Parent : Option<string>.None ,
+        weighter: x => x.Weight );
 }
 
 static Dimension GetSectorDimension()
