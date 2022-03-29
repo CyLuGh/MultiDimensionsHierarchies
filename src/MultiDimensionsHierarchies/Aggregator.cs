@@ -2,7 +2,6 @@
 using MoreLinq;
 using MultiDimensionsHierarchies.Core;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -85,31 +84,19 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var results = new ConcurrentDictionary<Skeleton , Option<T>>();
 
-                baseData
+                var res = baseData
                     .AsParallel()
-                    .ForAll( skeleton =>
-                    {
-                        foreach ( var ancestor in skeleton.Key.Ancestors() )
-                        {
-                            //var weight = skeleton.Key.ResultingWeight( ancestor );
-                            var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
-                            results.AddOrUpdate( ancestor , skeleton.Value ,
-                                ( _ , data ) =>
-                                    data.Some( d => skeleton.Value
-                                            .Some( s => aggregator( d , weightEffect( s , weight ) ) )
-                                            .None( () => d ) )
-                                        .None( () => skeleton.Value.Some( s => s )
-                                                                   .None( () => default ) ) );
-                        }
-                    } );
-
-                var res = results.Select( kvp => new Skeleton<T>( kvp.Value , kvp.Key ) ).ToSeq();
-                if ( targets.Count > 0 )
-                {
-                    res = res.Where( s => targets.Contains( s.Key ) );
-                }
+                    .SelectMany( skeleton =>
+                        skeleton.Value.Some( v =>
+                                skeleton.Key.Ancestors().Select( ancestor =>
+                                     new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
+                            .None( () => Seq.empty<Skeleton<T>>() ) )
+                    .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
+                    .GroupBy( s => s.Key )
+                    .Select( g => g.Aggregate( aggregator ) )
+                    .Somes()
+                    .ToArray();
 
                 stopWatch.Stop();
 

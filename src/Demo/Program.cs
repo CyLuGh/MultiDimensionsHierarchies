@@ -7,6 +7,7 @@ using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
 using Spectre.Console;
+using System.Diagnostics;
 using System.Globalization;
 
 AnsiConsole.Write( new FigletText( "MDH demo" ).LeftAligned() );
@@ -21,8 +22,12 @@ if ( AnsiConsole.Confirm( "Would you like to see the effect of hierarchies on co
     await Task.Delay( TimeSpan.FromSeconds( 1 ) );
     AnsiConsole.WriteLine( "Let's have a look at a sample to illustrate this." );
 
+    //var dim = AnsiConsole.Status()
+    //    .Start( "Building dimension sample" , _ => DimensionFactory.BuildWithParentLink( "Sample" , GetParentLinkHierarchy() , o => o.Id , o => o.ParentId ) );
+
     var dim = AnsiConsole.Status()
-        .Start( "Building dimension sample" , _ => DimensionFactory.BuildWithParentLink( "Sample" , GetParentLinkHierarchy() , o => o.Id , o => o.ParentId ) );
+        .Start( "Building dimension sample" ,
+            _ => DimensionFactory.BuildWithParentLink( "Sample" , BuildHierarchy( "1" , Option<string>.None , 5 ) , o => o.Id , o => o.ParentId ) );
 
     AnsiConsole.WriteLine();
     DisplayDimension( dim );
@@ -47,9 +52,100 @@ if ( AnsiConsole.Confirm( "Would you like to see the effect of hierarchies on co
     AnsiConsole.WriteLine();
     AnsiConsole.MarkupLine( "The growth is indeed exponential. Manual iteration through these nodes becomes difficult and efficiency tends to disappear. This library aims at making the first easier while not failing too much at the second." );
     await Task.Delay( TimeSpan.FromSeconds( 3 ) );
-    AnsiConsole.WriteLine();
-    AnsiConsole.WriteLine( "Press enter to continue..." );
-    Console.ReadLine();
+
+    if ( AnsiConsole.Confirm( "Would you like to run a test aggregate?" ) )
+    {
+        var dimCount = AnsiConsole.Prompt(
+            new TextPrompt<int>( "How many dimensions should we try?" )
+            .ValidationErrorMessage( "This isn't a valid dimension count." )
+            .Validate( size => size switch
+            {
+                < 1 => Spectre.Console.ValidationResult.Error( "At least 1 dimension is needed!" ),
+                > 4 => Spectre.Console.ValidationResult.Error( "Dimensions shouldn't exceed 4." ),
+                _ => Spectre.Console.ValidationResult.Success()
+            } ) );
+
+        var sampleSize = AnsiConsole.Prompt(
+            new TextPrompt<int>( "How big should sample be?" )
+            .ValidationErrorMessage( "This isn't a valid sample size." )
+            .Validate( size => size switch
+            {
+                < 10 => Spectre.Console.ValidationResult.Error( "Sample size should be at least 10." ),
+                > 10_000_000 => Spectre.Console.ValidationResult.Error( $"Sample size shouldn't exceed {10_000_000:N0} elements, just for patience sake." ),
+                _ => Spectre.Console.ValidationResult.Success()
+            } ) );
+
+        var hRes = AnsiConsole.Progress()
+            //.AutoRefresh( false ) // Turn off auto refresh
+            //.AutoClear( false )   // Do not remove the task list when done
+            .HideCompleted( false )   // Hide tasks as they are completed
+            .Columns( new ProgressColumn[]
+            {
+                new TaskDescriptionColumn(),    // Task description
+                new ProgressBarColumn(),        // Progress bar
+                //new PercentageColumn(),         // Percentage
+                new ElapsedTimeColumn(),        // Elapsed time
+                new SpinnerColumn(),            // Spinner
+            } )
+            .Start( ctx =>
+            {
+                var genDim = ctx.AddTask( "Generate dimensions" , false );
+                var genSample = ctx.AddTask( "Generate sample data" , false );
+                var buildSkels = ctx.AddTask( "Build skeletons" , false );
+                var hAgg = ctx.AddTask( "Execute Heuristic aggregate" , false );
+
+                var labels = dim.Flatten().Select( b => b.Label ).ToList();
+
+                genDim.StartTask();
+                genDim.IsIndeterminate = true;
+                var sDimensions = Enumerable.Range( 0 , dimCount )
+                    .Select( x =>
+                        DimensionFactory.BuildWithParentLink( $"Dimension {(char) ( 'A' + x )}" , BuildHierarchy( "1" , Option<string>.None , 5 ) , o => o.Id , o => o.ParentId ) )
+                    .ToArray();
+                genDim.StopTask();
+                genDim.Value = 100;
+
+                Randomizer.Seed = new Random( 0 );
+                var faker = new Faker();
+
+                genSample.StartTask();
+                genSample.IsIndeterminate = true;
+                var data = Enumerable.Range( 0 , sampleSize )
+                  .AsParallel()
+                  .Select( _ => new { DimA = faker.PickRandom( labels ) , DimB = faker.PickRandom( labels ) , DimC = faker.PickRandom( labels ) , DimD = faker.PickRandom( labels ) , Value = faker.Random.Double() } )
+                  .ToArray();
+                genSample.StopTask();
+                genSample.Value = 100;
+
+                buildSkels.StartTask();
+                buildSkels.IsIndeterminate = true;
+                var sSkels = SkeletonFactory.BuildSkeletons( data , ( x , s ) => s switch
+                    {
+                        "Dimension A" => x.DimA,
+                        "Dimension B" => x.DimB,
+                        "Dimension C" => x.DimC,
+                        "Dimension D" => x.DimD,
+                        _ => string.Empty
+                    } , s => s.Value , sDimensions )
+                   .ToArray();
+                buildSkels.StopTask();
+                buildSkels.Value = 100;
+
+                hAgg.StartTask();
+                hAgg.IsIndeterminate = true;
+                var hRes = Aggregator.Aggregate( Method.Heuristic , sSkels , ( a , b ) => a + b , vals => vals.Sum() );
+                hAgg.StopTask();
+                hAgg.Value = 100;
+
+                return hRes;
+            } );
+
+        AnsiConsole.MarkupLine( "The computation took [orange3]{0}[/] seconds and created [orange3]{1}[/] results." , hRes.Duration , hRes.Results.Length );
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.WriteLine( "Press enter to continue..." );
+        Console.ReadLine();
+    }
 }
 
 AnsiConsole.Clear();
@@ -104,8 +200,12 @@ ShowSample( sample );
 
 await Task.Delay( TimeSpan.FromSeconds( .5 ) );
 
+var skelWatch = Stopwatch.StartNew();
 var skeletons = AnsiConsole.Status()
     .Start( "Build skeletons" , _ => SkeletonFactory.BuildSkeletons( sample , Sample.Parser , s => s.Value , sampleDimensions ).ToArray() );
+skelWatch.Stop();
+AnsiConsole.MarkupLine( "Building skeletons took {0}" , skelWatch.Elapsed );
+await Task.Delay( TimeSpan.FromSeconds( .5 ) );
 
 var heuristicAggregates = AnsiConsole.Status()
     .Start( "Compute all aggregates through Heuristic method" ,
@@ -122,8 +222,10 @@ AnsiConsole.MarkupLine( "Let's compute those same keys through the Targeted meth
 var targets = sampleDimensions.Combine()
     .FindAll( new[] { ("WORLD", "Countries") , ("S1", "Sector") , ("Gain", "Flow") } ,
               new[] { ("WORLD", "Countries") , ("S1", "Sector") , ("Loss", "Flow") } ,
+              new[] { ("WORLD", "Countries") , ("S1", "Sector") , ("Balance", "Flow") } ,
               new[] { ("WORLD", "Countries") , ("S2", "Sector") , ("Gain", "Flow") } ,
-              new[] { ("WORLD", "Countries") , ("S2", "Sector") , ("Loss", "Flow") } );
+              new[] { ("WORLD", "Countries") , ("S2", "Sector") , ("Loss", "Flow") } ,
+              new[] { ("WORLD", "Countries") , ("S2", "Sector") , ("Balance", "Flow") } );
 
 var targetedAggregates = AnsiConsole.Status()
     .Start( "Compute all aggregates through Targeted method" ,
@@ -175,34 +277,36 @@ static T[] ReadFile<T>( string path )
     return csv.GetRecords<T>().ToArray();
 }
 
-static IEnumerable<ParentHierarchyInput<string>> GetParentLinkHierarchy()
+static IEnumerable<ParentHierarchyInput<string>> BuildHierarchy( string id , Option<string> parentId , int maxDepth , int count = 1 )
 {
-    yield return new ParentHierarchyInput<string> { Id = "1" , Label = "1" }; // 1 - 26 - 17
+    var item = new ParentHierarchyInput<string> { Id = id };
 
-    yield return new ParentHierarchyInput<string> { Id = "1.1" , Label = "1.1" , ParentId = "1" }; // 2 - 13 - 4
-    yield return new ParentHierarchyInput<string> { Id = "1.1.1" , Label = "1.1.1" , ParentId = "1.1" }; // 3 - 7 - 4
-    yield return new ParentHierarchyInput<string> { Id = "1.1.2" , Label = "1.1.2" , ParentId = "1.1" }; // 4
-    yield return new ParentHierarchyInput<string> { Id = "1.1.1.1" , Label = "1.1.1.1" , ParentId = "1.1.1" }; // 4
+    parentId.IfSome( p => item.ParentId = p );
 
-    yield return new ParentHierarchyInput<string> { Id = "1.2" , Label = "1.2" , ParentId = "1" }; // 3 - 12 - 9
-    yield return new ParentHierarchyInput<string> { Id = "1.2.1" , Label = "1.2.1" , ParentId = "1.2" }; // 4
-    yield return new ParentHierarchyInput<string> { Id = "1.2.2" , Label = "1.2.2" , ParentId = "1.2" }; // 5
+    yield return item;
 
-    yield return new ParentHierarchyInput<string> { Id = "2" , Label = "2" }; // 2 - 20 - 18
-
-    yield return new ParentHierarchyInput<string> { Id = "2.1" , Label = "2.1" , ParentId = "2" }; // 3
-    yield return new ParentHierarchyInput<string> { Id = "2.2" , Label = "2.2" , ParentId = "2" }; // 4
-    yield return new ParentHierarchyInput<string> { Id = "2.3" , Label = "2.3" , ParentId = "2" }; // 5
-    yield return new ParentHierarchyInput<string> { Id = "2.4" , Label = "2.4" , ParentId = "2" }; // 6
+    if ( count++ < maxDepth )
+    {
+        var limit = Math.Pow( count , 1 );
+        for ( int i = 1 ; i <= limit ; i++ )
+        {
+            foreach ( var child in BuildHierarchy( $"{id}.{i}" , Option<string>.Some( id ) , maxDepth , count ) )
+                yield return child;
+        }
+    }
 }
 
 static Dimension GetFlowDimension()
 {
-    var gainBone = new Bone( "Gain" , "Flow" );
-    var lossBone = new Bone( "Loss" , "Flow" , -1d );
-    var balanceBone = new Bone( "Balance" , "Flow" , gainBone , lossBone );
+    var gain = new { Label = "Gain" , Parent = "Balance" , Weight = 1 };
+    var loss = new { Label = "Loss" , Parent = "Balance" , Weight = -1 };
+    var balance = new { Label = "Balance" , Weight = 1 };
 
-    return DimensionFactory.BuildFromBones( "Flow" , balanceBone );
+    return DimensionFactory.BuildWithParentLink( "Flow" ,
+        new[] { gain , loss } ,
+        x => x.Label ,
+        x => !string.IsNullOrEmpty( x.Parent ) ? x.Parent : Option<string>.None ,
+        weighter: x => x.Weight );
 }
 
 static Dimension GetSectorDimension()
@@ -260,17 +364,33 @@ static (double, double) CheckResult( AggregationResult<double> aggregationResult
     return (sumResult, aggResult);
 }
 
+static (double, double) CheckBalance( AggregationResult<double> aggregationResult , IEnumerable<Sample> sample , string sector )
+{
+    var sumResult = sample.AsParallel().Where( s => s.Sector.StartsWith( sector ) && s.Flow == DataFlow.Gain ).Sum( x => x.Value )
+        - sample.AsParallel().Where( s => s.Sector.StartsWith( sector ) && s.Flow == DataFlow.Loss ).Sum( x => x.Value );
+    var aggResult = aggregationResult.Results.Find( ("WORLD", "Countries") , (sector, "Sector") , ("Balance", "Flow") )
+        .Some( r => r.Value.Some( v => v ).None( () => double.NaN ) ).None( () => double.NaN );
+
+    return (sumResult, aggResult);
+}
+
 static void CheckResults( List<Sample> sample , AggregationResult<double> heuristicAggregates )
 {
     var checks = new[] { "S1" , "S2" }
         .SelectMany( s => new[] { (s,DataFlow.Gain,CheckResult( heuristicAggregates , sample , s , DataFlow.Gain )) ,
             (s,DataFlow.Loss,CheckResult( heuristicAggregates , sample , s , DataFlow.Loss ) )} );
 
+    var balances = new[] { "S1" , "S2" }
+        .Select( s => (s, CheckBalance( heuristicAggregates , sample , s )) );
+
     var table = new Table();
     table.AddColumn( "Zone" ).AddColumn( "Sector" ).AddColumn( "Flow" ).AddColumn( "LINQ Sum" ).AddColumn( "Aggregate Result" ).AddColumn( "Difference" );
 
     foreach ( var (sector, flow, (linqRes, aggRes)) in checks )
         table.AddRow( "WORLD" , sector , flow.ToString() , linqRes.ToString() , aggRes.ToString() , ( linqRes - aggRes ).ToString() );
+
+    foreach ( var (sector, (linqRes, aggRes)) in balances )
+        table.AddRow( "WORLD" , sector , "Balance" , linqRes.ToString() , aggRes.ToString() , ( linqRes - aggRes ).ToString() );
 
     AnsiConsole.Write( table );
 }

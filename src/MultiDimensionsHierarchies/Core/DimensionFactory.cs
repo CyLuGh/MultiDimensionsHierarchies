@@ -7,11 +7,18 @@ namespace MultiDimensionsHierarchies.Core
 {
     public static class DimensionFactory
     {
-        public static Dimension BuildFromBones( string dimensionName , params Bone[] bones )
-        {
-            return new( dimensionName , bones );
-        }
-
+        /// <summary>
+        /// Build dimension from its components. Each component defines the key of its parent element.
+        /// </summary>
+        /// <typeparam name="TA">Type of source component</typeparam>
+        /// <typeparam name="TB">Type of key identifying component in a unique way</typeparam>
+        /// <param name="dimensionName">Name used for dimension</param>
+        /// <param name="items">Items to be parsed</param>
+        /// <param name="keySelector">How to get the item id</param>
+        /// <param name="parentKeySelector">How to get the item parent (or an Option.None if no parent)</param>
+        /// <param name="labeller">(Optional) How to create the label from the item</param>
+        /// <param name="weighter">(Optional) How to determine weight from item in relation to its parent</param>
+        /// <returns>Dimension with properly linked hierarchy items</returns>
         public static Dimension BuildWithParentLink<TA, TB>(
             string dimensionName ,
             IEnumerable<TA> items ,
@@ -48,6 +55,17 @@ namespace MultiDimensionsHierarchies.Core
                 );
         }
 
+        /// <summary>
+        /// Build dimension from its components. Each component defines the key of one of its child elements.
+        /// </summary>
+        /// <typeparam name="TA">Type of source component</typeparam>
+        /// <typeparam name="TB">Type of key identifying component in a unique way</typeparam>
+        /// <param name="dimensionName">Name used for dimension</param>
+        /// <param name="items">Items to be parsed</param>
+        /// <param name="keySelector">How to get the item id</param>
+        /// <param name="childKeySelector">How to get the item child (or an Option.None if no child)</param>
+        /// <param name="labeller">(Optional) How to create the label from the item</param>
+        /// <returns>Dimension with properly linked hierarchy items</returns>
         public static Dimension BuildWithChildLink<TA, TB>(
             string dimensionName ,
             IEnumerable<TA> items ,
@@ -88,6 +106,17 @@ namespace MultiDimensionsHierarchies.Core
            );
         }
 
+        /// <summary>
+        /// Build dimension from its components. Each component defines the keys of all its child elements.
+        /// </summary>
+        /// <typeparam name="TA">Type of source component</typeparam>
+        /// <typeparam name="TB">Type of key identifying component in a unique way</typeparam>
+        /// <param name="dimensionName">Name used for dimension</param>
+        /// <param name="items">Items to be parsed</param>
+        /// <param name="keySelector">How to get the item id</param>
+        /// <param name="childrenKeysSelector">How to get the child items</param>
+        /// <param name="labeller">(Optional) How to create the label from the item</param>
+        /// <returns>Dimension with properly linked hierarchy items</returns>
         public static Dimension BuildWithMultipleChildrenLink<TA, TB>(
             string dimensionName ,
             IEnumerable<TA> items ,

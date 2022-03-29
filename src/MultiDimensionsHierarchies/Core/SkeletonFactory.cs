@@ -1,4 +1,5 @@
 ﻿using LanguageExt;
+using MoreLinq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,15 @@ namespace MultiDimensionsHierarchies.Core
 {
     public static class SkeletonFactory
     {
+        /// <summary>
+        /// Build skeletons from source items.
+        /// </summary>
+        /// <typeparam name="T">Type of source data</typeparam>
+        /// <param name="inputs">Source data</param>
+        /// <param name="parser">How to find defined bone in dimension in source item</param>
+        /// <param name="dimensions">Dimensions with their hierarchies</param>
+        /// <param name="dimensionsOfInterest">(Optional) Subset of dimensions to be used</param>
+        /// <returns>Sequence of properly defined Skeletons</returns>
         public static Seq<Skeleton> BuildSkeletons<T>( IEnumerable<T> inputs ,
             Func<T , string , string> parser ,
             IEnumerable<Dimension> dimensions ,
@@ -15,6 +25,17 @@ namespace MultiDimensionsHierarchies.Core
             return CreateSkeletons( inputs , parser , dimensions , dimensionsOfInterest ).ToSeq();
         }
 
+        /// <summary>
+        /// Build skeletons with their associated value from source items.
+        /// </summary>
+        /// <typeparam name="T">Type of source data</typeparam>
+        /// <typeparam name="TI">Type of value associated to skeleton</typeparam>
+        /// <param name="inputs"></param>
+        /// <param name="parser"></param>
+        /// <param name="evaluator"></param>
+        /// <param name="dimensions"></param>
+        /// <param name="dimensionsOfInterest"></param>
+        /// <returns></returns>
         public static Seq<Skeleton<T>> BuildSkeletons<T, TI>( IEnumerable<TI> inputs ,
           Func<TI , string , string> parser ,
           Func<TI , T> evaluator ,
@@ -24,6 +45,15 @@ namespace MultiDimensionsHierarchies.Core
             return CreateSkeletons( inputs , parser , evaluator , dimensions , dimensionsOfInterest ).ToSeq();
         }
 
+        /// <summary>
+        /// Build skeletons from string sources
+        /// </summary>
+        /// <param name="stringInputs"></param>
+        /// <param name="partitioner"></param>
+        /// <param name="selectioner"></param>
+        /// <param name="dimensions"></param>
+        /// <param name="dimensionsOfInterest"></param>
+        /// <returns></returns>
         public static Seq<Skeleton> BuildSkeletons( IEnumerable<string> stringInputs ,
             Func<string , string[]> partitioner ,
             Func<string[] , string , string> selectioner ,
@@ -79,24 +109,10 @@ namespace MultiDimensionsHierarchies.Core
                 }
 
                 return bones.Rights()
-                   .Cartesian( bones => bones )
-                   .Select( set => new Skeleton<U>( evaluator( input ) , set ) );
+                    .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
+                        ( skels , bs ) => skels.Cartesian( bs , ( s , b ) => s.Add( b ) ) )
+                   .Select( skel => new Skeleton<U>( evaluator( input ) , skel ) );
             } );
-        }
-
-        internal static Either<string , Bone> FindBone<T>( T input , Func<T , string , string> parser , string dimensionName , Seq<Dimension> dimensions )
-        {
-            var boneLabel = parser( input , dimensionName );
-            var bone = dimensions.Find( d => d.Name.Equals( dimensionName ) )
-                .Some( d => d.Flatten().Find( b => b.Label.Equals( boneLabel ) )
-                     .Some( b => b )
-                     .None( () => Bone.None ) )
-                .None( () => Bone.None );
-
-            if ( bone.Equals( Bone.None ) )
-                return $"Couldn't find {boneLabel} in dimension {dimensionName}";
-
-            return bone;
         }
 
         internal static Either<string , Bone[]> FindBones<T>( T input , Func<T , string , string> parser , string dimensionName , Seq<Dimension> dimensions )
@@ -108,7 +124,6 @@ namespace MultiDimensionsHierarchies.Core
 
             if ( bones.Length == 0 )
                 return $"Couldn't find {boneLabel} in dimension {dimensionName}";
-
             return bones;
         }
     }

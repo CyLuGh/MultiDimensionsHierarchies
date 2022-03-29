@@ -96,5 +96,17 @@ namespace MultiDimensionsHierarchies.Core
         public static Seq<Skeleton<T>> FindAll<T>( this IEnumerable<Skeleton<T>> skeletons , params (string label, string dimensionName)[][] bones )
             => bones.SelectMany( bs => skeletons.ToSeq().FindAll( bs ) )
             .ToSeq();
+
+        public static long AncestorsCount( this IEnumerable<Skeleton> skeletons )
+            => skeletons.AsParallel().Sum( s => s.Ancestors().LongCount() );
+
+        public static long AncestorsCount<T>( this IEnumerable<Skeleton<T>> skeletons )
+            => skeletons.AsParallel().Sum( s => s.Key.Ancestors().LongCount() );
+
+        public static IEnumerable<Skeleton> GetAncestors( this IEnumerable<Skeleton> skeletons )
+            => skeletons.AsParallel().SelectMany( s => s.Ancestors() ).Distinct();
+
+        public static IEnumerable<Skeleton> GetAncestors<T>( this IEnumerable<Skeleton<T>> skeletons )
+            => skeletons.AsParallel().SelectMany( s => s.Key.Ancestors() ).Distinct();
     }
 }

@@ -21,7 +21,7 @@ namespace MultiDimensionsHierarchies.Core
             if ( flattened.GroupBy( b => b.Label )
                 .Any( g => g.Count() > 1 && g.Select( b => b.Ancestors() )
                         .Aggregate( ( prvSeq , nxtSeq ) => prvSeq.Intersect( nxtSeq ).ToSeq() )
-                        .Any() ) )
+                        .Length > 0 ) )
             {
                 checks.Enqueue( "Hierarchies may include some diamond shapes!" );
             }
