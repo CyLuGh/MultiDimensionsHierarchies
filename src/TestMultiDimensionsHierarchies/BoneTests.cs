@@ -99,7 +99,7 @@ public class BoneTests
         var root = GetThreeLevelsBone();
 
         root.Descendants().Find( b => b.Label.Equals( "Grand Child 1.2" ) )
-            .ShouldBeSome( b => { b.Root().Should().BeSameAs( root ); } );
+            .ShouldBeSome( b => b.Root().Should().BeSameAs( root ) );
     }
 
     [Fact]

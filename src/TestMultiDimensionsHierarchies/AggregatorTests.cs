@@ -80,8 +80,6 @@ public class AggregatorTests
         * dimensionCount // Because of how we assign values to leaves
         * (int) Math.Pow( itemsCount , dimensionCount - 1 );
 
-
-
     [Fact]
     public void TestHeuristic1Dimension()
     {

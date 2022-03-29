@@ -2,8 +2,6 @@
 using MoreLinq;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.Contracts;
 using System.Linq;
 
 namespace MultiDimensionsHierarchies.Core
@@ -17,10 +15,12 @@ namespace MultiDimensionsHierarchies.Core
             if ( enumerables == null ) throw new ArgumentNullException( nameof( enumerables ) );
             if ( resultSelector == null ) throw new ArgumentNullException( nameof( resultSelector ) );
 
+#pragma warning disable RCS1227 // Validate arguments correctly. => makes Unit tests fail if applied
             var enumerators = enumerables
                 .Select( e => e?.GetEnumerator() ?? throw new ArgumentException( "One of the enumerables is null" ) )
                 .Pipe( e => e.MoveNext() )
                 .ToArray();
+#pragma warning restore RCS1227 // Validate arguments correctly.
 
             do yield return resultSelector( enumerators.Select( e => e.Current ) ); while ( MoveNext() );
 

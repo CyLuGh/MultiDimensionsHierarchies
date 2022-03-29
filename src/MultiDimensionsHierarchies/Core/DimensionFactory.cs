@@ -7,6 +7,11 @@ namespace MultiDimensionsHierarchies.Core
 {
     public static class DimensionFactory
     {
+        public static Dimension BuildFromBones( string dimensionName , params Bone[] bones )
+        {
+            return new( dimensionName , bones );
+        }
+
         public static Dimension BuildWithParentLink<TA, TB>(
             string dimensionName ,
             IEnumerable<TA> items ,
@@ -110,7 +115,7 @@ namespace MultiDimensionsHierarchies.Core
 
         private static Option<(TB Key, Bone Value)> BuildBone<TA, TB>(
             string dimensionName ,
-            LanguageExt.HashSet<(TB Key , TA Item)> hashSet ,
+            LanguageExt.HashSet<(TB Key, TA Item)> hashSet ,
             Seq<TA> items ,
             Option<TB> parentKey ,
             Func<TA , string> labeller ,

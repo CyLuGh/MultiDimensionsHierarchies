@@ -12,8 +12,7 @@ namespace MultiDimensionsHierarchies.Core
             IEnumerable<Dimension> dimensions ,
             string[] dimensionsOfInterest = null )
         {
-            return CreateSkeletons( inputs , parser , dimensions , dimensionsOfInterest )
-                .AsParallel().ToSeq();
+            return CreateSkeletons( inputs , parser , dimensions , dimensionsOfInterest ).ToSeq();
         }
 
         public static Seq<Skeleton<T>> BuildSkeletons<T, TI>( IEnumerable<TI> inputs ,
@@ -22,8 +21,7 @@ namespace MultiDimensionsHierarchies.Core
           IEnumerable<Dimension> dimensions ,
           string[] dimensionsOfInterest = null )
         {
-            return CreateSkeletons( inputs , parser , evaluator , dimensions , dimensionsOfInterest )
-                .AsParallel().ToSeq();
+            return CreateSkeletons( inputs , parser , evaluator , dimensions , dimensionsOfInterest ).ToSeq();
         }
 
         public static Seq<Skeleton> BuildSkeletons( IEnumerable<string> stringInputs ,
@@ -69,7 +67,7 @@ namespace MultiDimensionsHierarchies.Core
                 dimensionsOfInterest = seqDimensions.Select( d => d.Name ).ToArray();
             }
 
-            return inputs.SelectMany( input =>
+            return inputs.AsParallel().SelectMany( input =>
             {
                 var bones = dimensionsOfInterest.Select( d => FindBones( input , parser , d , seqDimensions ) )
                     .ToArray();
