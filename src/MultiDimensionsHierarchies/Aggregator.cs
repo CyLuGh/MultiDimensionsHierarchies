@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MultiDimensionsHierarchies
 {
@@ -17,6 +18,8 @@ namespace MultiDimensionsHierarchies
         /// Computes all aggregates from source data in a bottom-top way.
         /// </summary>
         Heuristic,
+        HeuristicGroup,
+        HeuristicDictionary,
         /// <summary>
         /// Computes limited aggregates in top-down way.
         /// </summary>
@@ -72,11 +75,22 @@ namespace MultiDimensionsHierarchies
             {
                 Method.Targeted => TargetedAggregate( groupedInputs , seqTargets , groupAggregator , weightEffect ),
                 Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , seqTargets , weightEffect ),
+                Method.HeuristicDictionary => HeuristicDictionaryAggregate( groupedInputs , aggregator , seqTargets , weightEffect ),
+                Method.HeuristicGroup => HeuristicGroupAggregate( groupedInputs , aggregator , seqTargets , weightEffect ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
 
         private static AggregationResult<T> HeuristicAggregate<T>( Skeleton<T>[] baseData ,
+                                                                  Func<T , T , T> aggregator ,
+                                                                  Seq<Skeleton> targets ,
+                                                                  Func<T , double , T> weightEffect )
+        {
+            // Choose most adequate method?
+            return HeuristicGroupAggregate( baseData , aggregator , targets , weightEffect );
+        }
+
+        private static AggregationResult<T> HeuristicGroupAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   Seq<Skeleton> targets ,
                                                                   Func<T , double , T> weightEffect )
@@ -96,6 +110,42 @@ namespace MultiDimensionsHierarchies
                     .GroupBy( s => s.Key )
                     .Select( g => g.Aggregate( aggregator ) )
                     .Somes()
+                    .ToArray();
+
+                stopWatch.Stop();
+
+                return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , res , "Process OK" );
+            } );
+
+            return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+        }
+
+        private static AggregationResult<T> HeuristicDictionaryAggregate<T>( Skeleton<T>[] baseData ,
+                                                                  Func<T , T , T> aggregator ,
+                                                                  Seq<Skeleton> targets ,
+                                                                  Func<T , double , T> weightEffect )
+        {
+            var f = Prelude.Try( () =>
+            {
+                var stopWatch = Stopwatch.StartNew();
+
+                var results = new NonBlocking.ConcurrentDictionary<Skeleton , Option<T>>();
+
+                Parallel.ForEach( baseData , skeleton =>
+                {
+                    foreach ( var ancestor in skeleton.Key.Ancestors().Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    {
+                        var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
+                        var wVal = from v in skeleton.Value
+                                   select weightEffect( v , weight );
+
+                        results.AddOrUpdate( ancestor , wVal , ( _ , data ) => from d in data
+                                                                               from v in wVal
+                                                                               select aggregator( d , v ) );
+                    }
+                } );
+
+                var res = results.Select( kvp => new Skeleton<T>( kvp.Value , kvp.Key ) )
                     .ToArray();
 
                 stopWatch.Stop();
