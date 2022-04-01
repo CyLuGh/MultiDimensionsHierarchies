@@ -30,12 +30,12 @@ namespace MultiDimensionsHierarchies.Core
         /// </summary>
         /// <typeparam name="T">Type of source data</typeparam>
         /// <typeparam name="TI">Type of value associated to skeleton</typeparam>
-        /// <param name="inputs"></param>
-        /// <param name="parser"></param>
-        /// <param name="evaluator"></param>
-        /// <param name="dimensions"></param>
-        /// <param name="dimensionsOfInterest"></param>
-        /// <returns></returns>
+        /// <param name="inputs">Source data</param>
+        /// <param name="parser">How to find defined bone in dimension in source item</param>
+        /// <param name="evaluator">How to find associated value in source item</param>
+        /// <param name="dimensions">Dimensions with their hierarchies</param>
+        /// <param name="dimensionsOfInterest">(Optional) Subset of dimensions to be used</param>
+        /// <returns>Sequence of properly defined Skeletons, containing data</returns>
         public static Seq<Skeleton<T>> BuildSkeletons<T, TI>( IEnumerable<TI> inputs ,
           Func<TI , string , string> parser ,
           Func<TI , T> evaluator ,
@@ -48,12 +48,12 @@ namespace MultiDimensionsHierarchies.Core
         /// <summary>
         /// Build skeletons from string sources
         /// </summary>
-        /// <param name="stringInputs"></param>
-        /// <param name="partitioner"></param>
-        /// <param name="selectioner"></param>
-        /// <param name="dimensions"></param>
-        /// <param name="dimensionsOfInterest"></param>
-        /// <returns></returns>
+        /// <param name="stringInputs">Inputs, in string format</param>
+        /// <param name="partitioner">How to split the input string</param>
+        /// <param name="selectioner">How to find needed dimension in input string parts</param>
+        /// <param name="dimensions">Dimensions with their hierarchies</param>
+        /// <param name="dimensionsOfInterest">(Optional) Subset of dimensions to be used</param>
+        /// <returns>Sequence of properly defined Skeletons</returns>
         public static Seq<Skeleton> BuildSkeletons( IEnumerable<string> stringInputs ,
             Func<string , string[]> partitioner ,
             Func<string[] , string , string> selectioner ,
