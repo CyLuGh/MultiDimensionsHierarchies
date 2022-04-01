@@ -67,7 +67,7 @@ namespace MultiDimensionsHierarchies.Core
                     double.IsNaN( weight ) ? Weight : weight
                 );
 
-            bone.Children = bone.Children.Select( c => c.With( parent: bone ) )
+            bone.Children = bone.Children.Select( c => c.With( parent: bone , dimensionName: dimensionName ) )
                 .GroupBy( x => x )
                 .Select( g => g.Key.With( children: g.SelectMany( o => o.Children ).ToSeq() ) )
                 .ToSeq();

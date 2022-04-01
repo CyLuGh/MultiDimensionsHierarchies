@@ -15,6 +15,9 @@ namespace MultiDimensionsHierarchies.Core
             Frame = new Seq<Bone>( bones );
         }
 
+        public Dimension Rename( string name )
+            => new( name , Frame.Select( b => b.With( dimensionName: name ) ) );
+
         public Seq<Bone> Flatten() => Frame.Flatten().ToSeq();
 
         public Seq<Bone> Leaves() => Frame.SelectMany( d => d.Leaves() ).ToSeq();
