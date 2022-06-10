@@ -190,4 +190,23 @@ public static AggregationResult<T> Aggregate<T>( Method method ,
 Two algorithms (and one with two variants) are available through the *Method* enum.
 
 #### Heuristic
+The *Heuristic* algorithm will go through each input item and add its contribution to every possible ancestor.
+
+```mermaid
+flowchart TD
+    France:S123-->Europe:S123-->World:S123
+    France:S123-->France:S12-->Europe:S12
+    Europe:S123-->Europe:S12
+    Europe:S12-->World:S12
+    World:S123-->World:S12
+```
+
+Even with only two simple hierarchies, we can see that multiple paths can be followed through the hierarchies. The algorithm will avoid duplicate pathing.
+
+There are three options for the *Heuristic* approach in the enum, *Heuristic*, *HeuristicGroup* and *HeuristicDictionary*. *HeuristicGroup* and *HeuristicDictionary* are only useful if you really wish to tweak the way intermediate results are stored.
+
+The *Heuristic* method tends to be memory efficient but may less scale with multi cores processing.
+
 #### Targeted
+
+The *Targeted* algorithm requires a defined output set. For each target, it will find which input items are contributing and compute the result. While a little less efficient, this algorithm tends to be able to put more pressure on the CPU, making use of higher CPUs count.
