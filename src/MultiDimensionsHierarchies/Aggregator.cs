@@ -18,13 +18,16 @@ namespace MultiDimensionsHierarchies
         /// Computes all aggregates from source data in a bottom-top way.
         /// </summary>
         Heuristic,
+
         HeuristicGroup,
         HeuristicDictionary,
+
         /// <summary>
         /// Computes limited aggregates in top-down way.
         /// </summary>
         Targeted
     }
+
     //public enum CollectionMode { Skeleton, FullId, ShortId }
 
     public static class Aggregator
@@ -58,9 +61,9 @@ namespace MultiDimensionsHierarchies
             Func<T , T , T> aggregator , IEnumerable<Skeleton> targets , Func<IEnumerable<T> , T> groupAggregator = null ,
             Func<T , double , T> weightEffect = null )
         {
-            var seqTargets = targets.ToSeq();
+            var hashTarget = new LanguageExt.HashSet<Skeleton>().TryAddRange( targets );
 
-            if ( method == Method.Targeted && seqTargets.Length == 0 )
+            if ( method == Method.Targeted && hashTarget.Count == 0 )
                 return new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "Method is Targeted but no targets have been defined!" );
 
             /* Aggregate base data that might have common keys */
@@ -73,17 +76,17 @@ namespace MultiDimensionsHierarchies
 
             return method switch
             {
-                Method.Targeted => TargetedAggregate( groupedInputs , seqTargets , groupAggregator , weightEffect ),
-                Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , seqTargets , weightEffect ),
-                Method.HeuristicDictionary => HeuristicDictionaryAggregate( groupedInputs , aggregator , seqTargets , weightEffect ),
-                Method.HeuristicGroup => HeuristicGroupAggregate( groupedInputs , aggregator , seqTargets , weightEffect ),
+                Method.Targeted => TargetedAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect ),
+                Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , hashTarget , weightEffect ),
+                Method.HeuristicDictionary => HeuristicDictionaryAggregate( groupedInputs , aggregator , hashTarget , weightEffect ),
+                Method.HeuristicGroup => HeuristicGroupAggregate( groupedInputs , aggregator , hashTarget , weightEffect ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
 
         private static AggregationResult<T> HeuristicAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
-                                                                  Seq<Skeleton> targets ,
+                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                   Func<T , double , T> weightEffect )
         {
             // Choose most adequate method?
@@ -92,7 +95,7 @@ namespace MultiDimensionsHierarchies
 
         private static AggregationResult<T> HeuristicGroupAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
-                                                                  Seq<Skeleton> targets ,
+                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                   Func<T , double , T> weightEffect )
         {
             var f = Prelude.Try( () =>
@@ -122,7 +125,7 @@ namespace MultiDimensionsHierarchies
 
         private static AggregationResult<T> HeuristicDictionaryAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
-                                                                  Seq<Skeleton> targets ,
+                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                   Func<T , double , T> weightEffect )
         {
             var f = Prelude.Try( () =>
@@ -156,58 +159,74 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
+        private static (Skeleton<T>[], LanguageExt.HashSet<Skeleton>) SimplifyTargets<T>(
+            Skeleton<T>[] baseData ,
+            LanguageExt.HashSet<Skeleton> targets ,
+            Seq<Bone> uniqueTargetBaseBones ,
+            Func<IEnumerable<T> , T> groupAggregator ,
+            Func<T , double , T> weightEffect )
+        {
+            var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();
+            var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, b.Descendants()) ).ToHashMap();
+
+            var simplifiedData = baseData
+               .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
+               .Select( d => d.Except( uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray() ) )
+               .GroupBy( x => x.Key )
+               .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
+               .ToArray();
+
+            var hash = new LanguageExt.HashSet<Skeleton>().TryAddRange( targets.Select( s => s.Except( uniqueDimensions ) ) );
+
+            return (simplifiedData, hash);
+        }
+
         private static AggregationResult<T> TargetedAggregate<T>( Skeleton<T>[] baseData ,
-                                                                 Seq<Skeleton> targets ,
+                                                                 LanguageExt.HashSet<Skeleton> targets ,
                                                                  Func<IEnumerable<T> , T> groupAggregator ,
                                                                  Func<T , double , T> weightEffect )
         {
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var uniqueTargetBaseBones = targets.SelectMany( t => t.Bones )
+                var uniqueTargetBaseBones = targets
+                    .SelectMany( t => t.Bones )
                     .GroupBy( b => b.DimensionName )
                     .Where( g => g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) )
                     .Select( g => g.First() )
                     .ToSeq();
 
-                var simplifiedTargets = targets;
-                var simplifiedData = Seq.createRange( baseData );
-                if ( uniqueTargetBaseBones.Any() )
-                {
-                    var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();
-                    var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, b.Descendants()) ).ToHashMap();
+                var (simplifiedData, simplifiedTargets) =
+                    uniqueTargetBaseBones.Any() ?
+                        SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , weightEffect )
+                        : (baseData, targets);
 
-                    simplifiedData = baseData
-                       .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
-                       .Select( d => d.Except( uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray() ) )
-                       .GroupBy( x => x.Key )
-                       .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
-                       .ToSeq();
-
-                    simplifiedTargets = targets.Select( s => s.Except( uniqueDimensions ) );
-                }
+                var simplifiedMap = Map.create<Skeleton , Skeleton<T>>()
+                    .TryAddRange( simplifiedData.Select( s => (s.Key, s) ) );
 
                 var results = simplifiedTargets
                     .AsParallel()
                     .Select( t =>
                     {
-                        var composingData = simplifiedData;
+                        var mappedData = simplifiedMap;
 
                         foreach ( var bone in t.Bones )
                         {
                             var expectedBones = bone.Descendants();
-                            var unneededKeys = simplifiedData
+                            var unneededKeys = simplifiedMap.Values
                                 .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
                                                                 .Some( b => !expectedBones.Contains( b ) )
                                                                 .None( () => false ) )
                                 .Select( s => s.Key );
-                            composingData = composingData.Except( composingData.Where( o => unneededKeys.Contains( o.Key ) ) ).ToSeq();
+
+                            mappedData = mappedData.RemoveRange( unneededKeys );
                         }
 
-                        return composingData.Aggregate( t , groupAggregator , weightEffect );
-                    } );
+                        return mappedData.Values.Aggregate( t , groupAggregator , weightEffect );
+                    } )
+                    .Select( r => r.Add( uniqueTargetBaseBones ) )
+                    .ToArr();
 
-                results = results.AsParallel().Select( r => r.Add( uniqueTargetBaseBones ) );
                 stopWatch.Stop();
 
                 return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );

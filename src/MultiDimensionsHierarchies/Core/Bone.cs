@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace MultiDimensionsHierarchies.Core
 {
-    public class Bone : IEquatable<Bone>
+    public class Bone : IEquatable<Bone>, IComparable<Bone>
     {
         public static Bone None { get; } = new Bone( "None" , "?" );
 
@@ -95,6 +95,7 @@ namespace MultiDimensionsHierarchies.Core
                 .None( () => this );
 
         private Seq<Bone> _leaves = Seq.empty<Bone>();
+
         public Seq<Bone> Leaves()
         {
             if ( _leaves.IsEmpty )
@@ -103,6 +104,7 @@ namespace MultiDimensionsHierarchies.Core
         }
 
         private Seq<Bone> _descendants = Seq.empty<Bone>();
+
         public Seq<Bone> Descendants()
         {
             if ( _descendants.IsEmpty )
@@ -111,6 +113,7 @@ namespace MultiDimensionsHierarchies.Core
         }
 
         private Seq<Bone> _ancestors = Seq.empty<Bone>();
+
         public Seq<Bone> Ancestors()
         {
             if ( _ancestors.IsEmpty )
@@ -148,6 +151,7 @@ namespace MultiDimensionsHierarchies.Core
             if ( ReferenceEquals( this , other ) ) return true;
             return string.Equals( Label , other.Label )
                 && string.Equals( DimensionName , other.DimensionName )
+                && double.Equals( Weight , other.Weight )
                 && Parent.Equals( other.Parent );
         }
 
@@ -174,16 +178,30 @@ namespace MultiDimensionsHierarchies.Core
         public override string ToString()
             => $"{Label} in {DimensionName}";
 
-        public string FullPath()
-            => Parent
-                .Some( parent => string.Join( ">" , parent.FullPath() , Label ) )
-                .None( () => Label );
+        private string _fullPath = string.Empty;
+
+        public string FullPath
+        {
+            get
+            {
+                if ( string.IsNullOrEmpty( _fullPath ) )
+                    _fullPath = Parent
+                        .Some( parent => string.Join( ">" , parent.FullPath , Label ) )
+                        .None( () => Label );
+
+                return _fullPath;
+            }
+        }
 
         public static double ComputeResultingWeight( Bone current , Bone ancestor , Func<Bone , Bone , double> f )
             => f( current , ancestor );
 
         public static double ComputeResultingWeight( Bone current , Bone ancestor )
             => DetermineWeight( current , ancestor );
+
+        public int CompareTo( Bone other )
+            => string.Compare( FullPath , other.FullPath )
+                & Weight.CompareTo( other.Weight );
 
         internal static Func<Bone , Bone , double> DetermineWeight =
             ( currentBone , ancestorBone ) =>
