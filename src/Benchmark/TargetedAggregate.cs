@@ -4,17 +4,19 @@ using Benchmarks;
 using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
+using System.Diagnostics;
+
 using System.Linq;
 
 namespace Benchmark
 {
-    [SimpleJob( RuntimeMoniker.Net60 , warmupCount: 3 , targetCount: 7 )]
+
+    [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 )]
     [MemoryDiagnoser( false )]
-    [ThreadingDiagnoser]
     [CpuDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
-        [Params( 500 , 1_000 , 5_000 , 10_000 )]
+        [Params( 1000 , 5000 , 10_000 , 50_000 )]
         public int TargetsCount { get; set; }
 
         public Skeleton[] Targets;
@@ -27,6 +29,7 @@ namespace Benchmark
         {
             base.GlobalSetup();
 
+            Trace.WriteLine( "Building targets" );
             Targets = Dimensions.Take( DimensionsCount )
                 .Select( d => d.Flatten().Where( b => b.Depth <= 3 ).ToArray() )
                 .Combine()
@@ -41,10 +44,11 @@ namespace Benchmark
             return Aggregator.Aggregate( Method.Targeted , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }
 
-        [Benchmark]
-        public AggregationResult<double> Heuristic()
-        {
-            return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
-        }
+        //[Benchmark]
+        //public AggregationResult<double> Heuristic()
+        //{
+        //    return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+        //}
+
     }
 }

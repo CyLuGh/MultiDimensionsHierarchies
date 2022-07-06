@@ -28,6 +28,9 @@ namespace MultiDimensionsHierarchies.Core
             Bones = Arr.create( bones.OrderBy( x => x.DimensionName ).ToArray() );
         }
 
+        public Skeleton Add( Skeleton other )
+            => Add( other.Bones );
+
         public Skeleton Add( Bone addedBone )
             => Add( new[] { addedBone } );
 
