@@ -351,6 +351,26 @@ public class AggregatorTests
     }
 
     [Fact]
+    public void TestTargeted2SimplifyData()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" };
+        var skeletons = GetLeavesSample( dimensions );
+        var targets = GetTargets( dimensions );
+        var result = Aggregator.Aggregate( Method.Targeted , skeletons , ( a , b ) => a + b , targets );
+
+        GetTargets( dimensions[1] ).Find( "1.2" ).IfSome( tgt =>
+        {
+            var targets2 = GetTargets( dimensions[0] ).Select( s => s.Add( tgt ) );
+            var result2 = Aggregator.Aggregate( Method.Targeted , skeletons , ( a , b ) => a + b , targets2 );
+
+            var test = from r in result.Results.Find( "2" , "1.2" )
+                       from r2 in result2.Results.Find( "2" , "1.2" )
+                       select r.Value.Equals( r.Value );
+            test.ShouldBeSome( t => t.Should().BeTrue() );
+        } );
+    }
+
+    [Fact]
     public void TestTargeted5DimensionsSubSelect()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };

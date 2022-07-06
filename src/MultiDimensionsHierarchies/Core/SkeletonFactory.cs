@@ -170,9 +170,12 @@ namespace MultiDimensionsHierarchies.Core
                 dimensionsOfInterest = seqDimensions.Select( d => d.Name ).ToArray();
             }
 
+            var dimLookup = seqDimensions.SelectMany( d => d.Flatten() )
+               .ToLookup( b => (b.DimensionName, b.Label) );
+
             return inputs.AsParallel().SelectMany( input =>
             {
-                var bones = dimensionsOfInterest.Select( d => FindBones( input , parser , d , seqDimensions ) )
+                var bones = dimensionsOfInterest.Select( d => FindBones( input , parser , d , dimLookup ) )
                     .ToArray();
 
                 if ( bones.Lefts().Any() )
@@ -214,9 +217,12 @@ namespace MultiDimensionsHierarchies.Core
                 dimensionsOfInterest = seqDimensions.Select( d => d.Name ).ToArray();
             }
 
+            var dimLookup = seqDimensions.SelectMany( d => d.Flatten() )
+                .ToLookup( b => (b.DimensionName, b.Label) );
+
             return inputs.AsParallel().SelectMany( input =>
             {
-                var bones = dimensionsOfInterest.Select( d => FindBones( input , parser , d , seqDimensions ) )
+                var bones = dimensionsOfInterest.Select( d => FindBones( input , parser , d , dimLookup ) )
                     .ToArray();
                 return TryCreateSkeletons( input , evaluator , bones );
             } );
@@ -241,12 +247,10 @@ namespace MultiDimensionsHierarchies.Core
             }
         }
 
-        internal static Either<string , Bone[]> FindBones<T>( T input , Func<T , string , string> parser , string dimensionName , Seq<Dimension> dimensions )
+        internal static Either<string , Bone[]> FindBones<T>( T input , Func<T , string , string> parser , string dimensionName , ILookup<(string, string) , Bone> dimensionsLookup )
         {
             var boneLabel = parser( input , dimensionName );
-            var bones = dimensions.Find( d => d.Name.Equals( dimensionName ) )
-                .Some( d => d.Flatten().Where( b => b.Label.Equals( boneLabel ) ).ToArray() )
-                .None( () => Array.Empty<Bone>() );
+            var bones = dimensionsLookup[(dimensionName, boneLabel)].ToArray();
 
             if ( bones.Length == 0 )
                 return $"Couldn't find {boneLabel} in dimension {dimensionName}";
