@@ -11,7 +11,6 @@ namespace Benchmark
         public string DimE { get; set; } = string.Empty;
         public string DimF { get; set; } = string.Empty;
 
-
         public double Value { get; set; }
 
         public static Func<DataInput , string , string> Parser =>

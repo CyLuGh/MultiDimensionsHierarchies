@@ -213,3 +213,29 @@ The *Targeted* algorithm requires a defined output set. For each target, it will
 
 ## Samples
 Some samples can be found in the [Demo project](https://github.com/CyLuGh/MultiDimensionsHierarchies/tree/main/src/Demo) and in the [Unit tests](https://github.com/CyLuGh/MultiDimensionsHierarchies/tree/main/src/TestMultiDimensionsHierarchies)
+
+## Benchmarks (WIP)
+
+
+| Method | Dimensions | Sample Size | Targets | Results | Duration | Speed |
+|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+|Heuristic|3|10,000|0|22,875|1.396s|16,386.10 r/s|
+|Heuristic|3|50,000|0|32,415|4.407s|7,355.34 r/s|
+|Heuristic|3|100,000|0|35,063|5.517s|6,355.44 r/s|
+|Heuristic|4|10,000|0|235,423|6.407s|36,744.65 r/s|
+|Heuristic|4|50,000|0|481,714|30.791s|15,644.63 r/s|
+|Heuristic|4|100,000|0|615,929|59.482s|10,354.88 r/s|
+|Heuristic|5|10,000|0|1,668,963|26.976s|61,868.43 r/s|
+|Heuristic|5|50,000|0|4,352,390|145.394s|29,935.14 r/s|
+|Targeted|3|10,000|500|500|2.158s|231.69 r/s|
+|Targeted|3|50,000|500|500|7.993s|62.55 r/s|
+|Targeted|3|100,000|500|500|10.525s|47.50 r/s|
+|Targeted|4|10,000|500|500|2.446s|204.41 r/s|
+|Targeted|4|10,000|1,000|1,000|6.741s|148.34 r/s|
+|Targeted|4|10,000|5,000|5,000|31.690s|157.77 r/s|
+|Targeted|4|50,000|500|500|8.216s|60.85 r/s|
+|Targeted|4|50,000|1,000|1,000|39.018s|25.62 r/s|
+|Targeted|4|50,000|5,000|5,000|194.676s|25.68 r/s|
+|Targeted|4|100,000|500|500|11.135s|44.90 r/s|
+|Targeted|4|100,000|1,000|1,000|82.293s|12.15 r/s|
+|Targeted|5|10,000|1,000|1,000|6.559s|152.46 r/s|

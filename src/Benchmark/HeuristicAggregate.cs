@@ -7,7 +7,6 @@ using System.Linq;
 
 namespace Benchmark
 {
-
     [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 )]
     [MemoryDiagnoser( false )]
     [CpuDiagnoser]
@@ -28,6 +27,5 @@ namespace Benchmark
         //{
         //    return Aggregator.Aggregate( Method.HeuristicDictionary , Data , ( a , b ) => a + b , doubles => doubles.Sum() );
         //}
-
     }
 }
