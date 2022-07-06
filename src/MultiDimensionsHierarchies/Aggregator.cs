@@ -206,24 +206,7 @@ namespace MultiDimensionsHierarchies
 
                 var results = simplifiedTargets
                     .AsParallel()
-                    .Select( t =>
-                    {
-                        var mappedData = simplifiedMap;
-
-                        foreach ( var bone in t.Bones )
-                        {
-                            var expectedBones = bone.Descendants();
-                            var unneededKeys = simplifiedMap.Values
-                                .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
-                                                                .Some( b => !expectedBones.Contains( b ) )
-                                                                .None( () => false ) )
-                                .Select( s => s.Key );
-
-                            mappedData = mappedData.RemoveRange( unneededKeys );
-                        }
-
-                        return mappedData.Values.Aggregate( t , groupAggregator , weightEffect );
-                    } )
+                    .Select( t => t.FindContributors( simplifiedMap ).Aggregate( t , groupAggregator , weightEffect ) )
                     .Select( r => r.Add( uniqueTargetBaseBones ) )
                     .ToArr();
 
