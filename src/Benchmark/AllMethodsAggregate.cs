@@ -5,6 +5,7 @@ using MultiDimensionsHierarchies.Core;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+
 using System.Linq;
 
 namespace Benchmark
@@ -44,6 +45,7 @@ namespace Benchmark
             Trace.WriteLine( "Building sample" );
             var sample = BuildSample( dimA.Flatten().Select( b => b.Label ).Distinct().ToArray() , SampleSize );
             Trace.WriteLine( "Building skeletons" );
+
             Data = SkeletonFactory.BuildSkeletons(
                     sample ,
                     DataInput.Parser ,
@@ -87,6 +89,7 @@ namespace Benchmark
                   DimF = faker.PickRandom( labels ) ,
                   Value = faker.Random.Double()
               } )
+
               .ToArray();
 
             return data;
