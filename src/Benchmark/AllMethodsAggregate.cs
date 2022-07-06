@@ -4,13 +4,14 @@ using LanguageExt;
 using MultiDimensionsHierarchies.Core;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Benchmark
 {
     public abstract class AllMethodsAggregate
     {
-        [Params( 10_000 , 50_000 , 100_000 , 500_000 , 1_000_000 )]
+        [Params( 10_000 , 50_000 , 100_000 , 200_000 )]
         public int SampleSize { get; set; }
 
         [Params( 3 , 4 , 5 )]
@@ -23,22 +24,26 @@ namespace Benchmark
         protected readonly Dimension dimC;
         protected readonly Dimension dimD;
         protected readonly Dimension dimE;
+        protected readonly Dimension dimF;
 
-        protected Dimension[] Dimensions => new[] { dimA , dimB , dimC , dimD , dimE };
+        public Dimension[] Dimensions => new[] { dimA , dimB , dimC , dimD , dimE , dimF };
 
-        public AllMethodsAggregate()
+        protected AllMethodsAggregate()
         {
             dimA = DimensionFactory.BuildWithParentLink( "Dim A" , BuildHierarchy( "1" , Option<string>.None , 4 ) , o => o.Id , o => o.ParentId );
             dimB = DimensionFactory.BuildWithParentLink( "Dim B" , BuildHierarchy( "1" , Option<string>.None , 4 ) , o => o.Id , o => o.ParentId );
             dimC = DimensionFactory.BuildWithParentLink( "Dim C" , BuildHierarchy( "1" , Option<string>.None , 4 ) , o => o.Id , o => o.ParentId );
             dimD = DimensionFactory.BuildWithParentLink( "Dim D" , BuildHierarchy( "1" , Option<string>.None , 4 ) , o => o.Id , o => o.ParentId );
             dimE = DimensionFactory.BuildWithParentLink( "Dim E" , BuildHierarchy( "1" , Option<string>.None , 4 ) , o => o.Id , o => o.ParentId );
+            dimF = DimensionFactory.BuildWithParentLink( "Dim F" , BuildHierarchy( "1" , Option<string>.None , 4 ) , o => o.Id , o => o.ParentId );
         }
 
         [GlobalSetup]
         public virtual void GlobalSetup()
         {
+            Trace.WriteLine( "Building sample" );
             var sample = BuildSample( dimA.Flatten().Select( b => b.Label ).Distinct().ToArray() , SampleSize );
+            Trace.WriteLine( "Building skeletons" );
             Data = SkeletonFactory.BuildSkeletons(
                     sample ,
                     DataInput.Parser ,
@@ -72,7 +77,16 @@ namespace Benchmark
 
             var data = Enumerable.Range( 0 , sampleSize )
               .AsParallel()
-              .Select( _ => new DataInput { DimA = faker.PickRandom( labels ) , DimB = faker.PickRandom( labels ) , DimC = faker.PickRandom( labels ) , DimD = faker.PickRandom( labels ) , DimE = faker.PickRandom( labels ) , Value = faker.Random.Double() } )
+              .Select( _ => new DataInput
+              {
+                  DimA = faker.PickRandom( labels ) ,
+                  DimB = faker.PickRandom( labels ) ,
+                  DimC = faker.PickRandom( labels ) ,
+                  DimD = faker.PickRandom( labels ) ,
+                  DimE = faker.PickRandom( labels ) ,
+                  DimF = faker.PickRandom( labels ) ,
+                  Value = faker.Random.Double()
+              } )
               .ToArray();
 
             return data;

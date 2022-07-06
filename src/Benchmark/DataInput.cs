@@ -9,6 +9,7 @@ namespace Benchmark
         public string DimC { get; set; } = string.Empty;
         public string DimD { get; set; } = string.Empty;
         public string DimE { get; set; } = string.Empty;
+        public string DimF { get; set; } = string.Empty;
 
         public double Value { get; set; }
 
@@ -20,6 +21,7 @@ namespace Benchmark
                      "Dim C" => item.DimC,
                      "Dim D" => item.DimD,
                      "Dim E" => item.DimE,
+                     "Dim F" => item.DimF,
                      _ => string.Empty
                  };
     }

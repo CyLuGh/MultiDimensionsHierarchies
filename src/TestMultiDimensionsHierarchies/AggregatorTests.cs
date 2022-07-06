@@ -212,6 +212,37 @@ public class AggregatorTests
     }
 
     [Fact]
+    public void CompateHeuristic5Dimensions()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+        var skeletons = GetLeavesSample( dimensions );
+
+        var resultGroup = Aggregator.Aggregate( Method.HeuristicGroup , skeletons , ( a , b ) => a + b );
+        var resultDict = Aggregator.Aggregate( Method.HeuristicDictionary , skeletons , ( a , b ) => a + b );
+
+        resultGroup.Status.Should().Be( AggregationStatus.OK );
+        var r2Grp = resultGroup.Results.Find( "2" , "2" , "2" , "2" , "2" );
+        r2Grp.ShouldBeSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+        } );
+        resultGroup.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
+
+        var cplx = dimensions.Select( d => SkeletonTests.GetDimension( d ) ).Complexity();
+        resultGroup.Results.LongCount().Should().Be( cplx );
+
+        var r2Dct = resultDict.Results.Find( "2" , "2" , "2" , "2" , "2" );
+        r2Dct.ShouldBeSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+        } );
+
+        resultGroup.Results.LongCount().Should().Be( resultDict.Results.LongCount() );
+    }
+
+    [Fact]
     public void TestHeuristic5DimensionsWithTargets()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
