@@ -166,13 +166,13 @@ public class SkeletonTests
         var dimC = GetDimension( "Dim C" );
 
         dimA.Find( "2" )
-            .IfSome( boneA =>
+            .ShouldBeSome( boneA =>
             {
                 dimB.Find( "1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         dimC.Find( "1.1.1" )
-                            .IfSome( boneC =>
+                            .ShouldBeSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneC , boneA , boneB );
                                 var leaves = skeleton.Leaves();
@@ -191,13 +191,13 @@ public class SkeletonTests
         var dimC = GetDimension( "Dim C" );
 
         dimA.Find( "2" )
-            .IfSome( boneA =>
+            .ShouldBeSome( boneA =>
             {
                 dimB.Find( "1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         dimC.Find( "1.1.1" )
-                            .IfSome( boneC =>
+                            .ShouldBeSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneC , boneA , boneB );
 
@@ -229,13 +229,13 @@ public class SkeletonTests
         }.ToDictionary( x => x.Key , x => x.Values );
 
         dimA.Find( "2" )
-            .IfSome( boneA =>
+            .ShouldBeSome( boneA =>
             {
                 dimB.Find( "1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         dimC.Find( "1.1.1" )
-                            .IfSome( boneC =>
+                            .ShouldBeSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneC , boneA , boneB );
 
@@ -278,13 +278,13 @@ public class SkeletonTests
         var dimC = GetDimension( "Dim C" );
 
         dimA.Find( "2.1" )
-            .IfSome( boneA =>
+            .ShouldBeSome( boneA =>
             {
                 dimB.Find( "1.1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         dimC.Find( "1.1.1.1" )
-                            .IfSome( boneC =>
+                            .ShouldBeSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
                                 var ancestors = skeleton.Ancestors();
@@ -306,13 +306,13 @@ public class SkeletonTests
         var dimC = GetDimension( "Dim C" );
 
         dimA.Find( "2" )
-            .IfSome( boneA =>
+            .ShouldBeSome( boneA =>
             {
                 dimB.Find( "1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         dimC.Find( "1.1.1" )
-                            .IfSome( boneC =>
+                            .ShouldBeSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
                                 var ancestors = skeleton.Ancestors();
@@ -355,18 +355,89 @@ public class SkeletonTests
             .Combine();
 
         dimA.Find( "2" )
-            .IfSome( boneA =>
+            .ShouldBeSome( boneA =>
             {
                 dimB.Find( "1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         dimC.Find( "1.1.1" )
-                            .IfSome( boneC =>
+                            .ShouldBeSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
                                 var composing = skeleton.GetComposingSkeletons( new[] { dimA , dimB , dimC } , skels );
                                 /* 5 in A * 4 in B * 2 in C = 40 */
                                 composing.Length.Should().Be( 40 );
+                            } );
+                    } );
+            } );
+    }
+
+    [Fact]
+    public void TestComposingSkeletonsT()
+    {
+        var dimA = GetDimension( "Dim A" );
+        var dimB = GetDimension( "Dim B" );
+        var dimC = GetDimension( "Dim C" );
+
+        var dimensions = Arr.create( dimA , dimB , dimC );
+
+        var skels = dimensions
+            .Combine()
+            .Select( s => new Skeleton<Unit>( s ) );
+
+        var map = Map.createRange( skels.Select( s => (s.Key, s) ) );
+
+        dimA.Find( "2" )
+            .ShouldBeSome( boneA =>
+            {
+                dimB.Find( "1.1" )
+                    .ShouldBeSome( boneB =>
+                    {
+                        dimC.Find( "1.1.1" )
+                            .ShouldBeSome( boneC =>
+                            {
+                                var skeleton = new Skeleton( boneA , boneB , boneC );
+                                var composing = skeleton.GetComposingSkeletons( map );
+                                /* 5 in A * 4 in B * 2 in C = 40 */
+                                composing.Length.Should().Be( 40 );
+                            } );
+                    } );
+            } );
+
+        var multiSkels = dimensions
+            .Combine()
+            .Concat( new[] { dimensions.BuildSkeleton( "2" , "1.1" , "1.1.1" ) } )
+            .Select( s =>
+            {
+                int value = 0;
+                foreach ( var bone in s.Bones )
+                {
+                    foreach ( var part in bone.Label.Split( '.' ) )
+                    {
+                        if ( int.TryParse( part , out int v ) )
+                            value += v;
+                    }
+                }
+                return new Skeleton<int>( value , s );
+            } );
+
+        var multipMap = Map.createRange( multiSkels
+            .GroupBy( s => s.Key )
+            .Select( g => (g.Key, g.ToSeq()) ) );
+
+        dimA.Find( "2" )
+            .ShouldBeSome( boneA =>
+            {
+                dimB.Find( "1.1" )
+                    .ShouldBeSome( boneB =>
+                    {
+                        dimC.Find( "1.1.1" )
+                            .ShouldBeSome( boneC =>
+                            {
+                                var skeleton = new Skeleton( boneA , boneB , boneC );
+                                var composing = skeleton.GetComposingSkeletons( multipMap );
+                                /* 5 in A * 4 in B * 2 in C = 40 + 1 manual add */
+                                composing.Length.Should().Be( 41 );
                             } );
                     } );
             } );
@@ -383,22 +454,22 @@ public class SkeletonTests
             .Combine();
 
         dimA.Find( "2" )
-            .IfSome( boneA =>
+            .ShouldBeSome( boneA =>
             {
                 dimB.Find( "1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         dimC.Find( "1.1.1" )
-                            .IfSome( boneC =>
+                            .ShouldBeSome( boneC =>
                             {
                                 var skeletonA = new Skeleton( boneA , boneB , boneC );
                                 var skeletonB = new Skeleton( boneC , boneA , boneB );
                                 var skeletonC = new Skeleton( boneA , boneB );
                                 var skeletonD = new Skeleton( boneA , boneB , new Bone( "1.1.1" , "Dim C" ) );
 
-                                skeletonA.Should().BeEquivalentTo( skeletonB );
-                                //skeletonA.Should().NotBeEquivalentTo( skeletonC );
-                                //skeletonA.Should().NotBeEquivalentTo( skeletonD );
+                                skeletonA.Should().BeRankedEquallyTo( skeletonB );
+                                skeletonA.Should().NotBeRankedEquallyTo( skeletonC );
+                                skeletonA.Should().NotBeRankedEquallyTo( skeletonD );
 
                                 skeletonA.StripHierarchies()
                                     .Should().BeEquivalentTo( skeletonD.StripHierarchies() );

@@ -194,10 +194,9 @@ namespace MultiDimensionsHierarchies.Core
             }
         }
 
-        public Arr<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<Skeleton> sourceSkeletons )
+        public Seq<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<Skeleton> sourceSkeletons )
         {
             var targetSkeleton = Update( dimensions );
-
             var bones = targetSkeleton.Bones.ToDictionary( b => b.DimensionName ,
                 b => new System.Collections.Generic.HashSet<string>( b.Descendants().Select( x => x.Label ) ) );
 
@@ -220,12 +219,50 @@ namespace MultiDimensionsHierarchies.Core
                     composingElements.Remove( r );
             }
 
-            return composingElements.ToArr();
+            return composingElements.ToSeq();
         }
 
-        public Arr<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<string> completeKeys )
+        public Seq<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<string> completeKeys )
             => GetComposingSkeletons( dimensions ,
                 completeKeys.Distinct().Select( ParseCompleteString ) );
+
+        public Seq<Skeleton<T>> GetComposingSkeletons<T>( Map<Skeleton , Skeleton<T>> map )
+        {
+            var mappedData = map;
+
+            foreach ( var bone in Bones )
+            {
+                var expectedBones = bone.Descendants();
+                var unneededKeys = map.Values
+                    .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
+                                                    .Some( b => !expectedBones.Contains( b ) )
+                                                    .None( () => false ) )
+                    .Select( s => s.Key );
+
+                mappedData = mappedData.RemoveRange( unneededKeys );
+            }
+
+            return mappedData.Values.ToSeq();
+        }
+
+        public Seq<Skeleton<T>> GetComposingSkeletons<T>( Map<Skeleton , Seq<Skeleton<T>>> map )
+        {
+            var mappedData = map;
+
+            foreach ( var bone in Bones )
+            {
+                var expectedBones = bone.Descendants();
+                var unneededKeys = map.Keys
+                    .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
+                                                    .Some( b => !expectedBones.Contains( b ) )
+                                                    .None( () => false ) )
+                    .Select( s => s );
+
+                mappedData = mappedData.RemoveRange( unneededKeys );
+            }
+
+            return mappedData.Values.Collect( o => o ).ToSeq();
+        }
 
         public bool Equals( Skeleton other )
         {

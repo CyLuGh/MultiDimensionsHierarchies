@@ -108,24 +108,5 @@ namespace MultiDimensionsHierarchies.Core
 
         public static IEnumerable<Skeleton> GetAncestors<T>( this IEnumerable<Skeleton<T>> skeletons )
             => skeletons.AsParallel().SelectMany( s => s.Key.Ancestors() ).Distinct();
-
-        public static Seq<Skeleton<T>> FindContributors<T>( this Skeleton skeleton , Map<Skeleton , Skeleton<T>> map )
-        {
-            var mappedData = map;
-
-            foreach ( var bone in skeleton.Bones )
-            {
-                var expectedBones = bone.Descendants();
-                var unneededKeys = map.Values
-                    .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
-                                                    .Some( b => !expectedBones.Contains( b ) )
-                                                    .None( () => false ) )
-                    .Select( s => s.Key );
-
-                mappedData = mappedData.RemoveRange( unneededKeys );
-            }
-
-            return mappedData.Values.ToSeq();
-        }
     }
 }

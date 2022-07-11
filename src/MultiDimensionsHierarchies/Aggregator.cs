@@ -206,7 +206,7 @@ namespace MultiDimensionsHierarchies
 
                 var results = simplifiedTargets
                     .AsParallel()
-                    .Select( t => t.FindContributors( simplifiedMap ).Aggregate( t , groupAggregator , weightEffect ) )
+                    .Select( t => t.GetComposingSkeletons( simplifiedMap ).Aggregate( t , groupAggregator , weightEffect ) )
                     .Select( r => r.Add( uniqueTargetBaseBones ) )
                     .ToArr();
 
