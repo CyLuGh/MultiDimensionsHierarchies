@@ -212,7 +212,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void CompateHeuristic5Dimensions()
+    public void CompareHeuristic5Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
         var skeletons = GetLeavesSample( dimensions );

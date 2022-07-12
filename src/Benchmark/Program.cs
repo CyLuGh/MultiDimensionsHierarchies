@@ -18,25 +18,25 @@ public static class Program
 
     public static void Main( string[] args )
     {
-        //BenchmarkRunner.Run<TargetedAggregate>();
-        //BenchmarkRunner.Run<HeuristicAggregate>();
+        BenchmarkRunner.Run<TargetedAggregate>();
+        BenchmarkRunner.Run<HeuristicAggregate>();
 
-        var file = $"results_{Guid.NewGuid()}.log";
+        //var file = $"results_{Guid.NewGuid()}.log";
 
-        Trace.Listeners.Add( new TextWriterTraceListener( Console.Out ) );
-        Trace.Listeners.Add( new TextWriterTraceListener( file ) );
-        Trace.AutoFlush = true;
+        //Trace.Listeners.Add( new TextWriterTraceListener( Console.Out ) );
+        //Trace.Listeners.Add( new TextWriterTraceListener( file ) );
+        //Trace.AutoFlush = true;
 
-        var heuristic = new HeuristicAggregate();
-        var targeted = new TargetedAggregate();
+        //var heuristic = new HeuristicAggregate();
+        //var targeted = new TargetedAggregate();
 
-        if ( int.TryParse( args[0] , out var size )
-            && int.TryParse( args[1] , out var dimension )
-            && int.TryParse( args[2] , out var target ) )
-        {
-            TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
-            TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
-        }
+        //if ( int.TryParse( args[0] , out var size )
+        //    && int.TryParse( args[1] , out var dimension )
+        //    && int.TryParse( args[2] , out var target ) )
+        //{
+        //    TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
+        //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
+        //}
 
         //var sizes = new[] { 10_000 , 50_000 , 100_000 };
         //var dimensions = new[] { 3 , 4 , 5 };
