@@ -12,10 +12,10 @@ namespace Benchmark
 {
     public abstract class AllMethodsAggregate
     {
-        [Params( 10_000 , 50_000 , 100_000 , 200_000 )]
+        [Params( 10_000 )]
         public int SampleSize { get; set; }
 
-        [Params( 3 , 4 , 5 )]
+        [Params( 4 )]
         public int DimensionsCount { get; set; }
 
         public Skeleton<double>[] Data;

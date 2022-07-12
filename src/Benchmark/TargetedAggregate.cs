@@ -10,12 +10,13 @@ using System.Linq;
 
 namespace Benchmark
 {
-    [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 )]
+    [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 ),
+     SimpleJob( RuntimeMoniker.Net60 , warmupCount: 3 , targetCount: 7 )]
     [MemoryDiagnoser( false )]
     [CpuDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
-        [Params( 1000 , 5000 , 10_000 , 50_000 )]
+        [Params( 1000 )]
         public int TargetsCount { get; set; }
 
         public Skeleton[] Targets;
@@ -41,6 +42,12 @@ namespace Benchmark
         public AggregationResult<double> Targeted()
         {
             return Aggregator.Aggregate( Method.Targeted , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+        }
+
+        [Benchmark]
+        public DetailedAggregationResult<double> DetailedTargeted()
+        {
+            return Aggregator.DetailedAggregate( Method.Targeted , Data , doubles => doubles.Sum( t => t.value ) , Targets );
         }
 
         //[Benchmark]
