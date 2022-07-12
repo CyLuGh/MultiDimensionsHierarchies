@@ -108,5 +108,9 @@ namespace MultiDimensionsHierarchies.Core
 
         public static IEnumerable<Skeleton> GetAncestors<T>( this IEnumerable<Skeleton<T>> skeletons )
             => skeletons.AsParallel().SelectMany( s => s.Key.Ancestors() ).Distinct();
+
+        public static Option<SkeletonsAccumulator<T>> Find<T>( this IEnumerable<SkeletonsAccumulator<T>> skeletons , params string[] labels )
+            => skeletons.Find( s => s.Bones.Length == labels.Length
+                && Enumerable.Range( 0 , labels.Length ).All( i => s.Bones[i].Label.Equals( labels[i] ) ) );
     }
 }

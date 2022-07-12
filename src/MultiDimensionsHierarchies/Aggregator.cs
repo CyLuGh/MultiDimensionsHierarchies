@@ -217,5 +217,80 @@ namespace MultiDimensionsHierarchies
 
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
+
+        public static DetailedAggregationResult<T> DetailedAggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs , Func<IEnumerable<(T value, double weight)> , T> aggregator , IEnumerable<Skeleton> targets = null )
+        {
+            var hashTarget = new LanguageExt.HashSet<Skeleton>();
+            if ( targets != null )
+                hashTarget = hashTarget.TryAddRange( targets );
+
+            if ( method == Method.Targeted && hashTarget.Count == 0 )
+                return new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "Method is Targeted but no targets have been defined!" );
+
+            return method switch
+            {
+                Method.Targeted => DetailedTargetedAggregate( inputs.ToArray() , aggregator , hashTarget ),
+                Method.Heuristic => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , hashTarget ),
+                Method.HeuristicDictionary => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , hashTarget ),
+                Method.HeuristicGroup => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , hashTarget ),
+                _ => new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
+            };
+        }
+
+        private static DetailedAggregationResult<T> HeuristicDetailedGroupAggregate<T>( Skeleton<T>[] baseData ,
+                                                                  Func<IEnumerable<(T, double)> , T> aggregator ,
+                                                                  LanguageExt.HashSet<Skeleton> targets )
+        {
+            var f = Prelude.Try( () =>
+            {
+                var stopWatch = Stopwatch.StartNew();
+
+                var res = baseData
+                    .AsParallel()
+                    .SelectMany<Skeleton<T> , (Skeleton Key, double Weight, Skeleton<T> Input)>( skeleton =>
+                        skeleton.Value.Some( v =>
+                                skeleton.Key.Ancestors().Select( ancestor =>
+                                    (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
+                            .None( () => Seq.empty<(Skeleton, double, Skeleton<T>)>() ) )
+                    .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
+                    .GroupBy( s => s.Key )
+                    .Select( g => new SkeletonsAccumulator<T>( g.Key , g.Select( x => (x.Weight, x.Input) ) , aggregator ) )
+                    .ToArray();
+
+                stopWatch.Stop();
+
+                return new DetailedAggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , res , "Process OK" );
+            } );
+
+            return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+        }
+
+        private static DetailedAggregationResult<T> DetailedTargetedAggregate<T>( Skeleton<T>[] baseData ,
+                                                                    Func<IEnumerable<(T, double)> , T> aggregator ,
+                                                                    LanguageExt.HashSet<Skeleton> targets )
+        {
+            var f = Prelude.Try( () =>
+            {
+                var stopWatch = Stopwatch.StartNew();
+
+                var map = Map.createRange( baseData.AsParallel().GroupBy( s => s.Key )
+                    .Select( g => (g.Key, g.ToSeq()) ) );
+
+                var results = targets
+                    .AsParallel()
+                    .Select( skeleton =>
+                    {
+                        var components = skeleton.GetComposingSkeletons( map )
+                            .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
+                        return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
+                    } );
+
+                stopWatch.Stop();
+
+                return new DetailedAggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
+            } );
+
+            return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+        }
     }
 }
