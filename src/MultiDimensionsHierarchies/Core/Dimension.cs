@@ -29,5 +29,8 @@ namespace MultiDimensionsHierarchies.Core
 
         public Option<Bone> Find( string label )
             => Frame.Flatten().Find( b => b.Label.Equals( label ) );
+
+        public Seq<Bone> FindAll( string label )
+            => Frame.Flatten().Where( b => b.Label.Equals( label ) );
     }
 }
