@@ -273,14 +273,17 @@ namespace MultiDimensionsHierarchies
             {
                 var stopWatch = Stopwatch.StartNew();
 
-                var map = Map.createRange( baseData.AsParallel().GroupBy( s => s.Key )
-                    .Select( g => (g.Key, g.ToSeq()) ) );
+                //var map = Map.createRange( baseData.AsParallel().GroupBy( s => s.Key )
+                //    .Select( g => (g.Key, g.ToSeq()) ) );
+
+                var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
+                    .ToDictionary( g => g.Key , g => g.ToSeq() );
 
                 var results = targets
                     .AsParallel()
                     .Select( skeleton =>
                     {
-                        var components = skeleton.GetComposingSkeletons( map )
+                        var components = skeleton.GetComposingSkeletons( dictionary )
                             .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
                         return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
                     } )

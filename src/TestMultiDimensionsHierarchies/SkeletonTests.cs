@@ -421,9 +421,13 @@ public class SkeletonTests
                 return new Skeleton<int>( value , s );
             } );
 
-        var multipMap = Map.createRange( multiSkels
+        //var multipMap = Map.createRange( multiSkels
+        //    .GroupBy( s => s.Key )
+        //    .Select( g => (g.Key, g.ToSeq()) ) );
+
+        var multipMap = multiSkels
             .GroupBy( s => s.Key )
-            .Select( g => (g.Key, g.ToSeq()) ) );
+            .ToDictionary( g => g.Key , g => g.ToSeq() );
 
         dimA.Find( "2" )
             .ShouldBeSome( boneA =>
