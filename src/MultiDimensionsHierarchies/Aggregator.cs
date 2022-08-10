@@ -283,7 +283,8 @@ namespace MultiDimensionsHierarchies
                         var components = skeleton.GetComposingSkeletons( map )
                             .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
                         return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
-                    } );
+                    } )
+                    .ToArray();
 
                 stopWatch.Stop();
 
