@@ -1,6 +1,5 @@
 ﻿using LanguageExt;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace MultiDimensionsHierarchies.Core
@@ -22,13 +21,13 @@ namespace MultiDimensionsHierarchies.Core
             }
         }
 
-        public Seq<(double weight, Skeleton<T> data)> Components { get; private set; }
+        public Arr<(double weight, Skeleton<T> data)> Components { get; private set; }
         public Func<IEnumerable<(T value, double weight)> , T> Aggregator { get; }
 
         public SkeletonsAccumulator( Skeleton key , IEnumerable<(double, Skeleton<T>)> data , Func<IEnumerable<(T value, double weight)> , T> aggregator )
         {
             Key = key;
-            Components = Seq.createRange( data );
+            Components = Arr.createRange( data );
             Aggregator = aggregator;
         }
 
