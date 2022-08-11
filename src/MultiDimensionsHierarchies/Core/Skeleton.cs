@@ -75,16 +75,28 @@ namespace MultiDimensionsHierarchies.Core
         private Seq<Skeleton> _ancestors = Seq.empty<Skeleton>();
 
         public Seq<Skeleton> Ancestors()
+            => Ancestors( Seq<Bone>.Empty );
+
+        public Seq<Skeleton> Ancestors( Seq<Bone> filters )
         {
             if ( _ancestors.IsEmpty )
             {
                 _ancestors = Bones.Select( x => x.Ancestors().ToArray() )
-                     .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
-                         ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
+                     .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
+                         ( lists , bones ) =>
+                             lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                     .Select( l => new Skeleton( l ) )
                      .ToSeq();
             }
 
-            return _ancestors;
+            if ( filters.IsEmpty )
+                return _ancestors;
+
+            // Apply filters
+            var checks = filters.GroupBy( x => x.DimensionName )
+                .ToDictionary( g => g.Key , g => g.Select( x => x.Label ).Distinct().ToArray() );
+
+            return _ancestors.Where( s => s.HasDimensions( checks ) );
         }
 
         private Seq<Skeleton> _descendants = Seq.empty<Skeleton>();
@@ -94,8 +106,10 @@ namespace MultiDimensionsHierarchies.Core
             if ( _descendants.IsEmpty )
             {
                 _descendants = Bones.Select( x => x.Descendants().ToArray() )
-                    .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
-                        ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) )
+                    .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
+                         ( lists , bones ) =>
+                             lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                    .Select( l => new Skeleton( l ) )
                     .ToSeq();
             }
 
@@ -280,13 +294,20 @@ namespace MultiDimensionsHierarchies.Core
             return obj.GetType() == this.GetType() && Equals( (Skeleton) obj );
         }
 
+        private int? _hashCode;
+
         public override int GetHashCode()
         {
+            if ( _hashCode.HasValue )
+                return _hashCode.Value;
+
             unchecked
             {
                 var hashCode = Bones.Count;
                 foreach ( var bone in Bones )
                     hashCode += bone.GetHashCode();
+
+                _hashCode = hashCode;
                 return hashCode;
             }
         }

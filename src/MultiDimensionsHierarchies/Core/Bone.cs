@@ -121,6 +121,9 @@ namespace MultiDimensionsHierarchies.Core
             return _ancestors;
         }
 
+        public Seq<Bone> Ancestors( Seq<Bone> filters )
+            => filters.IsEmpty ? Ancestors() : Ancestors().Intersect( filters ).ToSeq();
+
         private IEnumerable<Bone> FetchLeaves()
         {
             if ( HasChild() )
@@ -163,14 +166,20 @@ namespace MultiDimensionsHierarchies.Core
             return Equals( (Bone) obj );
         }
 
+        private int? _hashCode;
+
         public override int GetHashCode()
         {
+            if ( _hashCode.HasValue )
+                return _hashCode.Value;
+
             unchecked
             {
                 var hashCode = Parent.Match( p => p.GetHashCode() , () => 1 );
                 hashCode += ( hashCode * 397 ) ^ Label.GetHashCode();
                 hashCode += ( hashCode * 397 ) ^ DimensionName.GetHashCode();
 
+                _hashCode = hashCode;
                 return hashCode;
             }
         }

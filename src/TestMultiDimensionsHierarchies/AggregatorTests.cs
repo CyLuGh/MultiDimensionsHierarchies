@@ -29,6 +29,24 @@ public class AggregatorTests
             } )
             .ToSeq();
 
+    internal static Seq<Skeleton<int>> GetLeavesSample( params Dimension[] dimensions )
+        => dimensions
+            .Combine().Where( s => s.IsLeaf() )
+            .Select( s =>
+            {
+                int value = 0;
+                foreach ( var bone in s.Bones )
+                {
+                    foreach ( var part in bone.Label.Split( '.' ) )
+                    {
+                        if ( int.TryParse( part , out int v ) )
+                            value += v;
+                    }
+                }
+                return new Skeleton<int>( value , s );
+            } )
+            .ToSeq();
+
     internal static Seq<Skeleton<int>> GetSample( params string[] dimensions )
         => dimensions.Select( d => SkeletonTests.GetDimension( d ) )
             .Combine()
@@ -145,6 +163,28 @@ public class AggregatorTests
 
         var cplx = dimensions.Select( d => SkeletonTests.GetDimension( d ) ).Complexity();
         result.Results.LongCount().Should().Be( cplx );
+    }
+
+    [Fact]
+    public void TestHeuristic2DimensionsWithFilter()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" }.Select( d => SkeletonTests.GetDimension( d ) ).ToArray();
+        var skeletons = GetLeavesSample( dimensions );
+
+        var filters = dimensions[1].FindAll( "2" );
+
+        var result = Aggregator.Aggregate( Method.Heuristic , skeletons , ( a , b ) => a + b , filters );
+
+        result.Status.Should().Be( AggregationStatus.OK );
+        var r2 = result.Results.Find( "2" , "2" );
+        r2.IsSome.Should().BeTrue();
+        r2.IfSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+        } );
+
+        result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , 2 ) / 2 );
     }
 
     [Fact]

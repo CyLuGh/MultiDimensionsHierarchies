@@ -42,9 +42,31 @@ namespace MultiDimensionsHierarchies
         /// <param name="groupAggregator">(Optional) How to aggregate a collection of T <typeparamref name="T"/></param>
         /// <param name="weightEffect">(Optional) How weight should be applied to T</param>
         /// <returns>AggregationResult which contains execution status and results if process OK.</returns>
-        public static AggregationResult<T> Aggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs ,
-            Func<T , T , T> aggregator , Func<IEnumerable<T> , T> groupAggregator = null , Func<T , double , T> weightEffect = null )
-            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , groupAggregator , weightEffect );
+        public static AggregationResult<T> Aggregate<T>(
+            Method method ,
+            IEnumerable<Skeleton<T>> inputs ,
+            Func<T , T , T> aggregator ,
+            Func<IEnumerable<T> , T> groupAggregator = null ,
+            Func<T , double , T> weightEffect = null )
+            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , Seq<Bone>.Empty , groupAggregator , weightEffect );
+
+        public static AggregationResult<T> Aggregate<T>(
+            Method method ,
+            IEnumerable<Skeleton<T>> inputs ,
+            Func<T , T , T> aggregator ,
+            Seq<Bone> ancestorsFilters ,
+            Func<IEnumerable<T> , T> groupAggregator = null ,
+            Func<T , double , T> weightEffect = null )
+            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , ancestorsFilters , groupAggregator , weightEffect );
+
+        public static AggregationResult<T> Aggregate<T>(
+            Method method ,
+            IEnumerable<Skeleton<T>> inputs ,
+            Func<T , T , T> aggregator ,
+            IEnumerable<Skeleton> targets ,
+            Func<IEnumerable<T> , T> groupAggregator = null ,
+            Func<T , double , T> weightEffect = null )
+            => Aggregate( method , inputs , aggregator , targets , Seq<Bone>.Empty , groupAggregator , weightEffect );
 
         /// <summary>
         /// Apply aggregator to inputs according to included hierarchies.
@@ -57,8 +79,13 @@ namespace MultiDimensionsHierarchies
         /// <param name="groupAggregator">(Optional) How to aggregate a collection of T <typeparamref name="T"/></param>
         /// <param name="weightEffect">(Optional) How weight should be applied to T</param>
         /// <returns>AggregationResult which contains execution status and results if process OK.</returns>
-        public static AggregationResult<T> Aggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs ,
-            Func<T , T , T> aggregator , IEnumerable<Skeleton> targets , Func<IEnumerable<T> , T> groupAggregator = null ,
+        public static AggregationResult<T> Aggregate<T>(
+            Method method ,
+            IEnumerable<Skeleton<T>> inputs ,
+            Func<T , T , T> aggregator ,
+            IEnumerable<Skeleton> targets ,
+            Seq<Bone> ancestorsFilters ,
+            Func<IEnumerable<T> , T> groupAggregator = null ,
             Func<T , double , T> weightEffect = null )
         {
             var hashTarget = new LanguageExt.HashSet<Skeleton>().TryAddRange( targets );
@@ -77,9 +104,9 @@ namespace MultiDimensionsHierarchies
             return method switch
             {
                 Method.Targeted => TargetedAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect ),
-                Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , hashTarget , weightEffect ),
-                Method.HeuristicDictionary => HeuristicDictionaryAggregate( groupedInputs , aggregator , hashTarget , weightEffect ),
-                Method.HeuristicGroup => HeuristicGroupAggregate( groupedInputs , aggregator , hashTarget , weightEffect ),
+                Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect ),
+                Method.HeuristicDictionary => HeuristicDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect ),
+                Method.HeuristicGroup => HeuristicGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
@@ -87,15 +114,17 @@ namespace MultiDimensionsHierarchies
         private static AggregationResult<T> HeuristicAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
+                                                                  Seq<Bone> ancestorsFilters ,
                                                                   Func<T , double , T> weightEffect )
         {
             // Choose most adequate method?
-            return HeuristicGroupAggregate( baseData , aggregator , targets , weightEffect );
+            return HeuristicGroupAggregate( baseData , aggregator , targets , ancestorsFilters , weightEffect );
         }
 
         private static AggregationResult<T> HeuristicGroupAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
+                                                                  Seq<Bone> ancestorsFilters ,
                                                                   Func<T , double , T> weightEffect )
         {
             var f = Prelude.Try( () =>
@@ -106,7 +135,7 @@ namespace MultiDimensionsHierarchies
                     .AsParallel()
                     .SelectMany( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors().Select( ancestor =>
+                                skeleton.Key.Ancestors( ancestorsFilters ).Select( ancestor =>
                                      new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
                             .None( () => Seq.empty<Skeleton<T>>() ) )
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
@@ -126,6 +155,7 @@ namespace MultiDimensionsHierarchies
         private static AggregationResult<T> HeuristicDictionaryAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
+                                                                  Seq<Bone> ancestorsFilters ,
                                                                   Func<T , double , T> weightEffect )
         {
             var f = Prelude.Try( () =>
@@ -136,7 +166,7 @@ namespace MultiDimensionsHierarchies
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
-                    foreach ( var ancestor in skeleton.Key.Ancestors().Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters ).Where( s => targets.IsEmpty || targets.Contains( s ) ) )
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
                         var wVal = from v in skeleton.Value
@@ -217,7 +247,19 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        public static DetailedAggregationResult<T> DetailedAggregate<T>( Method method , IEnumerable<Skeleton<T>> inputs , Func<IEnumerable<(T value, double weight)> , T> aggregator , IEnumerable<Skeleton> targets = null )
+        public static DetailedAggregationResult<T> DetailedAggregate<T>(
+            Method method ,
+            IEnumerable<Skeleton<T>> inputs ,
+            Func<IEnumerable<(T value, double weight)> , T> aggregator ,
+            IEnumerable<Skeleton> targets = null )
+            => DetailedAggregate( method , inputs , aggregator , Seq<Bone>.Empty , targets );
+
+        public static DetailedAggregationResult<T> DetailedAggregate<T>(
+            Method method ,
+            IEnumerable<Skeleton<T>> inputs ,
+            Func<IEnumerable<(T value, double weight)> , T> aggregator ,
+            Seq<Bone> ancestorsFilters ,
+            IEnumerable<Skeleton> targets = null )
         {
             var hashTarget = new LanguageExt.HashSet<Skeleton>();
             if ( targets != null )
@@ -229,15 +271,16 @@ namespace MultiDimensionsHierarchies
             return method switch
             {
                 Method.Targeted => DetailedTargetedAggregate( inputs.ToArray() , aggregator , hashTarget ),
-                Method.Heuristic => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , hashTarget ),
-                Method.HeuristicDictionary => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , hashTarget ),
-                Method.HeuristicGroup => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , hashTarget ),
+                Method.Heuristic => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
+                Method.HeuristicDictionary => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
+                Method.HeuristicGroup => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
                 _ => new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
 
         private static DetailedAggregationResult<T> HeuristicDetailedGroupAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<IEnumerable<(T, double)> , T> aggregator ,
+                                                                  Seq<Bone> ancestorsFilters ,
                                                                   LanguageExt.HashSet<Skeleton> targets )
         {
             var f = Prelude.Try( () =>
