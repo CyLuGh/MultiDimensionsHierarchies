@@ -116,6 +116,47 @@ public class SkeletonTests
     }
 
     [Fact]
+    public void TestAncestorsFilters()
+    {
+        var dimA = GetDimension( "Dim A" );
+        var dimB = GetDimension( "Dim B" );
+        var dimC = GetDimension( "Dim C" );
+
+        dimA.Find( "2.1" )
+            .ShouldBeSome( boneA =>
+            {
+                dimB.Find( "1.1" )
+                    .ShouldBeSome( boneB =>
+                    {
+                        var skeleton = new Skeleton( boneA , boneB );
+
+                        dimA.Find( "2" ).ShouldBeSome( filterA =>
+                        {
+                            var filters = Seq.create( filterA );
+                            var ancestors = skeleton.Ancestors( filters );
+                            ancestors.Length.Should().Be( 2 );
+                        } );
+                    } );
+
+                dimB.Find( "1.1.1" )
+                    .ShouldBeSome( boneB =>
+                    {
+                        var skeleton = new Skeleton( boneA , boneB );
+
+                        dimA.Find( "2" ).ShouldBeSome( filterA =>
+                        {
+                            dimB.Find( "1.1" ).ShouldBeSome( filterB =>
+                            {
+                                var filters = Seq.create( filterA , filterB );
+                                var ancestors = skeleton.Ancestors( filters );
+                                ancestors.Length.Should().Be( 1 );
+                            } );
+                        } );
+                    } );
+            } );
+    }
+
+    [Fact]
     public void TestRoot()
     {
         var dimA = GetDimension( "Dim A" );
