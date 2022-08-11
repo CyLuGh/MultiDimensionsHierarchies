@@ -226,9 +226,9 @@ namespace MultiDimensionsHierarchies.Core
             => GetComposingSkeletons( dimensions ,
                 completeKeys.Distinct().Select( ParseCompleteString ) );
 
-        public Seq<Skeleton<T>> GetComposingSkeletons<T>( Map<Skeleton , Skeleton<T>> map )
+        public Seq<Skeleton<T>> GetComposingSkeletons<T>( IDictionary<Skeleton , Skeleton<T>> map )
         {
-            var mappedData = map;
+            var mappedData = new Dictionary<Skeleton , Skeleton<T>>( map );
 
             foreach ( var bone in Bones )
             {
@@ -239,15 +239,16 @@ namespace MultiDimensionsHierarchies.Core
                                                     .None( () => false ) )
                     .Select( s => s.Key );
 
-                mappedData = mappedData.RemoveRange( unneededKeys );
+                foreach ( var key in unneededKeys )
+                    mappedData.Remove( key );
             }
 
             return mappedData.Values.ToSeq();
         }
 
-        public Seq<Skeleton<T>> GetComposingSkeletons<T>( Map<Skeleton , Seq<Skeleton<T>>> map )
+        public Seq<Skeleton<T>> GetComposingSkeletons<T>( IDictionary<Skeleton , Seq<Skeleton<T>>> map )
         {
-            var mappedData = map;
+            var mappedData = new Dictionary<Skeleton , Seq<Skeleton<T>>>( map );
 
             foreach ( var bone in Bones )
             {
@@ -258,7 +259,8 @@ namespace MultiDimensionsHierarchies.Core
                                                     .None( () => false ) )
                     .Select( s => s );
 
-                mappedData = mappedData.RemoveRange( unneededKeys );
+                foreach ( var key in unneededKeys )
+                    mappedData.Remove( key );
             }
 
             return mappedData.Values.Collect( o => o ).ToSeq();

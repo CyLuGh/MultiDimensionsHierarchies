@@ -385,7 +385,7 @@ public class SkeletonTests
             .Combine()
             .Select( s => new Skeleton<Unit>( s ) );
 
-        var map = Map.createRange( skels.Select( s => (s.Key, s) ) );
+        var map = skels.ToDictionary( s => s.Key );
 
         dimA.Find( "2" )
             .ShouldBeSome( boneA =>
@@ -421,9 +421,13 @@ public class SkeletonTests
                 return new Skeleton<int>( value , s );
             } );
 
-        var multipMap = Map.createRange( multiSkels
+        //var multipMap = Map.createRange( multiSkels
+        //    .GroupBy( s => s.Key )
+        //    .Select( g => (g.Key, g.ToSeq()) ) );
+
+        var multipMap = multiSkels
             .GroupBy( s => s.Key )
-            .Select( g => (g.Key, g.ToSeq()) ) );
+            .ToDictionary( g => g.Key , g => g.ToSeq() );
 
         dimA.Find( "2" )
             .ShouldBeSome( boneA =>

@@ -171,7 +171,7 @@ namespace MultiDimensionsHierarchies
 
             var simplifiedData = baseData
                .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
-               .Select( d => d.Except( uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray() ) )
+               .Select( d => d.Except( uniqueDimensions ) )
                .GroupBy( x => x.Key )
                .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
                .ToArray();
@@ -201,8 +201,7 @@ namespace MultiDimensionsHierarchies
                         SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , weightEffect )
                         : (baseData, targets);
 
-                var simplifiedMap = Map.create<Skeleton , Skeleton<T>>()
-                    .TryAddRange( simplifiedData.Select( s => (s.Key, s) ) );
+                var simplifiedMap = simplifiedData.ToDictionary( s => s.Key );
 
                 var results = simplifiedTargets
                     .AsParallel()
@@ -273,14 +272,14 @@ namespace MultiDimensionsHierarchies
             {
                 var stopWatch = Stopwatch.StartNew();
 
-                var map = Map.createRange( baseData.AsParallel().GroupBy( s => s.Key )
-                    .Select( g => (g.Key, g.ToSeq()) ) );
+                var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
+                    .ToDictionary( g => g.Key , g => g.ToSeq() );
 
                 var results = targets
                     .AsParallel()
                     .Select( skeleton =>
                     {
-                        var components = skeleton.GetComposingSkeletons( map )
+                        var components = skeleton.GetComposingSkeletons( dictionary )
                             .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
                         return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
                     } )
