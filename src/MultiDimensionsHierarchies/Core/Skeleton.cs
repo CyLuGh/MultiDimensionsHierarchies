@@ -247,11 +247,13 @@ namespace MultiDimensionsHierarchies.Core
             foreach ( var bone in Bones )
             {
                 var expectedBones = bone.Descendants();
-                var unneededKeys = map.Values
+                var unneededKeys = mappedData.Values
                     .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
                                                     .Some( b => !expectedBones.Contains( b ) )
                                                     .None( () => false ) )
-                    .Select( s => s.Key );
+                    .Select( s => s.Key )
+                    .ToSeq()
+                    .Strict();
 
                 foreach ( var key in unneededKeys )
                     mappedData.Remove( key );
@@ -271,7 +273,9 @@ namespace MultiDimensionsHierarchies.Core
                     .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
                                                     .Some( b => !expectedBones.Contains( b ) )
                                                     .None( () => false ) )
-                    .Select( s => s );
+                    .Select( s => s )
+                    .ToSeq()
+                    .Strict();
 
                 foreach ( var key in unneededKeys )
                     mappedData.Remove( key );
