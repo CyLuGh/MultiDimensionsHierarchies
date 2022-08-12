@@ -77,17 +77,17 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Skeleton> Ancestors()
             => Ancestors( Seq<Bone>.Empty );
 
-        public Seq<Skeleton> Ancestors( Seq<Bone> filters )
-        {
-            if ( _ancestors.IsEmpty )
-            {
-                _ancestors = Bones.Select( x => x.Ancestors().ToArray() )
+        private IEnumerable<Skeleton> BuildAncestors()
+            => Bones.Select( x => x.Ancestors().ToArray() )
                      .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
                          ( lists , bones ) =>
                              lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
-                     .Select( l => new Skeleton( l ) )
-                     .ToSeq();
-            }
+                     .Select( l => new Skeleton( l ) );
+
+        public Seq<Skeleton> Ancestors( Seq<Bone> filters )
+        {
+            if ( _ancestors.IsEmpty )
+                _ancestors = Prelude.Atom( BuildAncestors().ToSeq().Strict() );
 
             if ( filters.IsEmpty )
                 return _ancestors;
@@ -101,17 +101,17 @@ namespace MultiDimensionsHierarchies.Core
 
         private Seq<Skeleton> _descendants = Seq.empty<Skeleton>();
 
-        public Seq<Skeleton> Descendants()
-        {
-            if ( _descendants.IsEmpty )
-            {
-                _descendants = Bones.Select( x => x.Descendants().ToArray() )
+        private IEnumerable<Skeleton> BuildDescendants()
+            => Bones.Select( x => x.Descendants().ToArray() )
                     .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
                          ( lists , bones ) =>
                              lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
-                    .Select( l => new Skeleton( l ) )
-                    .ToSeq();
-            }
+                    .Select( l => new Skeleton( l ) );
+
+        public Seq<Skeleton> Descendants()
+        {
+            if ( _descendants.IsEmpty )
+                _descendants = Prelude.Atom( BuildDescendants().ToSeq().Strict() );
 
             return _descendants;
         }
@@ -267,7 +267,7 @@ namespace MultiDimensionsHierarchies.Core
             foreach ( var bone in Bones )
             {
                 var expectedBones = bone.Descendants();
-                var unneededKeys = map.Keys
+                var unneededKeys = mappedData.Keys
                     .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
                                                     .Some( b => !expectedBones.Contains( b ) )
                                                     .None( () => false ) )
