@@ -99,7 +99,7 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Bone> Leaves()
         {
             if ( _leaves.IsEmpty )
-                _leaves = Prelude.Atom( FetchLeaves().ToSeq() );
+                _leaves = Prelude.Atom( FetchLeaves().ToSeq().Strict() );
             return _leaves;
         }
 
@@ -108,7 +108,7 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Bone> Descendants()
         {
             if ( _descendants.IsEmpty )
-                _descendants = Prelude.Atom( BuildDescendants().ToSeq() );
+                _descendants = Prelude.Atom( BuildDescendants().ToSeq().Strict() );
             return _descendants;
         }
 
@@ -117,7 +117,7 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Bone> Ancestors()
         {
             if ( _ancestors.IsEmpty )
-                _ancestors = Prelude.Atom( BuildHierarchy().ToSeq() );
+                _ancestors = Prelude.Atom( BuildHierarchy().ToSeq().Strict() );
             return _ancestors;
         }
 
@@ -126,6 +126,8 @@ namespace MultiDimensionsHierarchies.Core
 
         private IEnumerable<Bone> FetchLeaves()
         {
+            //System.Diagnostics.Debug.WriteLine( "Fetch leaves for {0} in {1}" , Label , DimensionName );
+
             if ( HasChild() )
                 return Children.SelectMany( child => child.Leaves() );
 
@@ -134,6 +136,8 @@ namespace MultiDimensionsHierarchies.Core
 
         private IEnumerable<Bone> BuildDescendants()
         {
+            //System.Diagnostics.Debug.WriteLine( "Build descendants for {0} in {1}" , Label , DimensionName );
+
             yield return this;
 
             foreach ( var child in Children.SelectMany( c => c.Descendants() ) )
@@ -142,6 +146,8 @@ namespace MultiDimensionsHierarchies.Core
 
         private IEnumerable<Bone> BuildHierarchy()
         {
+            //System.Diagnostics.Debug.WriteLine( "Build hierarchy for {0} in {1}" , Label , DimensionName );
+
             yield return this;
 
             foreach ( var b in Parent.Some( p => p.Ancestors() ).None( () => Seq.empty<Bone>() ) )

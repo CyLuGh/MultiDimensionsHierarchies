@@ -166,7 +166,8 @@ namespace MultiDimensionsHierarchies
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
-                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters ).Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters )
+                        .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
                         var wVal = from v in skeleton.Value
@@ -219,26 +220,7 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var uniqueTargetBaseBones = targets
-                    .SelectMany( t => t.Bones )
-                    .GroupBy( b => b.DimensionName )
-                    .Where( g => g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) )
-                    .Select( g => g.First() )
-                    .ToSeq();
-
-                var (simplifiedData, simplifiedTargets) =
-                    uniqueTargetBaseBones.Any() ?
-                        SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , weightEffect )
-                        : (baseData, targets);
-
-                var simplifiedMap = simplifiedData.ToDictionary( s => s.Key );
-
-                var results = simplifiedTargets
-                    .AsParallel()
-                    .Select( t => t.GetComposingSkeletons( simplifiedMap ).Aggregate( t , groupAggregator , weightEffect ) )
-                    .Select( r => r.Add( uniqueTargetBaseBones ) )
-                    .ToArr();
-
+                var results = StreamAggregateResults( baseData , targets , groupAggregator , weightEffect );
                 stopWatch.Stop();
 
                 return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
@@ -291,7 +273,7 @@ namespace MultiDimensionsHierarchies
                     .AsParallel()
                     .SelectMany<Skeleton<T> , (Skeleton Key, double Weight, Skeleton<T> Input)>( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors().Select( ancestor =>
+                                skeleton.Key.Ancestors( ancestorsFilters ).Select( ancestor =>
                                     (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
                             .None( () => Seq.empty<(Skeleton, double, Skeleton<T>)>() ) )
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
@@ -314,26 +296,61 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-
-                var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
-                    .ToDictionary( g => g.Key , g => g.ToSeq() );
-
-                var results = targets
-                    .AsParallel()
-                    .Select( skeleton =>
-                    {
-                        var components = skeleton.GetComposingSkeletons( dictionary )
-                            .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
-                        return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
-                    } )
-                    .ToArray();
-
+                var results = StreamDetailedAggregateResults( baseData , targets , aggregator ).ToArray();
                 stopWatch.Stop();
 
                 return new DetailedAggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
             } );
 
             return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+        }
+
+        public static IEnumerable<Skeleton<T>> StreamAggregateResults<T>( Skeleton<T>[] baseData ,
+                                                                 LanguageExt.HashSet<Skeleton> targets ,
+                                                                 Func<IEnumerable<T> , T> groupAggregator ,
+                                                                 Func<T , double , T> weightEffect = null )
+        {
+            weightEffect ??= ( t , _ ) => t;
+
+            var uniqueTargetBaseBones = targets
+                    .SelectMany( t => t.Bones )
+                    .GroupBy( b => b.DimensionName )
+                    .Where( g => g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) )
+                    .Select( g => g.First() )
+                    .ToSeq();
+
+            var (simplifiedData, simplifiedTargets) =
+                uniqueTargetBaseBones.Any() ?
+                    SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , weightEffect )
+                    : (baseData, targets);
+
+            var simplifiedMap = simplifiedData.ToDictionary( s => s.Key );
+
+            var results = simplifiedTargets
+                .AsParallel()
+                .Select( t => t.GetComposingSkeletons( simplifiedMap ).Aggregate( t , groupAggregator , weightEffect ) )
+                .Select( r => r.Add( uniqueTargetBaseBones ) );
+
+            return results;
+        }
+
+        public static IEnumerable<SkeletonsAccumulator<T>> StreamDetailedAggregateResults<T>( Skeleton<T>[] baseData ,
+                                                                 LanguageExt.HashSet<Skeleton> targets ,
+                                                                 Func<IEnumerable<(T, double)> , T> aggregator )
+        {
+            var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
+                    .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
+
+            var results = targets
+                .AsParallel()
+                .Select( skeleton =>
+                {
+                    var components = skeleton.GetComposingSkeletons( dictionary )
+                        .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
+                    return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
+                } );
+
+            return results;
         }
     }
 }
