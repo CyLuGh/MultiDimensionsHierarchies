@@ -220,7 +220,8 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var results = StreamAggregateResults( baseData , targets , groupAggregator , weightEffect );
+                var results = StreamAggregateResults( baseData , targets , groupAggregator , weightEffect )
+                    .ToArray();
                 stopWatch.Stop();
 
                 return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
