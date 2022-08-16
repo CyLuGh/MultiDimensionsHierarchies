@@ -25,12 +25,16 @@ namespace MultiDimensionsHierarchies.Core
         public static Skeleton<T> Aggregate<T>( this IEnumerable<Skeleton<T>> skeletons ,
             Skeleton key , Func<IEnumerable<T> , T> aggregator , Func<T , double , T> weightEffect )
         {
-            return new( aggregator( skeletons.Select( o =>
+            var items = skeletons.Select( o =>
             {
                 var w = Skeleton.ComputeResultingWeight( o.Key , key );
                 return o.Value.Some( v => Option<(T, double)>.Some( (v, w) ) ).None( () => Option<(T, double)>.None );
-            } ).Somes()
-            .Select( t => weightEffect( t.Item1 , t.Item2 ) ) ) , key );
+            } ).Somes().ToSeq();
+
+            /* Make a difference between 0 from data and data being not present */
+            return items.IsEmpty ?
+                new( Option<T>.None , key )
+                : new( aggregator( items.Select( t => weightEffect( t.Item1 , t.Item2 ) ) ) , key );
         }
 
         public static Option<Skeleton<T>> Aggregate<T>( this IEnumerable<Skeleton<T>> skeletons , Func<T , T , T> aggregator )
