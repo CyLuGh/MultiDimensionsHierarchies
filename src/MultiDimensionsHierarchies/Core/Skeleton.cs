@@ -1,5 +1,6 @@
 ﻿using LanguageExt;
 using MoreLinq;
+using NonBlocking;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -74,20 +75,15 @@ namespace MultiDimensionsHierarchies.Core
 
         private Seq<Skeleton> _ancestors = Seq.empty<Skeleton>();
 
-        public Seq<Skeleton> Ancestors()
-            => Ancestors( Seq<Bone>.Empty );
+        public Seq<Skeleton> Ancestors( NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
+            => Ancestors( Seq<Bone>.Empty , cache );
 
-        private IEnumerable<Skeleton> BuildAncestors()
-            => Bones.Select( x => x.Ancestors().ToArray() )
-                     .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
-                         ( lists , bones ) =>
-                             lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
-                     .Select( l => new Skeleton( l ) );
-
-        public Seq<Skeleton> Ancestors( Seq<Bone> filters )
+        public Seq<Skeleton> Ancestors( Seq<Bone> filters , NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
         {
+            cache ??= new();
+
             if ( _ancestors.IsEmpty )
-                _ancestors = Prelude.Atom( BuildAncestors().ToSeq().Strict() );
+                _ancestors = Prelude.Atom( BuildAncestors( cache ).ToSeq().Strict() );
 
             if ( filters.IsEmpty )
                 return _ancestors;
@@ -99,19 +95,45 @@ namespace MultiDimensionsHierarchies.Core
             return _ancestors.Where( s => s.HasDimensions( checks ) );
         }
 
+        private IEnumerable<Skeleton> BuildAncestors( NonBlocking.ConcurrentDictionary<string , Skeleton> cache )
+            => Bones.Select( x => x.Ancestors().ToArray() )
+                     .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
+                         ( lists , bones ) =>
+                             lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                     .Select( l =>
+                     {
+                         var key = l.ToComposedString();
+                         if ( !cache.TryGetValue( key , out var skel ) )
+                         {
+                             skel = new Skeleton( l );
+                             cache.TryAdd( key , skel );
+                         }
+                         return skel;
+                     } );
+
         private Seq<Skeleton> _descendants = Seq.empty<Skeleton>();
 
-        private IEnumerable<Skeleton> BuildDescendants()
+        private IEnumerable<Skeleton> BuildDescendants( NonBlocking.ConcurrentDictionary<string , Skeleton> cache )
             => Bones.Select( x => x.Descendants().ToArray() )
                     .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
                          ( lists , bones ) =>
                              lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
-                    .Select( l => new Skeleton( l ) );
+                    .Select( l =>
+                    {
+                        var key = l.ToComposedString();
+                        if ( !cache.TryGetValue( key , out var skel ) )
+                        {
+                            skel = new Skeleton( l );
+                            cache.TryAdd( key , skel );
+                        }
+                        return skel;
+                    } );
 
-        public Seq<Skeleton> Descendants()
+        public Seq<Skeleton> Descendants( NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
         {
+            cache ??= new();
             if ( _descendants.IsEmpty )
-                _descendants = Prelude.Atom( BuildDescendants().ToSeq().Strict() );
+                _descendants = Prelude.Atom( BuildDescendants( cache ).ToSeq().Strict() );
 
             return _descendants;
         }

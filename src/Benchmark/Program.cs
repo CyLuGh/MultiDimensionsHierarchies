@@ -18,17 +18,17 @@ public static class Program
 
     public static void Main( string[] args )
     {
-        BenchmarkRunner.Run<TargetedAggregate>();
-        BenchmarkRunner.Run<HeuristicAggregate>();
+        //BenchmarkRunner.Run<TargetedAggregate>();
+        //BenchmarkRunner.Run<HeuristicAggregate>();
 
-        //var file = $"results_{Guid.NewGuid()}.log";
+        var file = $"results_{Guid.NewGuid()}.log";
 
-        //Trace.Listeners.Add( new TextWriterTraceListener( Console.Out ) );
-        //Trace.Listeners.Add( new TextWriterTraceListener( file ) );
-        //Trace.AutoFlush = true;
+        Trace.Listeners.Add( new TextWriterTraceListener( Console.Out ) );
+        Trace.Listeners.Add( new TextWriterTraceListener( file ) );
+        Trace.AutoFlush = true;
 
-        //var heuristic = new HeuristicAggregate();
-        //var targeted = new TargetedAggregate();
+        var heuristic = new HeuristicAggregate();
+        var targeted = new TargetedAggregate();
 
         //if ( int.TryParse( args[0] , out var size )
         //    && int.TryParse( args[1] , out var dimension )
@@ -38,24 +38,25 @@ public static class Program
         //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
         //}
 
-        //var sizes = new[] { 10_000 , 50_000 , 100_000 };
-        //var dimensions = new[] { 3 , 4 , 5 };
-        //var targets = new[] { 500 , 1_000 , 5_000 };
+        var sizes = new[] { 10_000/* , 50_000 , 100_000 */};
+        var dimensions = new[] { 3 /*, 4 , 5 */};
+        var targets = new[] { 500/* , 1_000 , 5_000*/ };
 
-        //foreach ( var dimension in dimensions )
-        //    foreach ( var size in sizes )
-        //    {
-        //        TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
+        foreach ( var dimension in dimensions )
+            foreach ( var size in sizes )
+            {
+                TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
+                TestMethod( heuristic , "Dictionary" , agg => agg.Dictionary() , dimension , size );
 
-        //        foreach ( var target in targets )
-        //        {
-        //            Configure( targeted , dimension , size , target );
-        //            if ( target > size || target > targeted.Targets.LongLength )
-        //                continue;
+                foreach ( var target in targets )
+                {
+                    Configure( targeted , dimension , size , target );
+                    if ( target > size || target > targeted.Targets.LongLength )
+                        continue;
 
-        //            TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
-        //        }
-        //    }
+                    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
+                }
+            }
     }
 
     private static void Configure<T>( T agg , int dimensionCount , int sampleSize , int targetCount = 0 ) where T : AllMethodsAggregate
@@ -93,14 +94,20 @@ public static class Program
         }
 
         Console.WriteLine();
-        Trace.WriteLine( $"{agg} {desc} Dimensions: {dimensionCount} Sample size: {sampleSize} Targets count: {targetCount} Average duration: {TimeSpan.FromTicks( (long) durations.Average( x => x.Ticks ) )} Results: {results?.Results.LongCount() ?? 0}" );
+        Trace.WriteLine( $"{agg} {desc} " +
+            $"Dimensions: {dimensionCount} " +
+            $"Sample size: {sampleSize} " +
+            $"Targets count: {targetCount} " +
+            $"Average duration: {TimeSpan.FromTicks( (long) durations.Average( x => x.Ticks ) )} " +
+            $"Results: {results?.Results.LongCount() ?? 0} " +
+            $"Average per result: {( results?.Results.LongCount() ?? 0 ) / ( TimeSpan.FromTicks( (long) durations.Average( x => x.Ticks ) ) ).TotalSeconds}" );
         Console.WriteLine();
     }
 
     private static void Test( HeuristicAggregate hA , TargetedAggregate tA , int dimensionCount , int sampleSize , int targetCount = 0 )
     {
         TestMethod( hA , "Group" , agg => agg.Group() , dimensionCount , sampleSize );
-        //TestMethod( hA , "Dictionary" , agg => agg.Dictionary() , dimensionCount , sampleSize );
+        TestMethod( hA , "Dictionary" , agg => agg.Dictionary() , dimensionCount , sampleSize );
         TestMethod( tA , "Target" , agg => agg.Targeted() , dimensionCount , sampleSize , targetCount );
         //TestMethod( tA , "Heuristic" , agg => agg.Heuristic() , dimensionCount , sampleSize , targetCount );
     }

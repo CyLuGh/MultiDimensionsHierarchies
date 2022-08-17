@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace MultiDimensionsHierarchies.Core
 {
@@ -31,5 +32,8 @@ namespace MultiDimensionsHierarchies.Core
 
             return true;
         }
+
+        public static string ToComposedString( this Seq<Bone> bones )
+            => string.Join( ":" , bones.OrderBy( b => b.DimensionName ).Select( b => b.FullPath ) );
     }
 }

@@ -130,12 +130,13 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
+                var cache = new NonBlocking.ConcurrentDictionary<string , Skeleton>();
 
                 var res = baseData
                     .AsParallel()
                     .SelectMany( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors( ancestorsFilters ).Select( ancestor =>
+                                skeleton.Key.Ancestors( ancestorsFilters , cache ).Select( ancestor =>
                                      new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
                             .None( () => Seq.empty<Skeleton<T>>() ) )
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
@@ -163,10 +164,11 @@ namespace MultiDimensionsHierarchies
                 var stopWatch = Stopwatch.StartNew();
 
                 var results = new NonBlocking.ConcurrentDictionary<Skeleton , Option<T>>();
+                var cache = new NonBlocking.ConcurrentDictionary<string , Skeleton>();
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
-                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters )
+                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters , cache )
                         .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
@@ -255,7 +257,7 @@ namespace MultiDimensionsHierarchies
             {
                 Method.Targeted => DetailedTargetedAggregate( inputs.ToArray() , aggregator , hashTarget ),
                 Method.Heuristic => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
-                Method.HeuristicDictionary => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
+                Method.HeuristicDictionary => HeuristicDetailedDictionaryAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
                 Method.HeuristicGroup => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
                 _ => new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
@@ -269,17 +271,55 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
+                var cache = new NonBlocking.ConcurrentDictionary<string , Skeleton>();
 
                 var res = baseData
                     .AsParallel()
                     .SelectMany<Skeleton<T> , (Skeleton Key, double Weight, Skeleton<T> Input)>( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors( ancestorsFilters ).Select( ancestor =>
+                                skeleton.Key.Ancestors( ancestorsFilters , cache ).Select( ancestor =>
                                     (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
                             .None( () => Seq.empty<(Skeleton, double, Skeleton<T>)>() ) )
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .GroupBy( s => s.Key )
                     .Select( g => new SkeletonsAccumulator<T>( g.Key , g.Select( x => (x.Weight, x.Input) ) , aggregator ) )
+                    .ToArray();
+
+                stopWatch.Stop();
+
+                return new DetailedAggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , res , "Process OK" );
+            } );
+
+            return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+        }
+
+        private static DetailedAggregationResult<T> HeuristicDetailedDictionaryAggregate<T>( Skeleton<T>[] baseData ,
+                                                                  Func<IEnumerable<(T, double)> , T> aggregator ,
+                                                                  Seq<Bone> ancestorsFilters ,
+                                                                  LanguageExt.HashSet<Skeleton> targets )
+        {
+            var f = Prelude.Try( () =>
+            {
+                var stopWatch = Stopwatch.StartNew();
+
+                var results = new NonBlocking.ConcurrentDictionary<Skeleton , List<(double, Skeleton<T>)>>();
+                var cache = new NonBlocking.ConcurrentDictionary<string , Skeleton>();
+
+                Parallel.ForEach( baseData , skeleton =>
+                {
+                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters , cache )
+                        .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    {
+                        var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
+
+                        results.AddOrUpdate( ancestor , new List<(double, Skeleton<T>)> { (weight, skeleton) } ,
+                            ( _ , list ) => { list.Add( (weight, skeleton) ); return list; } );
+                    }
+                } );
+
+                var res = results
+                    .AsParallel()
+                    .Select( kvp => new SkeletonsAccumulator<T>( kvp.Key , kvp.Value , aggregator ) )
                     .ToArray();
 
                 stopWatch.Stop();
