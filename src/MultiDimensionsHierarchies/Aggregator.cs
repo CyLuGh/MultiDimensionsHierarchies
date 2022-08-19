@@ -126,6 +126,22 @@ namespace MultiDimensionsHierarchies
             return HeuristicGroupAggregate( baseData , aggregator , targets , ancestorsFilters , weightEffect , useCachedSkeletons );
         }
 
+        private static HashMap<string , LanguageExt.HashSet<Bone>> BuildFiltersFromTargets( LanguageExt.HashSet<Skeleton> targets )
+           => HashMap.createRange( targets.SelectMany( t => t.Bones )
+               .GroupBy( b => b.DimensionName )
+               .Select( g => (g.Key, HashSet.createRange( g )) ) );
+
+        private static Func<Skeleton , Seq<Skeleton>> GetAncestorsBuilder( Seq<Bone> ancestorsFilters , NonBlocking.ConcurrentDictionary<string , Skeleton> cache , LanguageExt.HashSet<Skeleton> targets )
+        {
+            if ( targets.Count == 0 )
+                return s => s.Ancestors( ancestorsFilters , cache );
+
+            var targetFilters = BuildFiltersFromTargets( targets );
+            return s => s.BuildFilteredSkeletons( targetFilters )
+                .Where( x => targets.Contains( x ) )
+                .ToSeq().Strict();
+        }
+
         private static AggregationResult<T> HeuristicGroupAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
@@ -142,10 +158,10 @@ namespace MultiDimensionsHierarchies
                     .AsParallel()
                     .SelectMany( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors( ancestorsFilters , cache ).Select( ancestor =>
-                                     new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
+                            GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key )
+                                    .Select( ancestor =>
+                                        new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
                             .None( () => Seq.empty<Skeleton<T>>() ) )
-                    .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .GroupBy( s => s.Key )
                     .Select( g => g.Aggregate( aggregator ) )
                     .Somes()
@@ -175,8 +191,7 @@ namespace MultiDimensionsHierarchies
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
-                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters , cache )
-                        .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    foreach ( var ancestor in GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key ) )
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
                         var wVal = from v in skeleton.Value
@@ -286,8 +301,9 @@ namespace MultiDimensionsHierarchies
                     .AsParallel()
                     .SelectMany<Skeleton<T> , (Skeleton Key, double Weight, Skeleton<T> Input)>( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors( ancestorsFilters , cache ).Select( ancestor =>
-                                    (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
+                                GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key )
+                                    .Select( ancestor =>
+                                        (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
                             .None( () => Seq.empty<(Skeleton, double, Skeleton<T>)>() ) )
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .GroupBy( s => s.Key )
@@ -317,8 +333,7 @@ namespace MultiDimensionsHierarchies
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
-                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters , cache )
-                        .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    foreach ( var ancestor in GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key ) )
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
 

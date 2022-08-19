@@ -49,10 +49,10 @@ namespace Benchmark
             return Aggregator.DetailedAggregate( Method.Targeted , Data , doubles => doubles.Sum( t => t.value ) , Targets );
         }
 
-        //[Benchmark]
-        //public AggregationResult<double> Heuristic()
-        //{
-        //    return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
-        //}
+        [Benchmark]
+        public AggregationResult<double> Heuristic()
+        {
+            return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+        }
     }
 }

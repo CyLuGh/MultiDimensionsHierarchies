@@ -13,8 +13,8 @@ using System.Runtime.InteropServices;
 
 public static class Program
 {
-    public static int Tries => 4;
-    public static int Warmup => 1;
+    public static int Tries => 1;
+    public static int Warmup => 0;
 
     public static void Main( string[] args )
     {
@@ -43,26 +43,27 @@ public static class Program
         //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
         //}
 
-        var sizes = new[] { 10_000 , 100_000 , 1_000_000 };
-        var dimensions = new[] { 3 , 4 , 5 , 6 };
-        var targets = new[] { 500 , 1_000 , 5_000 , 15_000 };
+        var sizes = new[] { /*10_000 ,*/ 100_000 , 1_000_000 };
+        var dimensions = new[] { /*3 ,*/ 4 /*, 5 , 6*/ };
+        var targets = new[] { /*500 , 1_000 ,*/ 5_000 , 15_000 };
 
         foreach ( var dimension in dimensions )
             foreach ( var size in sizes )
             {
-                TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
-                TestMethod( heuristic , "Group Cached" , agg => agg.GroupCache() , dimension , size );
-                TestMethod( heuristic , "Dictionary" , agg => agg.Dictionary() , dimension , size );
-                TestMethod( heuristic , "Dictionary Cached" , agg => agg.DictionaryCache() , dimension , size );
+                //TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
+                //TestMethod( heuristic , "Group Cached" , agg => agg.GroupCache() , dimension , size );
+                //TestMethod( heuristic , "Dictionary" , agg => agg.Dictionary() , dimension , size );
+                //TestMethod( heuristic , "Dictionary Cached" , agg => agg.DictionaryCache() , dimension , size );
 
-                //foreach ( var target in targets )
-                //{
-                //    Configure( targeted , dimension , size , target );
-                //    if ( target > size || target > targeted.Targets.LongLength )
-                //        continue;
+                foreach ( var target in targets )
+                {
+                    Configure( targeted , dimension , size , target );
+                    if ( target > size || target > targeted.Targets.LongLength )
+                        continue;
 
-                //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
-                //}
+                    //TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
+                    TestMethod( targeted , "Heuristic" , agg => agg.Heuristic() , dimension , size , target );
+                }
             }
     }
 

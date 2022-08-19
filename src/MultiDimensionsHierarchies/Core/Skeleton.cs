@@ -94,6 +94,18 @@ namespace MultiDimensionsHierarchies.Core
             return _ancestors.Where( s => s.HasDimensions( checks ) );
         }
 
+        internal IEnumerable<Skeleton> BuildFilteredSkeletons( HashMap<string , LanguageExt.HashSet<Bone>> filters )
+            => Bones.Select( x =>
+            {
+                var ancestors = from set in filters.Find( x.DimensionName )
+                                select x.Ancestors().Where( o => set.Contains( o ) );
+                return ancestors.Match( a => a , () => Seq<Bone>.Empty );
+            } )
+            .Aggregate<Seq<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
+                         ( lists , bones ) =>
+                             lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+            .Select( l => new Skeleton( l ) );
+
         private IEnumerable<Skeleton> BuildAncestors( NonBlocking.ConcurrentDictionary<string , Skeleton> cache )
             => Bones.Select( x => x.Ancestors().ToArray() )
                      .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
