@@ -21,6 +21,11 @@ public static class Program
         //BenchmarkRunner.Run<TargetedAggregate>();
         //BenchmarkRunner.Run<HeuristicAggregate>();
 
+        ManualBenchmark();
+    }
+
+    private static void ManualBenchmark()
+    {
         var file = $"results_{Guid.NewGuid()}.log";
 
         Trace.Listeners.Add( new TextWriterTraceListener( Console.Out ) );
@@ -38,24 +43,26 @@ public static class Program
         //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
         //}
 
-        var sizes = new[] { 10_000/* , 50_000 , 100_000 */};
-        var dimensions = new[] { 3 /*, 4 , 5 */};
-        var targets = new[] { 500/* , 1_000 , 5_000*/ };
+        var sizes = new[] { 10_000 , 100_000 , 1_000_000 };
+        var dimensions = new[] { 3 , 4 , 5 , 6 };
+        var targets = new[] { 500 , 1_000 , 5_000 , 15_000 };
 
         foreach ( var dimension in dimensions )
             foreach ( var size in sizes )
             {
                 TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
+                TestMethod( heuristic , "Group Cached" , agg => agg.GroupCache() , dimension , size );
                 TestMethod( heuristic , "Dictionary" , agg => agg.Dictionary() , dimension , size );
+                TestMethod( heuristic , "Dictionary Cached" , agg => agg.DictionaryCache() , dimension , size );
 
-                foreach ( var target in targets )
-                {
-                    Configure( targeted , dimension , size , target );
-                    if ( target > size || target > targeted.Targets.LongLength )
-                        continue;
+                //foreach ( var target in targets )
+                //{
+                //    Configure( targeted , dimension , size , target );
+                //    if ( target > size || target > targeted.Targets.LongLength )
+                //        continue;
 
-                    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
-                }
+                //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
+                //}
             }
     }
 
@@ -72,6 +79,8 @@ public static class Program
 
     private static void TestMethod<T, U>( T agg , string desc , Func<T , AggregationResult<U>> method , int dimensionCount , int sampleSize , int targetCount = 0 ) where T : AllMethodsAggregate
     {
+        GC.Collect();
+
         Console.WriteLine( $"{agg} {desc} Dimensions: {dimensionCount} Sample size: {sampleSize} Targets count: {targetCount}" );
 
         Console.WriteLine( "Warming up..." );
@@ -87,6 +96,7 @@ public static class Program
         var durations = new Queue<TimeSpan>();
         for ( int i = 0 ; i < Tries ; i++ )
         {
+            Console.WriteLine( "Executing {0}" , i + 1 );
             Configure( agg , dimensionCount , sampleSize , targetCount );
             results = method( agg );
             durations.Enqueue( results.Duration );

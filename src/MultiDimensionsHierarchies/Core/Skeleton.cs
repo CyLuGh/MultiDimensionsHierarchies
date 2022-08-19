@@ -80,10 +80,9 @@ namespace MultiDimensionsHierarchies.Core
 
         public Seq<Skeleton> Ancestors( Seq<Bone> filters , NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
         {
-            cache ??= new();
-
             if ( _ancestors.IsEmpty )
-                _ancestors = Prelude.Atom( BuildAncestors( cache ).ToSeq().Strict() );
+                _ancestors = cache != null ? Prelude.Atom( BuildAncestors( cache ).ToSeq().Strict() )
+                    : Prelude.Atom( BuildAncestors().ToSeq().Strict() );
 
             if ( filters.IsEmpty )
                 return _ancestors;
@@ -111,7 +110,21 @@ namespace MultiDimensionsHierarchies.Core
                          return skel;
                      } );
 
+        private IEnumerable<Skeleton> BuildAncestors()
+            => Bones.Select( x => x.Ancestors().ToArray() )
+                     .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
+                         ( lists , bones ) =>
+                             lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                     .Select( l => new Skeleton( l ) );
+
         private Seq<Skeleton> _descendants = Seq.empty<Skeleton>();
+
+        private IEnumerable<Skeleton> BuildDescendants()
+            => Bones.Select( x => x.Descendants().ToArray() )
+                    .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
+                         ( lists , bones ) =>
+                             lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                    .Select( l => new Skeleton( l ) );
 
         private IEnumerable<Skeleton> BuildDescendants( NonBlocking.ConcurrentDictionary<string , Skeleton> cache )
             => Bones.Select( x => x.Descendants().ToArray() )
@@ -131,9 +144,9 @@ namespace MultiDimensionsHierarchies.Core
 
         public Seq<Skeleton> Descendants( NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
         {
-            cache ??= new();
             if ( _descendants.IsEmpty )
-                _descendants = Prelude.Atom( BuildDescendants( cache ).ToSeq().Strict() );
+                _descendants = cache != null ? Prelude.Atom( BuildDescendants( cache ).ToSeq().Strict() )
+                    : Prelude.Atom( BuildDescendants().ToSeq().Strict() );
 
             return _descendants;
         }
