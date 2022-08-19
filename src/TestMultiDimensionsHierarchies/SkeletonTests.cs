@@ -85,10 +85,10 @@ public class SkeletonTests
         var dimC = GetDimension( "Dim C" );
 
         dimA.Find( "2.1" )
-            .IfSome( boneA =>
+            .ShouldBeSome( boneA =>
             {
                 dimB.Find( "1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         var skeleton = new Skeleton( boneA , boneB );
 
@@ -97,7 +97,7 @@ public class SkeletonTests
                     } );
 
                 dimB.Find( "1.1.1" )
-                    .IfSome( boneB =>
+                    .ShouldBeSome( boneB =>
                     {
                         var skeleton = new Skeleton( boneA , boneB );
 
@@ -105,10 +105,50 @@ public class SkeletonTests
                         ancestors.Length.Should().Be( 6 );
 
                         dimC.Find( "1.1.1.1" )
-                            .IfSome( boneC =>
+                            .ShouldBeSome( boneC =>
                             {
                                 skeleton = new Skeleton( boneA , boneB , boneC );
                                 ancestors = skeleton.Ancestors();
+                                ancestors.Length.Should().Be( 24 );
+                            } );
+                    } );
+            } );
+    }
+
+    [Fact]
+    public void TestAncestorsCache()
+    {
+        var dimA = GetDimension( "Dim A" );
+        var dimB = GetDimension( "Dim B" );
+        var dimC = GetDimension( "Dim C" );
+
+        var cache = new NonBlocking.ConcurrentDictionary<string , Skeleton>();
+
+        dimA.Find( "2.1" )
+            .ShouldBeSome( boneA =>
+            {
+                dimB.Find( "1.1" )
+                    .ShouldBeSome( boneB =>
+                    {
+                        var skeleton = new Skeleton( boneA , boneB );
+
+                        var ancestors = skeleton.Ancestors( cache );
+                        ancestors.Length.Should().Be( 4 );
+                    } );
+
+                dimB.Find( "1.1.1" )
+                    .ShouldBeSome( boneB =>
+                    {
+                        var skeleton = new Skeleton( boneA , boneB );
+
+                        var ancestors = skeleton.Ancestors( cache );
+                        ancestors.Length.Should().Be( 6 );
+
+                        dimC.Find( "1.1.1.1" )
+                            .ShouldBeSome( boneC =>
+                            {
+                                skeleton = new Skeleton( boneA , boneB , boneC );
+                                ancestors = skeleton.Ancestors( cache );
                                 ancestors.Length.Should().Be( 24 );
                             } );
                     } );

@@ -12,10 +12,10 @@ namespace Benchmark
 {
     public abstract class AllMethodsAggregate
     {
-        [Params( 10_000 )]
+        [Params( 10_000 , 100_000 , 1_000_000 )]
         public int SampleSize { get; set; }
 
-        [Params( 4 )]
+        [Params( 2 , 3 , 4 , 5 , 6 )]
         public int DimensionsCount { get; set; }
 
         public Skeleton<double>[] Data;
@@ -42,10 +42,10 @@ namespace Benchmark
         [GlobalSetup]
         public virtual void GlobalSetup()
         {
-            Trace.WriteLine( "Building sample" );
+            //Console.WriteLine( "Building sample" );
             var sample = BuildSample( dimA.Flatten().Select( b => b.Label ).Distinct().ToArray() , SampleSize );
-            Trace.WriteLine( "Building skeletons" );
 
+            //Console.WriteLine( "Building skeletons" );
             Data = SkeletonFactory.BuildSkeletons(
                     sample ,
                     DataInput.Parser ,

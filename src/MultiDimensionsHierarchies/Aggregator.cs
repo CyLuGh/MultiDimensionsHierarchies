@@ -47,8 +47,9 @@ namespace MultiDimensionsHierarchies
             IEnumerable<Skeleton<T>> inputs ,
             Func<T , T , T> aggregator ,
             Func<IEnumerable<T> , T> groupAggregator = null ,
-            Func<T , double , T> weightEffect = null )
-            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , Seq<Bone>.Empty , groupAggregator , weightEffect );
+            Func<T , double , T> weightEffect = null ,
+            bool useCachedSkeletons = true )
+            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , Seq<Bone>.Empty , groupAggregator , weightEffect , useCachedSkeletons );
 
         public static AggregationResult<T> Aggregate<T>(
             Method method ,
@@ -56,8 +57,9 @@ namespace MultiDimensionsHierarchies
             Func<T , T , T> aggregator ,
             Seq<Bone> ancestorsFilters ,
             Func<IEnumerable<T> , T> groupAggregator = null ,
-            Func<T , double , T> weightEffect = null )
-            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , ancestorsFilters , groupAggregator , weightEffect );
+            Func<T , double , T> weightEffect = null ,
+            bool useCachedSkeletons = true )
+            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , ancestorsFilters , groupAggregator , weightEffect , useCachedSkeletons );
 
         public static AggregationResult<T> Aggregate<T>(
             Method method ,
@@ -65,8 +67,9 @@ namespace MultiDimensionsHierarchies
             Func<T , T , T> aggregator ,
             IEnumerable<Skeleton> targets ,
             Func<IEnumerable<T> , T> groupAggregator = null ,
-            Func<T , double , T> weightEffect = null )
-            => Aggregate( method , inputs , aggregator , targets , Seq<Bone>.Empty , groupAggregator , weightEffect );
+            Func<T , double , T> weightEffect = null ,
+            bool useCachedSkeletons = true )
+            => Aggregate( method , inputs , aggregator , targets , Seq<Bone>.Empty , groupAggregator , weightEffect , useCachedSkeletons );
 
         /// <summary>
         /// Apply aggregator to inputs according to included hierarchies.
@@ -86,7 +89,8 @@ namespace MultiDimensionsHierarchies
             IEnumerable<Skeleton> targets ,
             Seq<Bone> ancestorsFilters ,
             Func<IEnumerable<T> , T> groupAggregator = null ,
-            Func<T , double , T> weightEffect = null )
+            Func<T , double , T> weightEffect = null ,
+            bool useCachedSkeletons = true )
         {
             var hashTarget = new LanguageExt.HashSet<Skeleton>().TryAddRange( targets );
 
@@ -104,9 +108,9 @@ namespace MultiDimensionsHierarchies
             return method switch
             {
                 Method.Targeted => TargetedAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect ),
-                Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect ),
-                Method.HeuristicDictionary => HeuristicDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect ),
-                Method.HeuristicGroup => HeuristicGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect ),
+                Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
+                Method.HeuristicDictionary => HeuristicDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
+                Method.HeuristicGroup => HeuristicGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
@@ -115,27 +119,30 @@ namespace MultiDimensionsHierarchies
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
-                                                                  Func<T , double , T> weightEffect )
+                                                                  Func<T , double , T> weightEffect ,
+                                                                  bool useCachedSkeletons = true )
         {
             // Choose most adequate method?
-            return HeuristicGroupAggregate( baseData , aggregator , targets , ancestorsFilters , weightEffect );
+            return HeuristicGroupAggregate( baseData , aggregator , targets , ancestorsFilters , weightEffect , useCachedSkeletons );
         }
 
         private static AggregationResult<T> HeuristicGroupAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
-                                                                  Func<T , double , T> weightEffect )
+                                                                  Func<T , double , T> weightEffect ,
+                                                                  bool useCachedSkeletons )
         {
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
+                var cache = useCachedSkeletons ? new NonBlocking.ConcurrentDictionary<string , Skeleton>() : null;
 
                 var res = baseData
                     .AsParallel()
                     .SelectMany( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors( ancestorsFilters ).Select( ancestor =>
+                                skeleton.Key.Ancestors( ancestorsFilters , cache ).Select( ancestor =>
                                      new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
                             .None( () => Seq.empty<Skeleton<T>>() ) )
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
@@ -156,17 +163,19 @@ namespace MultiDimensionsHierarchies
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
-                                                                  Func<T , double , T> weightEffect )
+                                                                  Func<T , double , T> weightEffect ,
+                                                                  bool useCachedSkeletons )
         {
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
 
                 var results = new NonBlocking.ConcurrentDictionary<Skeleton , Option<T>>();
+                var cache = useCachedSkeletons ? new NonBlocking.ConcurrentDictionary<string , Skeleton>() : null;
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
-                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters )
+                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters , cache )
                         .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
@@ -242,7 +251,8 @@ namespace MultiDimensionsHierarchies
             IEnumerable<Skeleton<T>> inputs ,
             Func<IEnumerable<(T value, double weight)> , T> aggregator ,
             Seq<Bone> ancestorsFilters ,
-            IEnumerable<Skeleton> targets = null )
+            IEnumerable<Skeleton> targets = null ,
+            bool useCachedSkeletons = true )
         {
             var hashTarget = new LanguageExt.HashSet<Skeleton>();
             if ( targets != null )
@@ -254,9 +264,9 @@ namespace MultiDimensionsHierarchies
             return method switch
             {
                 Method.Targeted => DetailedTargetedAggregate( inputs.ToArray() , aggregator , hashTarget ),
-                Method.Heuristic => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
-                Method.HeuristicDictionary => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
-                Method.HeuristicGroup => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget ),
+                Method.Heuristic => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.HeuristicDictionary => HeuristicDetailedDictionaryAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.HeuristicGroup => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
                 _ => new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
@@ -264,22 +274,62 @@ namespace MultiDimensionsHierarchies
         private static DetailedAggregationResult<T> HeuristicDetailedGroupAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<IEnumerable<(T, double)> , T> aggregator ,
                                                                   Seq<Bone> ancestorsFilters ,
-                                                                  LanguageExt.HashSet<Skeleton> targets )
+                                                                  LanguageExt.HashSet<Skeleton> targets ,
+                                                                  bool useCachedSkeletons )
         {
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
+                var cache = useCachedSkeletons ? new NonBlocking.ConcurrentDictionary<string , Skeleton>() : null;
 
                 var res = baseData
                     .AsParallel()
                     .SelectMany<Skeleton<T> , (Skeleton Key, double Weight, Skeleton<T> Input)>( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors( ancestorsFilters ).Select( ancestor =>
+                                skeleton.Key.Ancestors( ancestorsFilters , cache ).Select( ancestor =>
                                     (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
                             .None( () => Seq.empty<(Skeleton, double, Skeleton<T>)>() ) )
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .GroupBy( s => s.Key )
                     .Select( g => new SkeletonsAccumulator<T>( g.Key , g.Select( x => (x.Weight, x.Input) ) , aggregator ) )
+                    .ToArray();
+
+                stopWatch.Stop();
+
+                return new DetailedAggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , res , "Process OK" );
+            } );
+
+            return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+        }
+
+        private static DetailedAggregationResult<T> HeuristicDetailedDictionaryAggregate<T>( Skeleton<T>[] baseData ,
+                                                                  Func<IEnumerable<(T, double)> , T> aggregator ,
+                                                                  Seq<Bone> ancestorsFilters ,
+                                                                  LanguageExt.HashSet<Skeleton> targets ,
+                                                                  bool useCachedSkeletons )
+        {
+            var f = Prelude.Try( () =>
+            {
+                var stopWatch = Stopwatch.StartNew();
+
+                var results = new NonBlocking.ConcurrentDictionary<Skeleton , List<(double, Skeleton<T>)>>();
+                var cache = useCachedSkeletons ? new NonBlocking.ConcurrentDictionary<string , Skeleton>() : null;
+
+                Parallel.ForEach( baseData , skeleton =>
+                {
+                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters , cache )
+                        .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    {
+                        var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
+
+                        results.AddOrUpdate( ancestor , new List<(double, Skeleton<T>)> { (weight, skeleton) } ,
+                            ( _ , list ) => { list.Add( (weight, skeleton) ); return list; } );
+                    }
+                } );
+
+                var res = results
+                    .AsParallel()
+                    .Select( kvp => new SkeletonsAccumulator<T>( kvp.Key , kvp.Value , aggregator ) )
                     .ToArray();
 
                 stopWatch.Stop();

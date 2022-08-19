@@ -223,10 +223,28 @@ public class AggregatorTests
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" , "2" );
         r2.IsSome.Should().BeTrue();
-        r2.IfSome( r =>
+        r2.ShouldBeSome( r =>
         {
             r.Value.IsSome.Should().BeTrue();
-            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+            r.Value.ShouldBeSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+        } );
+        result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
+    }
+
+    [Fact]
+    public void TestHeuristic3DimensionsWithoutCache()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" };
+        var skeletons = GetLeavesSample( dimensions );
+        var result = Aggregator.Aggregate( Method.Heuristic , skeletons , ( a , b ) => a + b , useCachedSkeletons: false );
+
+        result.Status.Should().Be( AggregationStatus.OK );
+        var r2 = result.Results.Find( "2" , "2" , "2" );
+        r2.IsSome.Should().BeTrue();
+        r2.ShouldBeSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.ShouldBeSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
         } );
         result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
     }

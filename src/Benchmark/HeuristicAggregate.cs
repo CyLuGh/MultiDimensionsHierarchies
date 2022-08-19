@@ -7,10 +7,9 @@ using System.Linq;
 
 namespace Benchmark
 {
-    [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 ),
+    [/*SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 ),*/
      SimpleJob( RuntimeMoniker.Net60 , warmupCount: 3 , targetCount: 7 )]
     [MemoryDiagnoser( false )]
-    [CpuDiagnoser]
     public class HeuristicAggregate : AllMethodsAggregate
     {
         public HeuristicAggregate() : base()
@@ -20,19 +19,31 @@ namespace Benchmark
         [Benchmark]
         public AggregationResult<double> Group()
         {
-            return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , doubles => doubles.Sum() );
-        }
-
-        [Benchmark]
-        public DetailedAggregationResult<double> Detailed()
-        {
-            return Aggregator.DetailedAggregate( Method.Heuristic , Data , doubles => doubles.Sum( t => t.value ) );
+            return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: false );
         }
 
         //[Benchmark]
-        //public AggregationResult<double> Dictionary()
+        //public DetailedAggregationResult<double> Detailed()
         //{
-        //    return Aggregator.Aggregate( Method.HeuristicDictionary , Data , ( a , b ) => a + b , doubles => doubles.Sum() );
+        //    return Aggregator.DetailedAggregate( Method.Heuristic , Data , doubles => doubles.Sum( t => t.value ) );
         //}
+
+        [Benchmark]
+        public AggregationResult<double> Dictionary()
+        {
+            return Aggregator.Aggregate( Method.HeuristicDictionary , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: false );
+        }
+
+        [Benchmark]
+        public AggregationResult<double> GroupCache()
+        {
+            return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: true );
+        }
+
+        [Benchmark]
+        public AggregationResult<double> DictionaryCache()
+        {
+            return Aggregator.Aggregate( Method.HeuristicDictionary , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: true );
+        }
     }
 }

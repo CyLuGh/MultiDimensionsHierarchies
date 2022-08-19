@@ -4,16 +4,15 @@ using Benchmarks;
 using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
-using System.Diagnostics;
+using System;
 
 using System.Linq;
 
 namespace Benchmark
 {
-    [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 ),
-     SimpleJob( RuntimeMoniker.Net60 , warmupCount: 3 , targetCount: 7 )]
+    [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 )/*,
+     SimpleJob( RuntimeMoniker.Net60 , warmupCount: 3 , targetCount: 7 )*/]
     [MemoryDiagnoser( false )]
-    [CpuDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
         [Params( 1000 )]
@@ -29,7 +28,7 @@ namespace Benchmark
         {
             base.GlobalSetup();
 
-            Trace.WriteLine( "Building targets" );
+            //Console.WriteLine( "Building targets" );
             Targets = Dimensions.Take( DimensionsCount )
                 .Select( d => d.Flatten().Where( b => b.Depth <= 3 ).ToArray() )
                 .Combine()
