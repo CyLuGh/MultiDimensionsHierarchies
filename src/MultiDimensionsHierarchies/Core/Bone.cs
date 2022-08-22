@@ -84,11 +84,33 @@ namespace MultiDimensionsHierarchies.Core
         public bool HasWeightElement()
             => Descendants().Any( b => b.Weight != 1d );
 
-        public int Depth =>
-            1 + Parent.Some( p => p.Depth ).None( () => 0 );
+        private int? _depth;
 
-        public int Complexity =>
-            1 + Children.Sum( c => c.Complexity );
+        public int Depth
+        {
+            get
+            {
+                if ( _depth.HasValue )
+                    return _depth.Value;
+
+                _depth = 1 + Parent.Some( p => p.Depth ).None( () => 0 );
+                return _depth.Value;
+            }
+        }
+
+        private int? _complexity;
+
+        public int Complexity
+        {
+            get
+            {
+                if ( _complexity.HasValue )
+                    return _complexity.Value;
+
+                _complexity = 1 + Children.Sum( c => c.Complexity );
+                return _complexity.Value;
+            }
+        }
 
         public Bone Root()
             => Parent.Some( p => p.Root() )

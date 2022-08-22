@@ -40,19 +40,19 @@ namespace Benchmark
         [Benchmark]
         public AggregationResult<double> Targeted()
         {
-            return Aggregator.Aggregate( Method.Targeted , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+            return Aggregator.Aggregate( Method.TopDown , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }
 
         [Benchmark]
         public DetailedAggregationResult<double> DetailedTargeted()
         {
-            return Aggregator.DetailedAggregate( Method.Targeted , Data , doubles => doubles.Sum( t => t.value ) , Targets );
+            return Aggregator.DetailedAggregate( Method.TopDown , Data , doubles => doubles.Sum( t => t.value ) , Targets );
         }
 
         [Benchmark]
         public AggregationResult<double> Heuristic()
         {
-            return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+            return Aggregator.Aggregate( Method.BottomTopGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }
     }
 }

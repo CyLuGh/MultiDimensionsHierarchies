@@ -163,7 +163,7 @@ namespace MultiDimensionsHierarchies.Core
             return _descendants;
         }
 
-        public int Complexity
+        public long Complexity
             => Bones.Select( b => b.Complexity )
                 .Aggregate( 1 , ( prv , nxt ) => prv * nxt );
 

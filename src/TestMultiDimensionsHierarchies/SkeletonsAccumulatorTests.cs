@@ -19,7 +19,7 @@ namespace TestMultiDimensionsHierarchies
         {
             var dimensions = new[] { "Dim A" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
-            var result = Aggregator.DetailedAggregate( Method.Heuristic , skeletons.ToArray() , data => data.Sum( t => t.value ) );
+            var result = Aggregator.DetailedAggregate( Method.BottomTop , skeletons.ToArray() , data => data.Sum( t => t.value ) );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" );
@@ -36,7 +36,7 @@ namespace TestMultiDimensionsHierarchies
         {
             var dimensions = new[] { "Dim A" , "Dim B" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
-            var result = Aggregator.DetailedAggregate( Method.Heuristic , skeletons.ToArray() , data => data.Sum( t => t.value ) );
+            var result = Aggregator.DetailedAggregate( Method.BottomTop , skeletons.ToArray() , data => data.Sum( t => t.value ) );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" , "2" );
@@ -57,7 +57,7 @@ namespace TestMultiDimensionsHierarchies
         {
             var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
-            var result = Aggregator.DetailedAggregate( Method.Heuristic , skeletons.ToArray() , data => data.Sum( t => t.value ) );
+            var result = Aggregator.DetailedAggregate( Method.BottomTop , skeletons.ToArray() , data => data.Sum( t => t.value ) );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
@@ -78,7 +78,7 @@ namespace TestMultiDimensionsHierarchies
             var dimensions = new[] { "Dim A" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
             var targets = AggregatorTests.GetTargets( dimensions );
-            var result = Aggregator.DetailedAggregate( Method.Targeted , skeletons.ToArray() , data => data.Sum( t => t.value ) , targets );
+            var result = Aggregator.DetailedAggregate( Method.TopDown , skeletons.ToArray() , data => data.Sum( t => t.value ) , targets );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" );
@@ -99,7 +99,7 @@ namespace TestMultiDimensionsHierarchies
             targets = Seq.create(
                 targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
                 ).Somes();
-            var result = Aggregator.DetailedAggregate( Method.Targeted , skeletons.ToArray() , data => data.Sum( t => t.value ) , targets );
+            var result = Aggregator.DetailedAggregate( Method.TopDown , skeletons.ToArray() , data => data.Sum( t => t.value ) , targets );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
@@ -116,7 +116,7 @@ namespace TestMultiDimensionsHierarchies
         {
             var dimensions = new[] { "Dim A" };
             var skeletons = AggregatorTests.GetLeavesWeightSample( dimensions );
-            var result = Aggregator.DetailedAggregate( Method.Heuristic , skeletons , data => data.Sum( t => t.value * t.weight ) );
+            var result = Aggregator.DetailedAggregate( Method.BottomTop , skeletons , data => data.Sum( t => t.value * t.weight ) );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" );
@@ -134,7 +134,7 @@ namespace TestMultiDimensionsHierarchies
             var skeletons = AggregatorTests.GetLeavesWeightSample( dimensions );
             var targets = AggregatorTests.GetWeightTargets( dimensions ).FindAll( "2" );
 
-            var result = Aggregator.DetailedAggregate( Method.Targeted , skeletons , data => data.Sum( t => t.value * t.weight ) , targets );
+            var result = Aggregator.DetailedAggregate( Method.TopDown , skeletons , data => data.Sum( t => t.value * t.weight ) , targets );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" );
@@ -151,7 +151,7 @@ namespace TestMultiDimensionsHierarchies
         {
             var dimensions = new[] { "Dim A" , "Dim B" };
             var skeletons = AggregatorTests.GetLeavesWeightSample( dimensions );
-            var result = Aggregator.DetailedAggregate( Method.Heuristic , skeletons , data => data.Sum( t => t.value * t.weight ) );
+            var result = Aggregator.DetailedAggregate( Method.BottomTop , skeletons , data => data.Sum( t => t.value * t.weight ) );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" , "2" );
@@ -168,7 +168,7 @@ namespace TestMultiDimensionsHierarchies
             var dimensions = new[] { "Dim A" , "Dim B" };
             var skeletons = AggregatorTests.GetLeavesWeightSample( dimensions );
             var targets = AggregatorTests.GetWeightTargets( dimensions ).FindAll( "2" , "2" );
-            var result = Aggregator.DetailedAggregate( Method.Targeted , skeletons , data => data.Sum( t => t.value * t.weight ) , targets );
+            var result = Aggregator.DetailedAggregate( Method.TopDown , skeletons , data => data.Sum( t => t.value * t.weight ) , targets );
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" , "2" );
