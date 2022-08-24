@@ -114,12 +114,7 @@ namespace MultiDimensionsHierarchies.Core
                      .Select( l =>
                      {
                          var key = l.ToComposedString();
-                         if ( !cache.TryGetValue( key , out var skel ) )
-                         {
-                             skel = new Skeleton( l );
-                             cache.TryAdd( key , skel );
-                         }
-                         return skel;
+                         return cache.GetOrAdd( key , _ => new Skeleton( l ) );
                      } );
 
         private IEnumerable<Skeleton> BuildAncestors()
@@ -146,12 +141,7 @@ namespace MultiDimensionsHierarchies.Core
                     .Select( l =>
                     {
                         var key = l.ToComposedString();
-                        if ( !cache.TryGetValue( key , out var skel ) )
-                        {
-                            skel = new Skeleton( l );
-                            cache.TryAdd( key , skel );
-                        }
-                        return skel;
+                        return cache.GetOrAdd( key , _ => new Skeleton( l ) );
                     } );
 
         public Seq<Skeleton> Descendants( NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )

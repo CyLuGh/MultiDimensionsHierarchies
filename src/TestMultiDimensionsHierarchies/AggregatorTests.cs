@@ -99,7 +99,7 @@ public class AggregatorTests
         * (int) Math.Pow( itemsCount , dimensionCount - 1 );
 
     [Fact]
-    public void TestHeuristic1Dimension()
+    public void TestBottomTop1Dimension()
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetLeavesSample( dimensions );
@@ -117,7 +117,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristic1DimensionMultiLevelData()
+    public void TestBottomTop1DimensionMultiLevelData()
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetSample( dimensions );
@@ -143,7 +143,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristic2Dimensions()
+    public void TestBottomTop2Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesSample( dimensions );
@@ -166,7 +166,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristic2DimensionsWithFilter()
+    public void TestBottomTop2DimensionsWithFilter()
     {
         var dimensions = new[] { "Dim A" , "Dim B" }.Select( d => SkeletonTests.GetDimension( d ) ).ToArray();
         var skeletons = GetLeavesSample( dimensions );
@@ -188,7 +188,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristic2DimensionMultiLevelData()
+    public void TestBottomTop2DimensionMultiLevelData()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetSample( dimensions );
@@ -214,7 +214,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristic3Dimensions()
+    public void TestBottomTop3Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" };
         var skeletons = GetLeavesSample( dimensions );
@@ -232,7 +232,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristic3DimensionsWithoutCache()
+    public void TestBottomTop3DimensionsWithoutCache()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" };
         var skeletons = GetLeavesSample( dimensions );
@@ -250,7 +250,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristic5Dimensions()
+    public void TestBottomTop5Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
         var skeletons = GetLeavesSample( dimensions );
@@ -270,7 +270,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void CompareHeuristic5Dimensions()
+    public void CompareBottomTop5Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
         var skeletons = GetLeavesSample( dimensions );
@@ -301,7 +301,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristic5DimensionsWithTargets()
+    public void TestBottomTop5DimensionsWithTargets()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
         var skeletons = GetLeavesSample( dimensions );
@@ -325,7 +325,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestTargeted1Dimension()
+    public void TestTopDown1Dimension()
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetLeavesSample( dimensions );
@@ -345,7 +345,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestTargeted1DimensionSubSelect()
+    public void TestTopDown1DimensionSubSelect()
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetLeavesSample( dimensions );
@@ -367,7 +367,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestTargeted2Dimensions()
+    public void TestTopDown2Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesSample( dimensions );
@@ -387,7 +387,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestTargeted2DimensionsSubSelect()
+    public void TestTopDown2DimensionsSubSelect()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesSample( dimensions );
@@ -409,7 +409,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestTargeted2SimplifyData()
+    public void TestTopDown2SimplifyData()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesSample( dimensions );
@@ -429,7 +429,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestTargeted5DimensionsSubSelect()
+    public void TestTopDown5DimensionsSubSelect()
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
         var skeletons = GetLeavesSample( dimensions );
@@ -451,7 +451,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristicWeight1Dimension()
+    public void TestBottomTopWeight1Dimension()
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetLeavesWeightSample( dimensions );
@@ -469,7 +469,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestTargetedWeight1Dimension()
+    public void TestTopDownWeight1Dimension()
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetLeavesWeightSample( dimensions );
@@ -490,7 +490,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestHeuristicWeight2Dimensions()
+    public void TestBottomTopWeight2Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesWeightSample( dimensions );
@@ -507,7 +507,7 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestTargetedWeight2Dimensions()
+    public void TestTopDownWeight2Dimensions()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesWeightSample( dimensions );

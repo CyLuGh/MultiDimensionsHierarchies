@@ -15,7 +15,7 @@ namespace TestMultiDimensionsHierarchies
     public class SkeletonsAccumulatorTests
     {
         [Fact]
-        public void TestHeuristic1Dimension()
+        public void TestBottomTop1Dimension()
         {
             var dimensions = new[] { "Dim A" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
@@ -32,7 +32,7 @@ namespace TestMultiDimensionsHierarchies
         }
 
         [Fact]
-        public void TestHeuristic2Dimensions()
+        public void TestBottomTop2Dimensions()
         {
             var dimensions = new[] { "Dim A" , "Dim B" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
@@ -53,7 +53,7 @@ namespace TestMultiDimensionsHierarchies
         }
 
         [Fact]
-        public void TestHeuristic5Dimensions()
+        public void TestBottomTop5Dimensions()
         {
             var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
@@ -73,7 +73,7 @@ namespace TestMultiDimensionsHierarchies
         }
 
         [Fact]
-        public void TestTargeted1Dimension()
+        public void TestTopDown1Dimension()
         {
             var dimensions = new[] { "Dim A" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
@@ -91,7 +91,7 @@ namespace TestMultiDimensionsHierarchies
         }
 
         [Fact]
-        public void TestTargeted5DimensionsSubSelect()
+        public void TestTopDown5DimensionsSubSelect()
         {
             var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
             var skeletons = AggregatorTests.GetLeavesSample( dimensions );
@@ -112,7 +112,7 @@ namespace TestMultiDimensionsHierarchies
         }
 
         [Fact]
-        public void TestHeuristicWeight1Dimension()
+        public void TestBottomTopWeight1Dimension()
         {
             var dimensions = new[] { "Dim A" };
             var skeletons = AggregatorTests.GetLeavesWeightSample( dimensions );
@@ -128,7 +128,7 @@ namespace TestMultiDimensionsHierarchies
         }
 
         [Fact]
-        public void TestTargetedWeight1Dimension()
+        public void TestTopDownWeight1Dimension()
         {
             var dimensions = new[] { "Dim A" };
             var skeletons = AggregatorTests.GetLeavesWeightSample( dimensions );
@@ -147,7 +147,7 @@ namespace TestMultiDimensionsHierarchies
         }
 
         [Fact]
-        public void TestHeuristicWeight2Dimensions()
+        public void TestBottomTopWeight2Dimensions()
         {
             var dimensions = new[] { "Dim A" , "Dim B" };
             var skeletons = AggregatorTests.GetLeavesWeightSample( dimensions );
@@ -163,7 +163,7 @@ namespace TestMultiDimensionsHierarchies
         }
 
         [Fact]
-        public void TestTargetedWeight2Dimensions()
+        public void TestTopDownWeight2Dimensions()
         {
             var dimensions = new[] { "Dim A" , "Dim B" };
             var skeletons = AggregatorTests.GetLeavesWeightSample( dimensions );

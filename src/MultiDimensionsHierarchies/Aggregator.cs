@@ -204,7 +204,8 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var cache = useCachedSkeletons ? new NonBlocking.ConcurrentDictionary<string , Skeleton>() : null;
+                var cache = useCachedSkeletons ?
+                    new NonBlocking.ConcurrentDictionary<string , Skeleton>( Environment.ProcessorCount , 1_000_000 ) : null;
 
                 var res = baseData
                     .AsParallel()
@@ -238,8 +239,9 @@ namespace MultiDimensionsHierarchies
             {
                 var stopWatch = Stopwatch.StartNew();
 
-                var results = new NonBlocking.ConcurrentDictionary<Skeleton , Option<T>>();
-                var cache = useCachedSkeletons ? new NonBlocking.ConcurrentDictionary<string , Skeleton>() : null;
+                var results = new NonBlocking.ConcurrentDictionary<Skeleton , Option<T>>( Environment.ProcessorCount , 500_000 );
+                var cache = useCachedSkeletons ?
+                    new NonBlocking.ConcurrentDictionary<string , Skeleton>( Environment.ProcessorCount , 1_000_000 ) : null;
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
@@ -357,7 +359,8 @@ namespace MultiDimensionsHierarchies
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var cache = useCachedSkeletons ? new NonBlocking.ConcurrentDictionary<string , Skeleton>() : null;
+                var cache = useCachedSkeletons ?
+                    new NonBlocking.ConcurrentDictionary<string , Skeleton>( Environment.ProcessorCount , 1_000_000 ) : null;
 
                 var res = baseData
                     .AsParallel()
@@ -390,8 +393,10 @@ namespace MultiDimensionsHierarchies
             {
                 var stopWatch = Stopwatch.StartNew();
 
-                var results = new NonBlocking.ConcurrentDictionary<Skeleton , List<(double, Skeleton<T>)>>();
-                var cache = useCachedSkeletons ? new NonBlocking.ConcurrentDictionary<string , Skeleton>() : null;
+                var results =
+                    new NonBlocking.ConcurrentDictionary<Skeleton , List<(double, Skeleton<T>)>>( Environment.ProcessorCount , 500_000 );
+                var cache = useCachedSkeletons ?
+                    new NonBlocking.ConcurrentDictionary<string , Skeleton>( Environment.ProcessorCount , 1_000_000 ) : null;
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
