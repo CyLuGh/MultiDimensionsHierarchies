@@ -14,23 +14,27 @@ namespace MultiDimensionsHierarchies
     /// </summary>
     public enum Method
     {
-        Heuristic,
+        Heuristic = 0,
 
         /// <summary>
         /// Computes all aggregates from source data in a bottom-top way.
         /// </summary>
-        BottomTop,
+        BottomTop = 1,
 
-        BottomTopGroup,
-        BottomTopDictionary,
+        BottomTopCached = 2,
 
         /// <summary>
         /// Computes limited aggregates in top-down way.
         /// </summary>
-        TopDown
-    }
+        TopDown = 3,
 
-    //public enum CollectionMode { Skeleton, FullId, ShortId }
+        BottomTopGroup = 11,
+        BottomTopDictionary = 12,
+        BottomTopGroupCached = 13,
+        BottomTopDictionaryCached = 14,
+
+        None = 255
+    }
 
     public static class Aggregator
     {
@@ -109,7 +113,10 @@ namespace MultiDimensionsHierarchies
 
             // Check for most well suited method if Heuristic
             if ( method == Method.Heuristic )
+            {
                 method = FindBestMethod( groupedInputs , hashTarget );
+                useCachedSkeletons = UseCache( method );
+            }
 
             return method switch
             {
@@ -117,27 +124,48 @@ namespace MultiDimensionsHierarchies
                 Method.BottomTop => BottomTopAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
                 Method.BottomTopDictionary => BottomTopDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
                 Method.BottomTopGroup => BottomTopGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
+                Method.BottomTopDictionaryCached => BottomTopDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , true ),
+                Method.BottomTopGroupCached => BottomTopGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , true ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
 
-        internal static Method FindBestMethod<T>( Skeleton<T>[] groupedInputs , LanguageExt.HashSet<Skeleton> targets )
-        {
-            var complexity = groupedInputs.AsParallel()
-                    .Sum( x => x.Key.Bones.Select( b => b.Depth ).Aggregate( 1L , ( a , b ) => a * b ) );
+        internal static bool UseCache( Method method )
+            => method switch
+            {
+                Method.BottomTopCached => true,
+                Method.BottomTopGroupCached => true,
+                Method.BottomTopDictionaryCached => true,
+                _ => false
+            };
 
-            var complex2 = groupedInputs.AsParallel()
-                    .Average( x => x.Key.Bones.Select( b => b.Depth ).Aggregate( 1L , ( a , b ) => a * b ) );
+        internal static Method FindBestMethod<T>( Skeleton<T>[] inputs , LanguageExt.HashSet<Skeleton> targets )
+        {
+            if ( inputs.Length == 0 || inputs[0].Bones.IsEmpty )
+                return Method.None;
 
             if ( !targets.IsEmpty )
             {
+                if ( Environment.ProcessorCount < 4 )
+                    return Method.BottomTopGroup;
+
                 return Method.TopDown;
             }
             else
             {
-                return Method.BottomTop;
+                var complexity = inputs.EstimateComplexity();
+                return FindBestBottomTopMethod( complexity , inputs.Length );
             }
         }
+
+        private static Method FindBestBottomTopMethod( long complexity , int inputsCount )
+            => complexity < 2_500_000 ? FindBestCachedMethod( inputsCount ) : FindBestNotCachedMethod( inputsCount );
+
+        private static Method FindBestCachedMethod( int inputsCount )
+            => inputsCount < 1_000_000 ? Method.BottomTopGroupCached : Method.BottomTopDictionaryCached;
+
+        private static Method FindBestNotCachedMethod( int inputsCount )
+            => inputsCount < 1_000_000 ? Method.BottomTopGroup : Method.BottomTopDictionary;
 
         private static AggregationResult<T> BottomTopAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
@@ -300,12 +328,22 @@ namespace MultiDimensionsHierarchies
             if ( method == Method.TopDown && hashTarget.Count == 0 )
                 return new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "Method is Targeted but no targets have been defined!" );
 
+            var inputsArray = inputs.ToArray();
+            // Check for most well suited method if Heuristic
+            if ( method == Method.Heuristic )
+            {
+                method = FindBestMethod( inputsArray , hashTarget );
+                useCachedSkeletons = UseCache( method );
+            }
+
             return method switch
             {
-                Method.TopDown => DetailedTargetedAggregate( inputs.ToArray() , aggregator , hashTarget ),
-                Method.BottomTop => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
-                Method.BottomTopDictionary => HeuristicDetailedDictionaryAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
-                Method.BottomTopGroup => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.TopDown => DetailedTargetedAggregate( inputsArray , aggregator , hashTarget ),
+                Method.BottomTop => HeuristicDetailedGroupAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.BottomTopDictionary => HeuristicDetailedDictionaryAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.BottomTopGroup => HeuristicDetailedGroupAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.BottomTopDictionaryCached => HeuristicDetailedDictionaryAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , true ),
+                Method.BottomTopGroupCached => HeuristicDetailedGroupAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , true ),
                 _ => new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
@@ -435,7 +473,8 @@ namespace MultiDimensionsHierarchies
                 .AsParallel()
                 .Select( skeleton =>
                 {
-                    var components = skeleton.GetComposingSkeletons( dictionary )
+                    var components = skeleton
+                        .GetComposingSkeletons( dictionary )
                         .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
                     return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
                 } );

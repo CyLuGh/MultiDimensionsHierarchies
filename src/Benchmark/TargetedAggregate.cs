@@ -38,7 +38,7 @@ namespace Benchmark
         }
 
         [Benchmark]
-        public AggregationResult<double> Targeted()
+        public AggregationResult<double> TopDown()
         {
             return Aggregator.Aggregate( Method.TopDown , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }
@@ -50,7 +50,7 @@ namespace Benchmark
         }
 
         [Benchmark]
-        public AggregationResult<double> Heuristic()
+        public AggregationResult<double> BottomTop()
         {
             return Aggregator.Aggregate( Method.BottomTopGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }

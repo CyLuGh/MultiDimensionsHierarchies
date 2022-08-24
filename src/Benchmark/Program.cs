@@ -13,8 +13,8 @@ using System.Runtime.InteropServices;
 
 public static class Program
 {
-    public static int Tries => 1;
-    public static int Warmup => 0;
+    public static int Tries => 2;
+    public static int Warmup => 1;
 
     public static void Main( string[] args )
     {
@@ -43,17 +43,17 @@ public static class Program
         //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
         //}
 
-        var sizes = new[] { /*10_000 ,*/ 100_000 , 1_000_000 };
-        var dimensions = new[] { /*3 ,*/ 4 /*, 5 , 6*/ };
-        var targets = new[] { /*500 , 1_000 ,*/ 5_000 , 15_000 };
+        var sizes = new[] { 10_000 , 100_000 /*, 500_000 */, 1_000_000 };
+        var dimensions = new[] { 3 , 4 , 5 , 6 };
+        var targets = new[] { 500 /*, 1_000 , 5_000*/ , 15_000 };
 
         foreach ( var dimension in dimensions )
             foreach ( var size in sizes )
             {
-                //TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
-                //TestMethod( heuristic , "Group Cached" , agg => agg.GroupCache() , dimension , size );
-                //TestMethod( heuristic , "Dictionary" , agg => agg.Dictionary() , dimension , size );
-                //TestMethod( heuristic , "Dictionary Cached" , agg => agg.DictionaryCache() , dimension , size );
+                TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
+                TestMethod( heuristic , "Group Cached" , agg => agg.GroupCache() , dimension , size );
+                TestMethod( heuristic , "Dictionary" , agg => agg.Dictionary() , dimension , size );
+                TestMethod( heuristic , "Dictionary Cached" , agg => agg.DictionaryCache() , dimension , size );
 
                 foreach ( var target in targets )
                 {
@@ -61,8 +61,8 @@ public static class Program
                     if ( target > size || target > targeted.Targets.LongLength )
                         continue;
 
-                    //TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
-                    TestMethod( targeted , "Heuristic" , agg => agg.Heuristic() , dimension , size , target );
+                    TestMethod( targeted , "Top Down Target" , agg => agg.TopDown() , dimension , size , target );
+                    TestMethod( targeted , "Bottom Top Target" , agg => agg.BottomTop() , dimension , size , target );
                 }
             }
     }
@@ -105,13 +105,15 @@ public static class Program
         }
 
         Console.WriteLine();
-        Trace.WriteLine( $"{agg} {desc} " +
-            $"Dimensions: {dimensionCount} " +
-            $"Sample size: {sampleSize} " +
-            $"Targets count: {targetCount} " +
-            $"Average duration: {TimeSpan.FromTicks( (long) durations.Average( x => x.Ticks ) )} " +
+
+        Trace.WriteLine( $"{agg} {desc} Dimensions: {dimensionCount} Sample size: {sampleSize} Targets count: {targetCount}" );
+        Trace.Indent();
+        Trace.WriteLine( $"Complexity: {agg.Data.EstimateComplexity()}" );
+        Trace.WriteLine( $"Average duration: {TimeSpan.FromTicks( (long) durations.Average( x => x.Ticks ) )} " +
             $"Results: {results?.Results.LongCount() ?? 0} " +
             $"Average per result: {( results?.Results.LongCount() ?? 0 ) / ( TimeSpan.FromTicks( (long) durations.Average( x => x.Ticks ) ) ).TotalSeconds}" );
+        Trace.Unindent();
+
         Console.WriteLine();
     }
 
@@ -119,7 +121,7 @@ public static class Program
     {
         TestMethod( hA , "Group" , agg => agg.Group() , dimensionCount , sampleSize );
         TestMethod( hA , "Dictionary" , agg => agg.Dictionary() , dimensionCount , sampleSize );
-        TestMethod( tA , "Target" , agg => agg.Targeted() , dimensionCount , sampleSize , targetCount );
+        TestMethod( tA , "Target" , agg => agg.TopDown() , dimensionCount , sampleSize , targetCount );
         //TestMethod( tA , "Heuristic" , agg => agg.Heuristic() , dimensionCount , sampleSize , targetCount );
     }
 }

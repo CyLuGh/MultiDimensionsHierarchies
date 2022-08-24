@@ -20,7 +20,7 @@ namespace TestMultiDimensionsHierarchies
 
             var method = Aggregator.FindBestMethod( skeletons.ToArray() , LanguageExt.HashSet<Skeleton>.Empty );
 
-            method.Should().Be( Method.BottomTop );
+            method.Should().Be( Method.BottomTopGroupCached );
         }
     }
 }
