@@ -133,7 +133,7 @@ if ( AnsiConsole.Confirm( "Would you like to see the effect of hierarchies on co
 
                 hAgg.StartTask();
                 hAgg.IsIndeterminate = true;
-                var hRes = Aggregator.Aggregate( Method.Heuristic , sSkels , ( a , b ) => a + b , vals => vals.Sum() );
+                var hRes = Aggregator.Aggregate( Method.BottomTop , sSkels , ( a , b ) => a + b , vals => vals.Sum() );
                 hAgg.StopTask();
                 hAgg.Value = 100;
 
@@ -209,7 +209,7 @@ await Task.Delay( TimeSpan.FromSeconds( .5 ) );
 
 var heuristicAggregates = AnsiConsole.Status()
     .Start( "Compute all aggregates through Heuristic method" ,
-        _ => Aggregator.Aggregate( Method.Heuristic , skeletons , ( a , b ) => a + b , vals => vals.Sum() , ( t , w ) => t * w ) );
+        _ => Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b , vals => vals.Sum() , ( t , w ) => t * w ) );
 
 AnsiConsole.Clear();
 
@@ -229,7 +229,7 @@ var targets = sampleDimensions.Combine()
 
 var targetedAggregates = AnsiConsole.Status()
     .Start( "Compute all aggregates through Targeted method" ,
-        _ => Aggregator.Aggregate( Method.Targeted , skeletons , ( a , b ) => a + b ,
+        _ => Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b ,
         targets , vals => vals.Sum() , ( t , w ) => t * w ) );
 
 AnsiConsole.MarkupLine( "The computation took [orange3]{0}[/] seconds and created [orange3]{1}[/] results." , targetedAggregates.Duration , targetedAggregates.Results.Length );

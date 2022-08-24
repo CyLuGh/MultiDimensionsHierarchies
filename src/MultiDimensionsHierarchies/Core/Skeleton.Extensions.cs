@@ -116,5 +116,18 @@ namespace MultiDimensionsHierarchies.Core
         public static Option<SkeletonsAccumulator<T>> Find<T>( this IEnumerable<SkeletonsAccumulator<T>> skeletons , params string[] labels )
             => skeletons.Find( s => s.Bones.Length == labels.Length
                 && Enumerable.Range( 0 , labels.Length ).All( i => s.Bones[i].Label.Equals( labels[i] ) ) );
+
+        public static long EstimateComplexity( this IEnumerable<Skeleton> skeletons )
+        {
+            var dimCount = skeletons.First().Bones.Length;
+            var complexity = skeletons.AsParallel()
+                    .Sum( x => x.Bones.Select( b => b.Depth )
+                        .Aggregate( 1L , ( a , b ) => a * b ) / dimCount );
+
+            return complexity;
+        }
+
+        public static long EstimateComplexity<T>( this IEnumerable<Skeleton<T>> skeletons )
+            => skeletons.Select( s => s.Key ).EstimateComplexity();
     }
 }

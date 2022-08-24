@@ -14,19 +14,42 @@ This class represents an element in the hierarchy, with links to its parent or c
 
 #### Example
 
+All along these examples, we'll talk about fries. We could imagine several dimensions about them: where the potatoes have been grown, where the fries have been eaten, how they were cooked, which shape they were cut into, whether they were fresh or frozen...
+
 Dimension ***GEO*** could be represented as such, with each country being a *Bone*.
 
 ```mermaid
-flowchart LR
-    World --> Europe
-    Europe --> Benelux
-    Europe --> France
-    Europe --> Germany
-    Europe --> Italy
-    Benelux --> Belgium
-    Benelux --> Netherlands
-    Benelux --> Luxemburg
-    
+flowchart TD
+World --> Europe
+Europe --> Benelux
+Europe --> France
+Europe --> Germany
+Europe --> Italy
+Europe --> Spain
+Europe --> EOthers[...]
+Benelux --> Belgium
+Benelux --> Netherlands
+Benelux --> Luxemburg
+World --> Asia
+Asia --> China
+Asia --> Japan
+Asia --> Korea
+Asia --> AOthers[...]
+World --> WOthers[...]
+```
+
+Dimension ***COOKING*** could look like this:
+
+```mermaid
+flowchart TD
+Any --> Air[Air-Dried]
+Any --> Grease
+Any --> Oil
+Any --> Oven
+Grease --> Beef
+Oil --> Olive
+Oil --> Sunflower
+Oil --> Colza
 ```
 
 ### DimensionFactory
@@ -56,6 +79,11 @@ public static Dimension BuildWithParentLink<TA, TB>(
     Func<TA , double> weighter = null
     )
 ```
+
+- `Func<TA , string> labeller` will determine the *Bone* label. If not provided, it will be use the key `ToString()` method.
+- `Func<TA , double> weighter` can set a weight to be applied on the child contribution when computing the parent aggregate. If not set, the weight will be **1**, which means the child value is unaffected.
+
+
 #### With single child link:
 An item has a link to a single child. If there are more than one child, the item appears several times.
 
@@ -68,6 +96,7 @@ An item has a link to a single child. If there are more than one child, the item
     ...
 ]
 ```
+
 ```csharp
 public static Dimension BuildWithChildLink<TA, TB>(
     string dimensionName ,
@@ -88,6 +117,7 @@ An item defines its children in group.
     ...
 ]
 ```
+
 ```csharp
 public static Dimension BuildWithMultipleChildrenLink<TA, TB>(
     string dimensionName ,
@@ -101,39 +131,9 @@ public static Dimension BuildWithMultipleChildrenLink<TA, TB>(
 
 A *Skeleton*, as a collection of **n** *Bone*s, defines an entry in **n** *Dimension*s. The generic type *Skeleton\<T\>* associates an entry and a value of type T.
 
-If we have the ***GEO*** dimension as defined earlier and we add the [Institutional ***SECTOR***](https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Glossary:Institutional_sector) dimension such as:
+If we wished to identify the fries produced in Belgium and cooked properly, we'd have `Belgium` for the **GEO** dimension and `Beef` for the **COOKING** dimension. The resulting skeleton would look like `Beef:Belgium`. **Inside a *Skeleton*, the *Bones* are sorted by the alphabetical order of their *Dimension* name.**
 
-```mermaid
-flowchart TD
-    subgraph Sector S13
-    S13-->S1311
-    S13-->S1313
-    S13-->S13141
-    S13-->S13149
-    end 
-
-    subgraph Sector S12
-    S12-->S121
-    S12-->S122
-    S122-->S1221
-    S122-->S1223
-    S12-->S123
-    S12-->S124
-    S12-->S125
-    end
-
-    subgraph Sector S11
-    S11-->S111
-    S11-->S112
-    end
-
-    S14
-    S15
-```
-
-We can then define a value for *France* and *S123* with a Skeleton like `France:S123`.
-
-***A Skeleton can't have two dimensions with the same name.*** If for some reason, you'd need two countries definition, you'd have to create a **GEO1** and a **GEO2**.
+***A Skeleton can't have two dimensions with the same name.*** If for some reason, we'd need two countries definition, you'd have to create a **GEO1** and a **GEO2**, or be more explicit with **PRODUCTION_COUNTRY** and **CONSUMPTION_COUNTRY**.
 
 ### SkeletonFactory
 
@@ -187,34 +187,39 @@ public static AggregationResult<T> Aggregate<T>( Method method ,
 ```
 
 ### Algorithms
-Two algorithms (and one with two variants) are available through the *Method* enum.
+Two algorithms are available through the *Method* enum.
 
-#### Heuristic
-The *Heuristic* algorithm will go through each input item and add its contribution to every possible ancestor.
+#### BottomTop
+The *BottomTop* algorithm will go through each input item and add its contribution to every possible ancestor.
 
 ```mermaid
 flowchart TD
-    France:S123-->Europe:S123-->World:S123
-    France:S123-->France:S12-->Europe:S12
-    Europe:S123-->Europe:S12
-    Europe:S12-->World:S12
-    World:S123-->World:S12
+Beef:Belgium --> Beef:Benelux --> Beef:Europe --> Beef:World
+Grease:Belgium --> Grease:Benelux --> Grease:Europe --> Grease:World
+Any:Belgium --> Any:Benelux --> Any:Europe --> Any:World
+Beef:Belgium --> Grease:Belgium --> Any:Belgium
+Beef:Benelux --> Grease:Benelux --> Any:Benelux
+Beef:Europe --> Grease:Europe --> Any:Europe
+Beef:World --> Grease:World --> Any:World
 ```
 
 Even with only two simple hierarchies, we can see that multiple paths can be followed through the hierarchies. The algorithm will avoid duplicate pathing.
 
-There are three options for the *Heuristic* approach in the enum, *Heuristic*, *HeuristicGroup* and *HeuristicDictionary*. *HeuristicGroup* and *HeuristicDictionary* are only useful if you really wish to tweak the way intermediate results are stored.
+Several variants are available for this algorithm:
+- **BottomTopGroup**: the algorithm will use the *GroupBy* operator from *Linq* to go through the nodes, which is faster but needs more memory. The required memory will also be more affected by the size of input data.
+- **BottomTopDictionary**: the algorithm will go through the nodes and use a *ConcurrentDictionary* to store the results. This requires a lot less memory, but it tends to be half as fast as the other method, because of the threading synchronization happening on the dictionary.
+- **BottomTopGroupCached** and **BottomTopDictionaryCached**: they implement the same algorithm as previously described but use another *ConcurrentDictionary* to reuse some previously computed nodes. This is faster as long as the computed nodes remain below 1,500,000 items.
 
-The *Heuristic* method tends to be memory efficient but may less scale with multi cores processing.
+The **BottomTop** method tends to be memory efficient but may less scale with multi cores processing.
 
-#### Targeted
+#### TopDown
 
-The *Targeted* algorithm requires a defined output set. For each target, it will find which input items are contributing and compute the result. While a little less efficient, this algorithm tends to be able to put more pressure on the CPU, making use of higher CPUs count.
+The *TopDown* algorithm requires a defined output set. For each target, it will find which input items are contributing and compute the result. While a little less efficient, this algorithm tends to be able to put more pressure on the CPU, making use of higher CPUs count.
 
 ## Samples
 Some samples can be found in the [Demo project](https://github.com/CyLuGh/MultiDimensionsHierarchies/tree/main/src/Demo) and in the [Unit tests](https://github.com/CyLuGh/MultiDimensionsHierarchies/tree/main/src/TestMultiDimensionsHierarchies)
 
-## Benchmarks (WIP)
+## Benchmarks (WIP) -- Outdated by new implementations
 
 
 | Method | Dimensions | Sample Size | Targets | Results | Duration | Speed |

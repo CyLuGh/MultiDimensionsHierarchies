@@ -19,7 +19,7 @@ namespace Benchmark
         [Benchmark]
         public AggregationResult<double> Group()
         {
-            return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: false );
+            return Aggregator.Aggregate( Method.BottomTopGroup , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: false );
         }
 
         //[Benchmark]
@@ -31,19 +31,19 @@ namespace Benchmark
         [Benchmark]
         public AggregationResult<double> Dictionary()
         {
-            return Aggregator.Aggregate( Method.HeuristicDictionary , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: false );
+            return Aggregator.Aggregate( Method.BottomTopDictionary , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: false );
         }
 
         [Benchmark]
         public AggregationResult<double> GroupCache()
         {
-            return Aggregator.Aggregate( Method.HeuristicGroup , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: true );
+            return Aggregator.Aggregate( Method.BottomTopGroup , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: true );
         }
 
         [Benchmark]
         public AggregationResult<double> DictionaryCache()
         {
-            return Aggregator.Aggregate( Method.HeuristicDictionary , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: true );
+            return Aggregator.Aggregate( Method.BottomTopDictionary , Data , ( a , b ) => a + b , doubles => doubles.Sum() , useCachedSkeletons: true );
         }
     }
 }

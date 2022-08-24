@@ -14,21 +14,27 @@ namespace MultiDimensionsHierarchies
     /// </summary>
     public enum Method
     {
+        Heuristic = 0,
+
         /// <summary>
         /// Computes all aggregates from source data in a bottom-top way.
         /// </summary>
-        Heuristic,
+        BottomTop = 1,
 
-        HeuristicGroup,
-        HeuristicDictionary,
+        BottomTopCached = 2,
 
         /// <summary>
         /// Computes limited aggregates in top-down way.
         /// </summary>
-        Targeted
-    }
+        TopDown = 3,
 
-    //public enum CollectionMode { Skeleton, FullId, ShortId }
+        BottomTopGroup = 11,
+        BottomTopDictionary = 12,
+        BottomTopGroupCached = 13,
+        BottomTopDictionaryCached = 14,
+
+        None = 255
+    }
 
     public static class Aggregator
     {
@@ -94,8 +100,8 @@ namespace MultiDimensionsHierarchies
         {
             var hashTarget = new LanguageExt.HashSet<Skeleton>().TryAddRange( targets );
 
-            if ( method == Method.Targeted && hashTarget.Count == 0 )
-                return new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "Method is Targeted but no targets have been defined!" );
+            if ( method == Method.TopDown && hashTarget.Count == 0 )
+                return new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "TopDown method requires targets but none have been defined!" );
 
             /* Aggregate base data that might have common keys */
             groupAggregator ??= ( items ) => items.Aggregate( aggregator );
@@ -105,17 +111,63 @@ namespace MultiDimensionsHierarchies
 
             weightEffect ??= ( t , _ ) => t;
 
+            // Check for most well suited method if Heuristic
+            if ( method == Method.Heuristic )
+            {
+                method = FindBestMethod( groupedInputs , hashTarget );
+                useCachedSkeletons = UseCache( method );
+            }
+
             return method switch
             {
-                Method.Targeted => TargetedAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect ),
-                Method.Heuristic => HeuristicAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
-                Method.HeuristicDictionary => HeuristicDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
-                Method.HeuristicGroup => HeuristicGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
+                Method.TopDown => TopDownAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect ),
+                Method.BottomTop => BottomTopAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
+                Method.BottomTopDictionary => BottomTopDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
+                Method.BottomTopGroup => BottomTopGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
+                Method.BottomTopDictionaryCached => BottomTopDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , true ),
+                Method.BottomTopGroupCached => BottomTopGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , true ),
                 _ => new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
 
-        private static AggregationResult<T> HeuristicAggregate<T>( Skeleton<T>[] baseData ,
+        internal static bool UseCache( Method method )
+            => method switch
+            {
+                Method.BottomTopCached => true,
+                Method.BottomTopGroupCached => true,
+                Method.BottomTopDictionaryCached => true,
+                _ => false
+            };
+
+        internal static Method FindBestMethod<T>( Skeleton<T>[] inputs , LanguageExt.HashSet<Skeleton> targets )
+        {
+            if ( inputs.Length == 0 || inputs[0].Bones.IsEmpty )
+                return Method.None;
+
+            if ( !targets.IsEmpty )
+            {
+                if ( Environment.ProcessorCount < 4 )
+                    return Method.BottomTopGroup;
+
+                return Method.TopDown;
+            }
+            else
+            {
+                var complexity = inputs.EstimateComplexity();
+                return FindBestBottomTopMethod( complexity , inputs.Length );
+            }
+        }
+
+        private static Method FindBestBottomTopMethod( long complexity , int inputsCount )
+            => complexity < 2_500_000 ? FindBestCachedMethod( inputsCount ) : FindBestNotCachedMethod( inputsCount );
+
+        private static Method FindBestCachedMethod( int inputsCount )
+            => inputsCount < 1_000_000 ? Method.BottomTopGroupCached : Method.BottomTopDictionaryCached;
+
+        private static Method FindBestNotCachedMethod( int inputsCount )
+            => inputsCount < 1_000_000 ? Method.BottomTopGroup : Method.BottomTopDictionary;
+
+        private static AggregationResult<T> BottomTopAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
@@ -123,10 +175,26 @@ namespace MultiDimensionsHierarchies
                                                                   bool useCachedSkeletons = true )
         {
             // Choose most adequate method?
-            return HeuristicGroupAggregate( baseData , aggregator , targets , ancestorsFilters , weightEffect , useCachedSkeletons );
+            return BottomTopGroupAggregate( baseData , aggregator , targets , ancestorsFilters , weightEffect , useCachedSkeletons );
         }
 
-        private static AggregationResult<T> HeuristicGroupAggregate<T>( Skeleton<T>[] baseData ,
+        private static HashMap<string , LanguageExt.HashSet<Bone>> BuildFiltersFromTargets( LanguageExt.HashSet<Skeleton> targets )
+           => HashMap.createRange( targets.SelectMany( t => t.Bones )
+               .GroupBy( b => b.DimensionName )
+               .Select( g => (g.Key, HashSet.createRange( g )) ) );
+
+        private static Func<Skeleton , Seq<Skeleton>> GetAncestorsBuilder( Seq<Bone> ancestorsFilters , NonBlocking.ConcurrentDictionary<string , Skeleton> cache , LanguageExt.HashSet<Skeleton> targets )
+        {
+            if ( targets.Count == 0 )
+                return s => s.Ancestors( ancestorsFilters , cache );
+
+            var targetFilters = BuildFiltersFromTargets( targets );
+            return s => s.BuildFilteredSkeletons( targetFilters )
+                .Where( x => targets.Contains( x ) )
+                .ToSeq().Strict();
+        }
+
+        private static AggregationResult<T> BottomTopGroupAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
@@ -142,10 +210,10 @@ namespace MultiDimensionsHierarchies
                     .AsParallel()
                     .SelectMany( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors( ancestorsFilters , cache ).Select( ancestor =>
-                                     new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
+                            GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key )
+                                    .Select( ancestor =>
+                                        new Skeleton<T>( weightEffect( v , Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ) ) , ancestor ) ) )
                             .None( () => Seq.empty<Skeleton<T>>() ) )
-                    .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .GroupBy( s => s.Key )
                     .Select( g => g.Aggregate( aggregator ) )
                     .Somes()
@@ -159,7 +227,7 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        private static AggregationResult<T> HeuristicDictionaryAggregate<T>( Skeleton<T>[] baseData ,
+        private static AggregationResult<T> BottomTopDictionaryAggregate<T>( Skeleton<T>[] baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
@@ -175,8 +243,7 @@ namespace MultiDimensionsHierarchies
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
-                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters , cache )
-                        .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    foreach ( var ancestor in GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key ) )
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
                         var wVal = from v in skeleton.Value
@@ -221,7 +288,7 @@ namespace MultiDimensionsHierarchies
             return (simplifiedData, hash);
         }
 
-        private static AggregationResult<T> TargetedAggregate<T>( Skeleton<T>[] baseData ,
+        private static AggregationResult<T> TopDownAggregate<T>( Skeleton<T>[] baseData ,
                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                  Func<IEnumerable<T> , T> groupAggregator ,
                                                                  Func<T , double , T> weightEffect )
@@ -258,15 +325,25 @@ namespace MultiDimensionsHierarchies
             if ( targets != null )
                 hashTarget = hashTarget.TryAddRange( targets );
 
-            if ( method == Method.Targeted && hashTarget.Count == 0 )
+            if ( method == Method.TopDown && hashTarget.Count == 0 )
                 return new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "Method is Targeted but no targets have been defined!" );
+
+            var inputsArray = inputs.ToArray();
+            // Check for most well suited method if Heuristic
+            if ( method == Method.Heuristic )
+            {
+                method = FindBestMethod( inputsArray , hashTarget );
+                useCachedSkeletons = UseCache( method );
+            }
 
             return method switch
             {
-                Method.Targeted => DetailedTargetedAggregate( inputs.ToArray() , aggregator , hashTarget ),
-                Method.Heuristic => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
-                Method.HeuristicDictionary => HeuristicDetailedDictionaryAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
-                Method.HeuristicGroup => HeuristicDetailedGroupAggregate( inputs.ToArray() , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.TopDown => DetailedTargetedAggregate( inputsArray , aggregator , hashTarget ),
+                Method.BottomTop => HeuristicDetailedGroupAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.BottomTopDictionary => HeuristicDetailedDictionaryAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.BottomTopGroup => HeuristicDetailedGroupAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , useCachedSkeletons ),
+                Method.BottomTopDictionaryCached => HeuristicDetailedDictionaryAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , true ),
+                Method.BottomTopGroupCached => HeuristicDetailedGroupAggregate( inputsArray , aggregator , ancestorsFilters , hashTarget , true ),
                 _ => new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "No method was defined." )
             };
         }
@@ -286,8 +363,9 @@ namespace MultiDimensionsHierarchies
                     .AsParallel()
                     .SelectMany<Skeleton<T> , (Skeleton Key, double Weight, Skeleton<T> Input)>( skeleton =>
                         skeleton.Value.Some( v =>
-                                skeleton.Key.Ancestors( ancestorsFilters , cache ).Select( ancestor =>
-                                    (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
+                                GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key )
+                                    .Select( ancestor =>
+                                        (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
                             .None( () => Seq.empty<(Skeleton, double, Skeleton<T>)>() ) )
                     .Where( r => targets.Count == 0 || targets.Contains( r.Key ) )
                     .GroupBy( s => s.Key )
@@ -317,8 +395,7 @@ namespace MultiDimensionsHierarchies
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
-                    foreach ( var ancestor in skeleton.Key.Ancestors( ancestorsFilters , cache )
-                        .Where( s => targets.IsEmpty || targets.Contains( s ) ) )
+                    foreach ( var ancestor in GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key ) )
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
 
@@ -396,7 +473,8 @@ namespace MultiDimensionsHierarchies
                 .AsParallel()
                 .Select( skeleton =>
                 {
-                    var components = skeleton.GetComposingSkeletons( dictionary )
+                    var components = skeleton
+                        .GetComposingSkeletons( dictionary )
                         .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
                     return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
                 } );
