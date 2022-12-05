@@ -376,4 +376,21 @@ public class DimensionFactoryTests
         check().IsLeft.Should().BeTrue();
         check().IfLeft( l => l.Should().Be( $"Same label is defined several times in the dimension, this may lead to false results if hierarchy is parsed from string inputs.{Environment.NewLine}Hierarchies may include some diamond shapes!" ) );
     }
+
+    [Fact]
+    public void TestTuples()
+    {
+        var elements = new[] { (Label: "D4", ParentLabel: "", Weight: 1d) ,
+            (Label:"D41", ParentLabel:"D4", Weight:1d) ,
+            (Label:"D42", ParentLabel:"D4", Weight:1d) ,
+            (Label:"FA", ParentLabel:"", Weight:1d) };
+
+        var dimensions = DimensionFactory.BuildWithParentLink( "Test" ,
+            elements ,
+            t => t.Label ,
+            t => !string.IsNullOrWhiteSpace( t.ParentLabel ) ? t.ParentLabel : Option<string>.None ,
+            weighter: t => t.Weight );
+
+        dimensions.Find( "FA" ).IsSome.Should().BeTrue();
+    }
 }

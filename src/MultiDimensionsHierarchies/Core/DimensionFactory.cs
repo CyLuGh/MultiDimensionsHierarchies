@@ -206,7 +206,16 @@ namespace MultiDimensionsHierarchies.Core
 
                 var createdIds = new Seq<TB>();
 
-                foreach ( var group in elements.GroupBy( x => parentKeySelector( x ) ) )
+                // Single root
+                foreach ( var (Key, Bone) in hashSet.Where( x => !parentKeys.Contains( x.Key )
+                    && parentKeySelector( x.Value ).IsNone )
+                    .Select( x => (x.Key, Value: new Bone( labeller( x.Value ) , dimensionName )) ) )
+                {
+                    results = results.Add( Key , Bone );
+                }
+
+                foreach ( var group in elements.GroupBy( x => parentKeySelector( x ) )
+                    .Where( g => g.Key.IsSome ) )
                 {
                     var res = BuildBone( dimensionName , hashSet , group.ToSeq() , group.Key , labeller , weighter );
                     results = res
