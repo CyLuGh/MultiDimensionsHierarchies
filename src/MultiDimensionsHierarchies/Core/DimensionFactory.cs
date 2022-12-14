@@ -19,6 +19,7 @@ namespace MultiDimensionsHierarchies.Core
         /// <param name="labeller">(Optional) How to create the label from the item</param>
         /// <param name="weighter">(Optional) How to determine weight from item in relation to its parent</param>
         /// <returns>Dimension with properly linked hierarchy items</returns>
+        /// <exception cref="InvalidKeySelectorException">Throw when keySelector doesn't create unique keys which are used as parent keys</exception>
         public static Dimension BuildWithParentLink<TA, TB>(
             string dimensionName ,
             IEnumerable<TA> items ,
@@ -66,6 +67,7 @@ namespace MultiDimensionsHierarchies.Core
         /// <param name="childKeySelector">How to get the item child (or an Option.None if no child)</param>
         /// <param name="labeller">(Optional) How to create the label from the item</param>
         /// <returns>Dimension with properly linked hierarchy items</returns>
+        /// <exception cref="InvalidKeySelectorException">Throw when keySelector doesn't create unique keys which are used as parent keys</exception>
         public static Dimension BuildWithChildLink<TA, TB>(
             string dimensionName ,
             IEnumerable<TA> items ,
@@ -117,6 +119,7 @@ namespace MultiDimensionsHierarchies.Core
         /// <param name="childrenKeysSelector">How to get the child items</param>
         /// <param name="labeller">(Optional) How to create the label from the item</param>
         /// <returns>Dimension with properly linked hierarchy items</returns>
+        /// <exception cref="InvalidKeySelectorException">Throw when keySelector doesn't create unique keys which are used as parent keys</exception>
         public static Dimension BuildWithMultipleChildrenLink<TA, TB>(
             string dimensionName ,
             IEnumerable<TA> items ,
@@ -172,6 +175,10 @@ namespace MultiDimensionsHierarchies.Core
                         .None( () => Option<(TB, Bone)>.None );
                 } ).None( () => Option<(TB, Bone)>.None );
 
+        /// <summary>
+        /// Build dimension from its components.
+        /// </summary>
+        /// <exception cref="InvalidKeySelectorException">Throw when keySelector doesn't create unique keys which are used as parent keys</exception>
         private static Dimension Build<TA, TB>(
             string dimensionName ,
             IEnumerable<TA> items ,
@@ -181,13 +188,19 @@ namespace MultiDimensionsHierarchies.Core
             Func<TA , double> weighter = null
             )
         {
-            weighter ??= _ => 1d;
-            var results = HashMap.create<TB , Bone>();
-
-            var test = items.Select( i => (keySelector( i ), i) ).Distinct().ToArray();
-
             var hashSet = HashSet.createRange( items.Select( i => (Key: keySelector( i ), Value: i) ) );
             var parentKeys = HashSet.createRange( hashSet.Select( x => parentKeySelector( x.Value ) ).Somes() );
+
+            if ( hashSet.GroupBy( x => x.Key )
+                .Where( g => g.Count() > 1 )
+                .Select( g => g.Key )
+                .Any( k => parentKeys.Contains( k ) ) )
+            {
+                throw new InvalidKeySelectorException( "Key selector doesn't return unique values that are used as parent keys, which leads to invalid hierarchy!" );
+            }
+
+            weighter ??= _ => 1d;
+            var results = HashMap.create<TB , Bone>();
 
             if ( parentKeys.Length == 0 ) /* This is a flat list */
             {

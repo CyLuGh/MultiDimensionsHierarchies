@@ -4,6 +4,7 @@ using MultiDimensionsHierarchies.Core;
 using System;
 using System.Collections.Generic;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace TestMultiDimensionsHierarchies;
 
@@ -378,12 +379,38 @@ public class DimensionFactoryTests
     }
 
     [Fact]
+    public void TestInvalidKeySelectorException()
+    {
+        var elements = new[] {
+            (Label: "D5", ParentLabel: "", Weight: 1d) ,
+            (Label:"A1", ParentLabel:"D5", Weight:1d) ,
+            (Label:"A2", ParentLabel:"A1", Weight:1d) ,
+            (Label:"US", ParentLabel:"A2", Weight:1d) ,
+            (Label:"P6", ParentLabel:"", Weight:1d) ,
+            (Label:"P5", ParentLabel:"P6", Weight:1d) ,
+            (Label:"P4", ParentLabel:"P5", Weight:1d) ,
+            (Label:"US", ParentLabel:"P4", Weight:1d) ,
+            (Label:"PR", ParentLabel:"US", Weight:1d) ,
+        };
+
+        var act = () => DimensionFactory.BuildWithParentLink( "Test" ,
+            elements ,
+            t => t.Label ,
+            t => !string.IsNullOrWhiteSpace( t.ParentLabel ) ? t.ParentLabel : Option<string>.None ,
+            weighter: t => t.Weight );
+
+        act.Should().Throw<InvalidKeySelectorException>();
+    }
+
+    [Fact]
     public void TestTuples()
     {
-        var elements = new[] { (Label: "D4", ParentLabel: "", Weight: 1d) ,
+        var elements = new[] {
+            (Label: "D4", ParentLabel: "", Weight: 1d) ,
             (Label:"D41", ParentLabel:"D4", Weight:1d) ,
             (Label:"D42", ParentLabel:"D4", Weight:1d) ,
-            (Label:"FA", ParentLabel:"", Weight:1d) };
+            (Label:"FA", ParentLabel:"", Weight:1d)
+        };
 
         var dimensions = DimensionFactory.BuildWithParentLink( "Test" ,
             elements ,
