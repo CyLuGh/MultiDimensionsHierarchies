@@ -22,9 +22,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install .NET
-        uses: actions/setup-dotnet@v1.8.0
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 6.0.x
+          dotnet-version: 7.0.x
 
       - name: NuGet Restore
         run: dotnet restore
