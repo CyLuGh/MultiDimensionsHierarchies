@@ -10,13 +10,16 @@ using System.Linq;
 
 namespace Benchmark
 {
-    [SimpleJob( RuntimeMoniker.Net472 , iterationCount: 5 , warmupCount: 3 ),
-     SimpleJob( RuntimeMoniker.Net70 , iterationCount: 5 , warmupCount: 3 )]
+    [/*SimpleJob( RuntimeMoniker.Net472 , iterationCount: 3 , warmupCount: 1 ),*/
+     SimpleJob( RuntimeMoniker.Net70 , iterationCount: 3 , warmupCount: 1 )]
     [MemoryDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
         [Params( 1000 )]
         public int TargetsCount { get; set; }
+
+        [Params( Method.TopDown , Method.TopDownGroup )]
+        public Method Method { get; set; }
 
         public Skeleton[] Targets;
 
@@ -40,20 +43,20 @@ namespace Benchmark
         [Benchmark]
         public AggregationResult<double> TopDown()
         {
-            return Aggregator.Aggregate( Method.TopDown , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+            return Aggregator.Aggregate( Method , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }
 
         [Benchmark]
-        public AggregationResult<double> TopDownGroup()
+        public DetailedAggregationResult<double> DetailedTargeted()
         {
-            return Aggregator.Aggregate( Method.TopDownGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+            return Aggregator.DetailedAggregate( Method , Data , doubles => doubles.Sum( t => t.value ) , Targets );
         }
 
-        //[Benchmark]
-        //public DetailedAggregationResult<double> DetailedTargeted()
-        //{
-        //    return Aggregator.DetailedAggregate( Method.TopDown , Data , doubles => doubles.Sum( t => t.value ) , Targets );
-        //}
+        [Benchmark]
+        public DetailedAggregationResult<double> DetailedSimplifiedTargeted()
+        {
+            return Aggregator.DetailedAggregate( Method , Data , doubles => doubles.Sum( t => t.value ) , Targets , true , Array.Empty<string>() , items => items.Sum() );
+        }
 
         //[Benchmark]
         //public AggregationResult<double> BottomTop()
