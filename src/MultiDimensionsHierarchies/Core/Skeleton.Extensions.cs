@@ -10,7 +10,7 @@ namespace MultiDimensionsHierarchies.Core
         public static Option<Skeleton<T>> Aggregate<T>( this IEnumerable<Skeleton<T>> skeletons , Func<IEnumerable<T> , T> aggregator )
         {
             var seq = skeletons.ToSeq();
-            if ( seq.All( x => x.Key.Equals( seq.First().Key ) ) )
+            if ( seq.Length > 0 && seq.All( x => x.Key.Equals( seq.First().Key ) ) )
             {
                 return seq.First().With( value: aggregator( seq.Select( o => o.Value ).Somes() ) );
             }

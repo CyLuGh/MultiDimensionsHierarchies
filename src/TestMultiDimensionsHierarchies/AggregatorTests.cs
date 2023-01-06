@@ -428,6 +428,51 @@ public class AggregatorTests
         } );
     }
 
+    //[Fact]
+    //public void TestTopDown5Dimensions()
+    //{
+    //    var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+    //    var skeletons = GetLeavesSample( dimensions );
+    //    var targets = GetTargets( dimensions );
+    //    targets = targets.Take( 10000 )
+    //        .ConcatFast( targets.Find( "2" , "2" , "2" , "2" , "2" ) )
+    //        .ToSeq();
+    //    var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
+
+    //    result.Status.Should().Be( AggregationStatus.OK );
+    //    var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
+    //    r2.IsSome.Should().BeTrue();
+    //    r2.IfSome( r =>
+    //    {
+    //        r.Value.IsSome.Should().BeTrue();
+    //        r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+    //    } );
+    //    result.Results.Length.Should().Be( targets.Length );
+    //}
+
+    //[Fact]
+    //public void TestTopDownGroup5Dimensions()
+    //{
+    //    var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+    //    var skeletons = GetLeavesSample( dimensions );
+    //    var targets = GetTargets( dimensions );
+    //    targets = targets.Take( 10000 )
+    //        .ConcatFast( targets.Find( "2" , "2" , "2" , "2" , "2" ) )
+    //        .ToSeq();
+
+    //    var result = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets );
+
+    //    result.Status.Should().Be( AggregationStatus.OK );
+    //    var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
+    //    r2.IsSome.Should().BeTrue();
+    //    r2.IfSome( r =>
+    //    {
+    //        r.Value.IsSome.Should().BeTrue();
+    //        r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+    //    } );
+    //    result.Results.Length.Should().Be( targets.Length );
+    //}
+
     [Fact]
     public void TestTopDown5DimensionsSubSelect()
     {
@@ -438,6 +483,28 @@ public class AggregatorTests
             targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
             ).Somes();
         var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
+
+        result.Status.Should().Be( AggregationStatus.OK );
+        var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
+        r2.IsSome.Should().BeTrue();
+        r2.IfSome( r =>
+        {
+            r.Value.IsSome.Should().BeTrue();
+            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
+        } );
+        result.Results.Length.Should().Be( targets.Length );
+    }
+
+    [Fact]
+    public void TestTopDownGroup5DimensionsSubSelect()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+        var skeletons = GetLeavesSample( dimensions );
+        var targets = GetTargets( dimensions );
+        targets = Seq.create(
+            targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
+            ).Somes();
+        var result = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );

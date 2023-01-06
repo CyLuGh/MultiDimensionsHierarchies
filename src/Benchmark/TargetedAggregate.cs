@@ -10,9 +10,9 @@ using System.Linq;
 
 namespace Benchmark
 {
-    [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 )/*,
-     SimpleJob( RuntimeMoniker.Net60 , warmupCount: 3 , targetCount: 7 )*/]
-    [MemoryDiagnoser( false )]
+    [SimpleJob( RuntimeMoniker.Net472 , iterationCount: 5 , warmupCount: 3 ),
+     SimpleJob( RuntimeMoniker.Net70 , iterationCount: 5 , warmupCount: 3 )]
+    [MemoryDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
         [Params( 1000 )]
@@ -44,15 +44,21 @@ namespace Benchmark
         }
 
         [Benchmark]
-        public DetailedAggregationResult<double> DetailedTargeted()
+        public AggregationResult<double> TopDownGroup()
         {
-            return Aggregator.DetailedAggregate( Method.TopDown , Data , doubles => doubles.Sum( t => t.value ) , Targets );
+            return Aggregator.Aggregate( Method.TopDownGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }
 
-        [Benchmark]
-        public AggregationResult<double> BottomTop()
-        {
-            return Aggregator.Aggregate( Method.BottomTopGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
-        }
+        //[Benchmark]
+        //public DetailedAggregationResult<double> DetailedTargeted()
+        //{
+        //    return Aggregator.DetailedAggregate( Method.TopDown , Data , doubles => doubles.Sum( t => t.value ) , Targets );
+        //}
+
+        //[Benchmark]
+        //public AggregationResult<double> BottomTop()
+        //{
+        //    return Aggregator.Aggregate( Method.BottomTopGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+        //}
     }
 }

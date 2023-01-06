@@ -18,54 +18,54 @@ public static class Program
 
     public static void Main( string[] args )
     {
-        //BenchmarkRunner.Run<TargetedAggregate>();
+        BenchmarkRunner.Run<TargetedAggregate>();
         //BenchmarkRunner.Run<HeuristicAggregate>();
 
-        ManualBenchmark();
+        //ManualBenchmark();
     }
 
-    private static void ManualBenchmark()
-    {
-        var file = $"results_{Guid.NewGuid()}.log";
+    //private static void ManualBenchmark()
+    //{
+    //    var file = $"results_{Guid.NewGuid()}.log";
 
-        Trace.Listeners.Add( new TextWriterTraceListener( Console.Out ) );
-        Trace.Listeners.Add( new TextWriterTraceListener( file ) );
-        Trace.AutoFlush = true;
+    //    Trace.Listeners.Add( new TextWriterTraceListener( Console.Out ) );
+    //    Trace.Listeners.Add( new TextWriterTraceListener( file ) );
+    //    Trace.AutoFlush = true;
 
-        var heuristic = new HeuristicAggregate();
-        var targeted = new TargetedAggregate();
+    //    var heuristic = new HeuristicAggregate();
+    //    var targeted = new TargetedAggregate();
 
-        //if ( int.TryParse( args[0] , out var size )
-        //    && int.TryParse( args[1] , out var dimension )
-        //    && int.TryParse( args[2] , out var target ) )
-        //{
-        //    TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
-        //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
-        //}
+    //    //if ( int.TryParse( args[0] , out var size )
+    //    //    && int.TryParse( args[1] , out var dimension )
+    //    //    && int.TryParse( args[2] , out var target ) )
+    //    //{
+    //    //    TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
+    //    //    TestMethod( targeted , "Target" , agg => agg.Targeted() , dimension , size , target );
+    //    //}
 
-        var sizes = new[] { 10_000 , 100_000 /*, 500_000 */, 1_000_000 };
-        var dimensions = new[] { 3 , 4 , 5 , 6 };
-        var targets = new[] { 500 /*, 1_000 , 5_000*/ , 15_000 };
+    //    var sizes = new[] { 10_000 , 100_000 /*, 500_000 */, 1_000_000 };
+    //    var dimensions = new[] { 3 , 4 , 5 , 6 };
+    //    var targets = new[] { 500 /*, 1_000 , 5_000*/ , 15_000 };
 
-        foreach ( var dimension in dimensions )
-            foreach ( var size in sizes )
-            {
-                TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
-                TestMethod( heuristic , "Group Cached" , agg => agg.GroupCache() , dimension , size );
-                TestMethod( heuristic , "Dictionary" , agg => agg.Dictionary() , dimension , size );
-                TestMethod( heuristic , "Dictionary Cached" , agg => agg.DictionaryCache() , dimension , size );
+    //    foreach ( var dimension in dimensions )
+    //        foreach ( var size in sizes )
+    //        {
+    //            TestMethod( heuristic , "Group" , agg => agg.Group() , dimension , size );
+    //            TestMethod( heuristic , "Group Cached" , agg => agg.GroupCache() , dimension , size );
+    //            TestMethod( heuristic , "Dictionary" , agg => agg.Dictionary() , dimension , size );
+    //            TestMethod( heuristic , "Dictionary Cached" , agg => agg.DictionaryCache() , dimension , size );
 
-                foreach ( var target in targets )
-                {
-                    Configure( targeted , dimension , size , target );
-                    if ( target > size || target > targeted.Targets.LongLength )
-                        continue;
+    //            foreach ( var target in targets )
+    //            {
+    //                Configure( targeted , dimension , size , target );
+    //                if ( target > size || target > targeted.Targets.LongLength )
+    //                    continue;
 
-                    TestMethod( targeted , "Top Down Target" , agg => agg.TopDown() , dimension , size , target );
-                    TestMethod( targeted , "Bottom Top Target" , agg => agg.BottomTop() , dimension , size , target );
-                }
-            }
-    }
+    //                TestMethod( targeted , "Top Down Target" , agg => agg.TopDown() , dimension , size , target );
+    //                TestMethod( targeted , "Bottom Top Target" , agg => agg.BottomTop() , dimension , size , target );
+    //            }
+    //        }
+    //}
 
     private static void Configure<T>( T agg , int dimensionCount , int sampleSize , int targetCount = 0 ) where T : AllMethodsAggregate
     {
