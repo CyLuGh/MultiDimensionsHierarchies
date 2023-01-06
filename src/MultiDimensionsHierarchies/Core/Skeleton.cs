@@ -53,6 +53,12 @@ namespace MultiDimensionsHierarchies.Core
             return new Skeleton( Bones.Where( x => !searched.Contains( x.DimensionName ) ).ToArray() );
         }
 
+        public bool HasBone( Bone b )
+            => Bones.Contains( b );
+
+        public bool HasAnyBone( Seq<Bone> bones )
+            => bones.Any( b => Bones.Contains( b ) );
+
         public bool HasUnknown() => Bones.Any( x => x.Equals( Bone.None ) );
 
         public bool IsLeaf()
@@ -411,5 +417,17 @@ namespace MultiDimensionsHierarchies.Core
 
                 return weight;
             };
+
+        public Bone GetBone( int index )
+        {
+            if ( index < Bones.Length )
+                return Bones[index];
+
+            return Bone.None;
+        }
+
+        public Bone GetBone( string dimensionName )
+            => Bones.Find( b => b.DimensionName.Equals( dimensionName ) )
+                .Match( b => b , () => Bone.None );
     }
 }

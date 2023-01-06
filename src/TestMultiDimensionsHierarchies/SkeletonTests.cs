@@ -615,4 +615,16 @@ public class SkeletonTests
 
         items.SequenceEqual( items2 ).Should().BeTrue();
     }
+
+    [Fact]
+    public void TestGetBone()
+    {
+        var boneA = new Bone( "A1" , "Dimension A" );
+        var boneB = new Bone( "B1" , "Dimension B" );
+
+        var skeleton = new Skeleton( boneB , boneA );
+
+        skeleton.GetBone( 0 ).Should().BeSameAs( boneA );
+        skeleton.GetBone( 2 ).Should().BeSameAs( Bone.None );
+    }
 }

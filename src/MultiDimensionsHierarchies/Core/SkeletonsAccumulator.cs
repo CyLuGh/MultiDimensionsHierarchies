@@ -6,7 +6,7 @@ namespace MultiDimensionsHierarchies.Core
 {
     public class SkeletonsAccumulator<T>
     {
-        public Skeleton Key { get; set; }
+        public Skeleton Key { get; }
         private Option<T> _value;
 
         public Option<T> Value
@@ -21,7 +21,7 @@ namespace MultiDimensionsHierarchies.Core
             }
         }
 
-        public Arr<(double weight, Skeleton<T> data)> Components { get; private set; }
+        public Arr<(double weight, Skeleton<T> data)> Components { get; }
         public Func<IEnumerable<(T value, double weight)> , T> Aggregator { get; }
 
         public SkeletonsAccumulator( Skeleton key , IEnumerable<(double, Skeleton<T>)> data , Func<IEnumerable<(T value, double weight)> , T> aggregator )

@@ -8,7 +8,7 @@ using System.Linq;
 namespace Benchmark
 {
     [/*SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 ),*/
-     SimpleJob( RuntimeMoniker.Net60 , warmupCount: 3 , targetCount: 7 )]
+     SimpleJob( RuntimeMoniker.Net60 )]
     [MemoryDiagnoser( false )]
     public class HeuristicAggregate : AllMethodsAggregate
     {

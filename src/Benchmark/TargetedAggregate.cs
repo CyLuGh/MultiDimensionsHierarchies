@@ -10,13 +10,16 @@ using System.Linq;
 
 namespace Benchmark
 {
-    [SimpleJob( RuntimeMoniker.Net472 , warmupCount: 3 , targetCount: 7 )/*,
-     SimpleJob( RuntimeMoniker.Net60 , warmupCount: 3 , targetCount: 7 )*/]
-    [MemoryDiagnoser( false )]
+    [/*SimpleJob( RuntimeMoniker.Net472 , iterationCount: 3 , warmupCount: 1 ),*/
+     SimpleJob( RuntimeMoniker.Net70 , iterationCount: 3 , warmupCount: 1 )]
+    [MemoryDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
         [Params( 1000 )]
         public int TargetsCount { get; set; }
+
+        [Params( Method.TopDown , Method.TopDownGroup )]
+        public Method Method { get; set; }
 
         public Skeleton[] Targets;
 
@@ -40,19 +43,25 @@ namespace Benchmark
         [Benchmark]
         public AggregationResult<double> TopDown()
         {
-            return Aggregator.Aggregate( Method.TopDown , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+            return Aggregator.Aggregate( Method , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }
 
         [Benchmark]
         public DetailedAggregationResult<double> DetailedTargeted()
         {
-            return Aggregator.DetailedAggregate( Method.TopDown , Data , doubles => doubles.Sum( t => t.value ) , Targets );
+            return Aggregator.DetailedAggregate( Method , Data , doubles => doubles.Sum( t => t.value ) , Targets );
         }
 
         [Benchmark]
-        public AggregationResult<double> BottomTop()
+        public DetailedAggregationResult<double> DetailedSimplifiedTargeted()
         {
-            return Aggregator.Aggregate( Method.BottomTopGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+            return Aggregator.DetailedAggregate( Method , Data , doubles => doubles.Sum( t => t.value ) , Targets , true , Array.Empty<string>() , items => items.Sum() );
         }
+
+        //[Benchmark]
+        //public AggregationResult<double> BottomTop()
+        //{
+        //    return Aggregator.Aggregate( Method.BottomTopGroup , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+        //}
     }
 }
