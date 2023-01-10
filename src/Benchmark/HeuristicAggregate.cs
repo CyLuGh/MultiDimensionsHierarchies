@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
-using Benchmarks;
 using LanguageExt;
 using MultiDimensionsHierarchies;
 using System.Linq;

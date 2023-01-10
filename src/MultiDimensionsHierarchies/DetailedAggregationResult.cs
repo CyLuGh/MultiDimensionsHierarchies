@@ -5,6 +5,9 @@ using System.Collections.Generic;
 
 namespace MultiDimensionsHierarchies
 {
+    /// <summary>
+    /// Result from the detailed aggregation process.
+    /// </summary>
     public class DetailedAggregationResult<T>
     {
         public Arr<SkeletonsAccumulator<T>> Results { get; }

@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
-using Benchmarks;
 using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
@@ -11,15 +10,16 @@ using System.Linq;
 namespace Benchmark
 {
     [/*SimpleJob( RuntimeMoniker.Net472 , iterationCount: 3 , warmupCount: 1 ),*/
+    //  SimpleJob( RuntimeMoniker.Net60 , iterationCount: 3 , warmupCount: 1 ),
      SimpleJob( RuntimeMoniker.Net70 , iterationCount: 3 , warmupCount: 1 )]
     [MemoryDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
-        [Params( 1000 )]
+        [Params( 1000 , 2000 )]
         public int TargetsCount { get; set; }
 
         [Params( Method.TopDown , Method.TopDownGroup )]
-        public Method Method { get; set; }
+        public Method AggregationMethod { get; set; }
 
         public Skeleton[] Targets;
 
@@ -41,22 +41,22 @@ namespace Benchmark
         }
 
         [Benchmark]
-        public AggregationResult<double> TopDown()
+        public AggregationResult<double> TargetedTopDown()
         {
-            return Aggregator.Aggregate( Method , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
+            return Aggregator.Aggregate( AggregationMethod , Data , ( a , b ) => a + b , Targets , doubles => doubles.Sum() );
         }
 
-        [Benchmark]
-        public DetailedAggregationResult<double> DetailedTargeted()
-        {
-            return Aggregator.DetailedAggregate( Method , Data , doubles => doubles.Sum( t => t.value ) , Targets );
-        }
+        // [Benchmark]
+        // public DetailedAggregationResult<double> DetailedTargeted()
+        // {
+        //     return Aggregator.DetailedAggregate( Method , Data , doubles => doubles.Sum( t => t.value ) , Targets );
+        // }
 
-        [Benchmark]
-        public DetailedAggregationResult<double> DetailedSimplifiedTargeted()
-        {
-            return Aggregator.DetailedAggregate( Method , Data , doubles => doubles.Sum( t => t.value ) , Targets , true , Array.Empty<string>() , items => items.Sum() );
-        }
+        // [Benchmark]
+        // public DetailedAggregationResult<double> DetailedSimplifiedTargeted()
+        // {
+        //     return Aggregator.DetailedAggregate( Method , Data , doubles => doubles.Sum( t => t.value ) , Targets , true , Array.Empty<string>() , items => items.Sum() );
+        // }
 
         //[Benchmark]
         //public AggregationResult<double> BottomTop()

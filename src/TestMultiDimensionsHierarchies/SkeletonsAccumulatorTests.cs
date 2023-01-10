@@ -40,10 +40,7 @@ namespace TestMultiDimensionsHierarchies
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" , "2" );
-            r2.ShouldBeSome( r =>
-            {
-                r.Value.ShouldBeSome( v => v.Should().Be( AggregatorTests.GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-            } );
+            r2.ShouldBeSome( r => r.Value.ShouldBeSome( v => v.Should().Be( AggregatorTests.GetExpectedResult( 18 , dimensions.Length , 4 ) ) ) );
 
             result.Results.Where( s => s.Key.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , 2 ) );
             result.Results.Where( s => s.Key.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
@@ -82,10 +79,7 @@ namespace TestMultiDimensionsHierarchies
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" );
-            r2.ShouldBeSome( r =>
-            {
-                r.Value.ShouldBeSome( v => v.Should().Be( AggregatorTests.GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-            } );
+            r2.ShouldBeSome( r => r.Value.ShouldBeSome( v => v.Should().Be( AggregatorTests.GetExpectedResult( 18 , dimensions.Length , 4 ) ) ) );
             result.Results.Where( s => s.Key.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
             result.Results.Length.Should().Be( targets.Length );
         }
@@ -100,10 +94,7 @@ namespace TestMultiDimensionsHierarchies
 
             result.Status.Should().Be( AggregationStatus.OK );
             var r2 = result.Results.Find( "2" );
-            r2.ShouldBeSome( r =>
-            {
-                r.Value.ShouldBeSome( v => v.Should().Be( AggregatorTests.GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-            } );
+            r2.ShouldBeSome( r => r.Value.ShouldBeSome( v => v.Should().Be( AggregatorTests.GetExpectedResult( 18 , dimensions.Length , 4 ) ) ) );
             result.Results.Where( s => s.Key.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
             result.Results.Length.Should().Be( targets.Length );
         }

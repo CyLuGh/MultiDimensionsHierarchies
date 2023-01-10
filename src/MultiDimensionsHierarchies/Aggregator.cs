@@ -15,26 +15,20 @@ namespace MultiDimensionsHierarchies
     public enum Method
     {
         Heuristic = 0,
-
         /// <summary>
         /// Computes all aggregates from source data in a bottom-top way.
         /// </summary>
         BottomTop = 1,
-
         BottomTopCached = 2,
-
         /// <summary>
         /// Computes limited aggregates in top-down way.
         /// </summary>
         TopDown = 3,
-
-        TopDownGroup = 31,
-
         BottomTopGroup = 11,
         BottomTopDictionary = 12,
         BottomTopGroupCached = 13,
         BottomTopDictionaryCached = 14,
-
+        TopDownGroup = 31,
         None = 255
     }
 
@@ -312,6 +306,16 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
+        /// <summary>
+        /// Create an aggregate by keeping references to base data element. If simplifyData is turned on, there are some changes applied to the base data.
+        /// </summary>
+        /// <param name="method">Algorithm to use to compute the aggregate</param>
+        /// <param name="inputs">Base data</param>
+        /// <param name="aggregator"></param>
+        /// <param name="targets">Keys to be computed</param>
+        /// <param name="simplifyData">Whether the data can be simplified (to speed up computation) or if it should be kept intact</param>
+        /// <param name="dimensionsToPreserve">Dimensions that shouldn't be simplified if simplifyData is set to true</param>
+        /// <param name="groupAggregator">How base data should be aggregated when simplifyData is set to true</param>
         public static DetailedAggregationResult<T> DetailedAggregate<T>(
             Method method ,
             IEnumerable<Skeleton<T>> inputs ,
@@ -384,7 +388,7 @@ namespace MultiDimensionsHierarchies
                 var res = baseData
                     .AsParallel()
                     .SelectMany<Skeleton<T> , (Skeleton Key, double Weight, Skeleton<T> Input)>( skeleton =>
-                        skeleton.Value.Some( v =>
+                        skeleton.Value.Some( _ =>
                                 GetAncestorsBuilder( ancestorsFilters , cache , targets )( skeleton.Key )
                                     .Select( ancestor =>
                                         (Ancestor: ancestor, Weight: Skeleton.ComputeResultingWeight( skeleton.Key , ancestor ), Input: skeleton) ) )
@@ -467,6 +471,9 @@ namespace MultiDimensionsHierarchies
                                                                  Func<T , double , T> weightEffect = null ,
                                                                  bool group = false )
         {
+            if ( baseData.Length == 0 || targets.Length == 0 )
+                return Seq<Skeleton<T>>.Empty;
+
             weightEffect ??= ( t , _ ) => t;
 
             var uniqueTargetBaseBones = targets
@@ -523,6 +530,9 @@ namespace MultiDimensionsHierarchies
                                                                  string[] dimensionsToPreserve = null ,
                                                                  Func<IEnumerable<T> , T> groupAggregator = null )
         {
+            if ( baseData.Length == 0 || targets.Length == 0 )
+                return Seq<SkeletonsAccumulator<T>>.Empty;
+
             return simplifyData
                 ? StreamSimplifiedDetailedAggregateResults( baseData , targets , aggregator , dimensionsToPreserve , groupAggregator , group )
                 : StreamSourceDetailedAggregateResults( baseData , targets , aggregator , group );
@@ -609,8 +619,8 @@ namespace MultiDimensionsHierarchies
                 return Array.Empty<SkeletonsAccumulator<T>>();
 
             return targets
-                //.AsParallel()
-                //.WithDegreeOfParallelism( boneIndex == 0 ? Environment.ProcessorCount : 1 )
+                .AsParallel()
+                .WithDegreeOfParallelism( boneIndex == 0 ? Environment.ProcessorCount : 1 )
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
                     GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToArray() , aggregator , boneIndex + 1 , dimensionsCount ) );

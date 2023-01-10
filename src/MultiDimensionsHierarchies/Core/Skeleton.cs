@@ -1,6 +1,5 @@
 ﻿using LanguageExt;
 using MoreLinq;
-using NonBlocking;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -87,8 +86,10 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Skeleton> Ancestors( Seq<Bone> filters , NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
         {
             if ( _ancestors.IsEmpty )
+            {
                 _ancestors = cache != null ? Prelude.Atom( BuildAncestors( cache ).ToSeq().Strict() )
                     : Prelude.Atom( BuildAncestors().ToSeq().Strict() );
+            }
 
             if ( filters.IsEmpty )
                 return _ancestors;
@@ -153,8 +154,10 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Skeleton> Descendants( NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
         {
             if ( _descendants.IsEmpty )
+            {
                 _descendants = cache != null ? Prelude.Atom( BuildDescendants( cache ).ToSeq().Strict() )
                     : Prelude.Atom( BuildDescendants().ToSeq().Strict() );
+            }
 
             return _descendants;
         }

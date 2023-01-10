@@ -117,10 +117,7 @@ public class GenericSkeletonTests
         skelTest3 = new Skeleton<TestObject>( boneA , boneB );
         sumTest = new[] { skelTest1 , skelTest2 , skelTest3 }.Aggregate( aggregator );
         sumTest.IsSome.Should().BeTrue();
-        sumTest.IfSome( s =>
-        {
-            s.Value.IsSome.Should().BeFalse();
-        } );
+        sumTest.IfSome( s => s.Value.IsSome.Should().BeFalse() );
     }
 
     [Fact]

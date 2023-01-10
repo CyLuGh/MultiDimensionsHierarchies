@@ -3,13 +3,9 @@ using BenchmarkDotNet.Running;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 public static class Program
 {
@@ -121,7 +117,7 @@ public static class Program
     {
         TestMethod( hA , "Group" , agg => agg.Group() , dimensionCount , sampleSize );
         TestMethod( hA , "Dictionary" , agg => agg.Dictionary() , dimensionCount , sampleSize );
-        TestMethod( tA , "Target" , agg => agg.TopDown() , dimensionCount , sampleSize , targetCount );
+        TestMethod( tA , "Target" , agg => agg.TargetedTopDown() , dimensionCount , sampleSize , targetCount );
         //TestMethod( tA , "Heuristic" , agg => agg.Heuristic() , dimensionCount , sampleSize , targetCount );
     }
 }

@@ -222,25 +222,21 @@ Some samples can be found in the [Demo project](https://github.com/CyLuGh/MultiD
 ## Benchmarks (WIP) -- Outdated by new implementations
 
 
-| Method | Dimensions | Sample Size | Targets | Results | Duration | Speed |
-|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-|Heuristic|3|10,000|0|22,875|1.396s|16,386.10 r/s|
-|Heuristic|3|50,000|0|32,415|4.407s|7,355.34 r/s|
-|Heuristic|3|100,000|0|35,063|5.517s|6,355.44 r/s|
-|Heuristic|4|10,000|0|235,423|6.407s|36,744.65 r/s|
-|Heuristic|4|50,000|0|481,714|30.791s|15,644.63 r/s|
-|Heuristic|4|100,000|0|615,929|59.482s|10,354.88 r/s|
-|Heuristic|5|10,000|0|1,668,963|26.976s|61,868.43 r/s|
-|Heuristic|5|50,000|0|4,352,390|145.394s|29,935.14 r/s|
-|Targeted|3|10,000|500|500|2.158s|231.69 r/s|
-|Targeted|3|50,000|500|500|7.993s|62.55 r/s|
-|Targeted|3|100,000|500|500|10.525s|47.50 r/s|
-|Targeted|4|10,000|500|500|2.446s|204.41 r/s|
-|Targeted|4|10,000|1,000|1,000|6.741s|148.34 r/s|
-|Targeted|4|10,000|5,000|5,000|31.690s|157.77 r/s|
-|Targeted|4|50,000|500|500|8.216s|60.85 r/s|
-|Targeted|4|50,000|1,000|1,000|39.018s|25.62 r/s|
-|Targeted|4|50,000|5,000|5,000|194.676s|25.68 r/s|
-|Targeted|4|100,000|500|500|11.135s|44.90 r/s|
-|Targeted|4|100,000|1,000|1,000|82.293s|12.15 r/s|
-|Targeted|5|10,000|1,000|1,000|6.559s|152.46 r/s|
+| TargetsCount | AggregationMethod | SampleSize | DimensionsCount | Mean | Allocated |
+| --: | --: | --: | --: | --: | --: |
+| 1000 | TopDown | 100000 | 4 | 50,7 | 41.07 GB
+| 1000 | TopDown | 100000 | 5 | 49,24 | 41.38 GB
+| 1000 | TopDown | 200000 | 4 | 94,01 | 78.37 GB
+| 1000 | TopDown | 200000 | 5 | 93,83 | 79.11 GB
+| 1000 | TopDownGroup | 100000 | 4	| 11,5 | 5.84 GB
+| 1000 | TopDownGroup | 100000 | 5	| 12,11 | 6.23 GB
+| 1000 | TopDownGroup | 200000 | 4	| 24,23 | 11.25 GB
+| 1000 | TopDownGroup | 200000 | 5	| 25,03 | 12 GB
+| 2000 | TopDown | 100000 | 4 | 78,55| 67.11 GB
+| 2000 | TopDown | 100000 | 5 | 83,69| 67.5 GB
+| 2000 | TopDown | 200000 | 4 | 148,01| 128.5 GB
+| 2000 | TopDown | 200000 | 5 | 147,26| 129.15 GB
+| 2000 | TopDownGroup | 100000 | 4 | 12,94 | 7.25 GB
+| 2000 | TopDownGroup | 100000 | 5 | 14 | 7.63 GB
+| 2000 | TopDownGroup | 200000 | 4 | 25,97 | 13.89 GB
+| 2000 | TopDownGroup | 200000 | 5 | 27,9 | 14.68 GB
