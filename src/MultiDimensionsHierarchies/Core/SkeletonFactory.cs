@@ -9,6 +9,37 @@ namespace MultiDimensionsHierarchies.Core
 {
     public static class SkeletonFactory
     {
+        public static Seq<Skeleton> BuildSkeletons(
+            IEnumerable<string> inputs ,
+            Func<string , string[]> parser ,
+            Arr<Dimension> dimensions
+        )
+        {
+            return inputs
+                .AsParallel()
+                .Select( input =>
+                {
+                    var split = parser( input );
+                    if ( split.Length != dimensions.Length )
+                        throw new ArgumentException( $"Dimensions count doesn't match parsed string {input}" );
+
+                    var elements = split.Select( ( s , i ) => dimensions[i].Find( s ) ).Somes().ToSeq();
+                    var missings = dimensions
+                        .Select( d => elements.Find( o => o.DimensionName.Equals( d ) )
+                        .Some( _ => string.Empty ).None( () => d.Name ) ).Where( s => !string.IsNullOrEmpty( s ) )
+                        .ToSeq();
+
+                    if ( missings.Any() )
+                    {
+                        var missing = string.Join( ", " , missings );
+                        throw new ArgumentException( $"Some dimensions couldn't be resolved: {missing}." );
+                    }
+
+                    return new Skeleton(elements);
+                } )
+                .ToSeq();
+        }
+
         /// <summary>
         /// Build skeletons from source items.
         /// </summary>
