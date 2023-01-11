@@ -50,8 +50,9 @@ namespace MultiDimensionsHierarchies
             Func<T , T , T> aggregator ,
             Func<IEnumerable<T> , T> groupAggregator = null ,
             Func<T , double , T> weightEffect = null ,
-            bool useCachedSkeletons = true )
-            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , Seq<Bone>.Empty , groupAggregator , weightEffect , useCachedSkeletons );
+            bool useCachedSkeletons = true ,
+            bool checkUse = false )
+            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , Seq<Bone>.Empty , groupAggregator , weightEffect , useCachedSkeletons , checkUse );
 
         public static AggregationResult<T> Aggregate<T>(
             Method method ,
@@ -60,8 +61,9 @@ namespace MultiDimensionsHierarchies
             Seq<Bone> ancestorsFilters ,
             Func<IEnumerable<T> , T> groupAggregator = null ,
             Func<T , double , T> weightEffect = null ,
-            bool useCachedSkeletons = true )
-            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , ancestorsFilters , groupAggregator , weightEffect , useCachedSkeletons );
+            bool useCachedSkeletons = true ,
+            bool checkUse = false )
+            => Aggregate( method , inputs , aggregator , Array.Empty<Skeleton>() , ancestorsFilters , groupAggregator , weightEffect , useCachedSkeletons , checkUse );
 
         public static AggregationResult<T> Aggregate<T>(
             Method method ,
@@ -70,8 +72,9 @@ namespace MultiDimensionsHierarchies
             IEnumerable<Skeleton> targets ,
             Func<IEnumerable<T> , T> groupAggregator = null ,
             Func<T , double , T> weightEffect = null ,
-            bool useCachedSkeletons = true )
-            => Aggregate( method , inputs , aggregator , targets , Seq<Bone>.Empty , groupAggregator , weightEffect , useCachedSkeletons );
+            bool useCachedSkeletons = true ,
+            bool checkUse = false )
+            => Aggregate( method , inputs , aggregator , targets , Seq<Bone>.Empty , groupAggregator , weightEffect , useCachedSkeletons , checkUse );
 
         /// <summary>
         /// Apply aggregator to inputs according to included hierarchies.
@@ -92,11 +95,12 @@ namespace MultiDimensionsHierarchies
             Seq<Bone> ancestorsFilters ,
             Func<IEnumerable<T> , T> groupAggregator = null ,
             Func<T , double , T> weightEffect = null ,
-            bool useCachedSkeletons = true )
+            bool useCachedSkeletons = true ,
+            bool checkUse = false )
         {
             var hashTarget = new LanguageExt.HashSet<Skeleton>().TryAddRange( targets );
 
-            if ( method == Method.TopDown && hashTarget.Count == 0 )
+            if ( ( method == Method.TopDown || method == Method.TopDownGroup ) && hashTarget.Count == 0 )
                 return new AggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "TopDown method requires targets but none have been defined!" );
 
             /* Aggregate base data that might have common keys */
@@ -116,8 +120,8 @@ namespace MultiDimensionsHierarchies
 
             return method switch
             {
-                Method.TopDown => TopDownAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect , false ),
-                Method.TopDownGroup => TopDownAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect , true ),
+                Method.TopDown => TopDownAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect , false , checkUse ),
+                Method.TopDownGroup => TopDownAggregate( groupedInputs , hashTarget , groupAggregator , weightEffect , true , checkUse ),
                 Method.BottomTop => BottomTopAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
                 Method.BottomTopDictionary => BottomTopDictionaryAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
                 Method.BottomTopGroup => BottomTopGroupAggregate( groupedInputs , aggregator , hashTarget , ancestorsFilters , weightEffect , useCachedSkeletons ),
@@ -291,12 +295,13 @@ namespace MultiDimensionsHierarchies
                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                  Func<IEnumerable<T> , T> groupAggregator ,
                                                                  Func<T , double , T> weightEffect ,
-                                                                 bool group = false )
+                                                                 bool group = false ,
+                                                                 bool checkUse = false )
         {
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var results = StreamAggregateResults( baseData , targets , groupAggregator , weightEffect , group )
+                var results = StreamAggregateResults( baseData , targets , groupAggregator , weightEffect , group , checkUse )
                     .ToArray();
                 stopWatch.Stop();
 
@@ -451,12 +456,13 @@ namespace MultiDimensionsHierarchies
                                                                     bool group = false ,
                                                                     bool simplifyData = false ,
                                                                     string[] dimensionsToPreserve = null ,
-                                                                    Func<IEnumerable<T> , T> groupAggregator = null )
+                                                                    Func<IEnumerable<T> , T> groupAggregator = null ,
+                                                                    bool checkUse = false )
         {
             var f = Prelude.Try( () =>
             {
                 var stopWatch = Stopwatch.StartNew();
-                var results = StreamDetailedAggregateResults( baseData , targets , aggregator , group , simplifyData , dimensionsToPreserve , groupAggregator ).ToArray();
+                var results = StreamDetailedAggregateResults( baseData , targets , aggregator , group , simplifyData , dimensionsToPreserve , groupAggregator , checkUse ).ToArray();
                 stopWatch.Stop();
 
                 return new DetailedAggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
@@ -469,9 +475,15 @@ namespace MultiDimensionsHierarchies
                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                  Func<IEnumerable<T> , T> groupAggregator ,
                                                                  Func<T , double , T> weightEffect = null ,
-                                                                 bool group = false )
+                                                                 bool group = false ,
+                                                                 bool checkUse = false )
         {
             if ( baseData.Length == 0 || targets.Length == 0 )
+                return Seq<Skeleton<T>>.Empty;
+
+            baseData = checkUse ? baseData.CheckUse( targets ).Rights().ToArray() : baseData;
+
+            if ( baseData.Length == 0 )
                 return Seq<Skeleton<T>>.Empty;
 
             weightEffect ??= ( t , _ ) => t;
@@ -528,10 +540,17 @@ namespace MultiDimensionsHierarchies
                                                                  bool group = false ,
                                                                  bool simplifyData = false ,
                                                                  string[] dimensionsToPreserve = null ,
-                                                                 Func<IEnumerable<T> , T> groupAggregator = null )
+                                                                 Func<IEnumerable<T> , T> groupAggregator = null ,
+                                                                 bool checkUse = false )
         {
             if ( baseData.Length == 0 || targets.Length == 0 )
                 return Seq<SkeletonsAccumulator<T>>.Empty;
+
+            baseData = checkUse ? baseData.CheckUse( targets ).Rights().ToArray() : baseData;
+
+            if ( baseData.Length == 0 )
+                return Seq<SkeletonsAccumulator<T>>.Empty;
+
 
             return simplifyData
                 ? StreamSimplifiedDetailedAggregateResults( baseData , targets , aggregator , dimensionsToPreserve , groupAggregator , group )
@@ -590,6 +609,7 @@ namespace MultiDimensionsHierarchies
                                                                  Func<IEnumerable<(T, double)> , T> aggregator ,
                                                                  bool group = false )
         {
+
             var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
                     .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
 

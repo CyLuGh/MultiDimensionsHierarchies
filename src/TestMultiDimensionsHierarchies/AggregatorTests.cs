@@ -592,4 +592,23 @@ public class AggregatorTests
                 .Be( 207 ) );
         } );
     }
+
+    [Fact]
+    public void TestCheckUse()
+    {
+        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+        var skeletons = GetLeavesSample( dimensions );
+        var targets = GetTargets( dimensions );
+        targets = Seq.create(
+            targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
+            ).Somes();
+
+        var resultsWithoutCheckUse = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets , checkUse: false );
+        var resultsWithCheckUse = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets , checkUse: true );
+
+        resultsWithCheckUse.Results.Length.Should().Be( resultsWithoutCheckUse.Results.Length );
+        resultsWithCheckUse.Results.OrderBy( x => x.Key )
+            .SequenceEqual( resultsWithoutCheckUse.Results.OrderBy( x => x.Key ) )
+            .Should().BeTrue();
+    }
 }

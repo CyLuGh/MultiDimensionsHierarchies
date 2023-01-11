@@ -134,13 +134,13 @@ namespace MultiDimensionsHierarchies.Core
         {
             var bonesPerDimension = targets
                 .AsParallel()
-                .SelectMany( s => s.Bones.Flatten() )
+                .SelectMany( s => s.Bones )
                 .GroupBy( b => b.DimensionName )
-                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Select( x => x ) ) );
+                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
 
             return skeletons
                 .AsParallel()
-                .Select<Skeleton<T> , Either<Skeleton , Skeleton<T>>>( s => s.Key.HasAnyBones( bonesPerDimension ) ? s : s.Key ).ToSeq();
+                .Select<Skeleton<T> , Either<Skeleton , Skeleton<T>>>( s => s.Key.CheckBones( bonesPerDimension ) ? s : s.Key ).ToSeq();
         }
     }
 }

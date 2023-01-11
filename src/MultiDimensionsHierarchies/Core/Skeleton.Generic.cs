@@ -4,10 +4,10 @@ using System.Collections.Generic;
 
 namespace MultiDimensionsHierarchies.Core
 {
-    public class Skeleton<T>
+    public class Skeleton<T> : IEquatable<Skeleton<T>>
     {
         public Skeleton Key { get; }
-        public Option<T> Value { get; set; }
+        public Option<T> Value { get; }
         public T ValueUnsafe => Value.MatchUnsafe( v => v , () => default );
 
         public Arr<Bone> Bones => Key.Bones;
@@ -74,5 +74,21 @@ namespace MultiDimensionsHierarchies.Core
 
             return With( value: t );
         }
+
+        public bool Equals( Skeleton<T> other )
+        {
+            if ( other is null ) return false;
+            if ( ReferenceEquals( this , other ) ) return true;
+            return Key.Equals( other.Key ) && Value.Equals( other.Value );
+        }
+
+        public override bool Equals( object obj )
+        {
+            if ( obj is null ) return false;
+            if ( ReferenceEquals( this , obj ) ) return true;
+            return obj.GetType() == this.GetType() && Equals( (Skeleton<T>) obj );
+        }
+
+        public override int GetHashCode() => Key.GetHashCode() ^ Value.GetHashCode();
     }
 }
