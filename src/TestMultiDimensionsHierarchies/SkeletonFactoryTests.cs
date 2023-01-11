@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using LanguageExt;
 using LanguageExt.UnitTesting;
 using MultiDimensionsHierarchies.Core;
 using System;
@@ -327,5 +328,47 @@ public class SkeletonFactoryTests
                 s.Value.ShouldBeSome( v => v.Should().Be( 4.6 ) );
                 s.ValueUnsafe.Should().Be( 4.6 );
             } );
+    }
+
+    [Fact]
+    public void TestBuildDimensionsArray()
+    {
+        var dimA = SkeletonTests.GetDimension( "Dimension A" );
+        var dimB = SkeletonTests.GetDimension( "Dimension B" );
+        var dimC = SkeletonTests.GetDimension( "Dimension C" );
+        var dimensions = Arr.create( dimA , dimB , dimC );
+
+        var items = new[] { "1.1:2.1:1.2" , "2:1:2.4" };
+        var skeletons = SkeletonFactory.BuildSkeletons( items , s => s.Split( ':' ) , dimensions );
+        skeletons.Length.Should().Be( 2 );
+        skeletons.Find( "2" , "1" , "2.4" )
+            .ShouldBeSome();
+
+        var items2 = new[] { "1.1:2.1:1.2" , "2:1:4" , "1:1:1:1" };
+        var act = () => SkeletonFactory.BuildSkeletons( items2 , s => s.Split( ':' ) , dimensions ).Strict();
+        act.Should().Throw<AggregateException>()
+            .WithInnerException( typeof( ArgumentException ) , "Some dimensions couldn't be resolved: Dimension C." );
+        act.Should().Throw<AggregateException>()
+            .WithInnerException( typeof( ArgumentException ) , "Dimensions count doesn't match parsed string 1:1:1:1" );
+    }
+
+    [Fact]
+    public void TestTryBuildDimensionsArray()
+    {
+        var dimA = SkeletonTests.GetDimension( "Dimension A" );
+        var dimB = SkeletonTests.GetDimension( "Dimension B" );
+        var dimC = SkeletonTests.GetDimension( "Dimension C" );
+        var dimensions = Arr.create( dimA , dimB , dimC );
+
+        var items = new[] { "1.1:2.1:1.2" , "2:1:2.4" };
+        var skeletons = SkeletonFactory.TryBuildSkeletons( items , s => s.Split( ':' ) , dimensions );
+        skeletons.Length.Should().Be( 2 );
+        skeletons.Rights().Find( "2" , "1" , "2.4" )
+            .ShouldBeSome();
+
+        items = new[] { "1.1:2.1:1.2" , "2:1:4" , "1:1:1:1" };
+        skeletons = SkeletonFactory.TryBuildSkeletons( items , s => s.Split( ':' ) , dimensions );
+        skeletons.Rights().Count.Should().Be( 1 );
+        skeletons.Lefts().Count.Should().Be( 2 );
     }
 }

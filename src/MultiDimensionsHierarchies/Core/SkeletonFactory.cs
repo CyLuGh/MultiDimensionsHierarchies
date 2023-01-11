@@ -17,27 +17,54 @@ namespace MultiDimensionsHierarchies.Core
         {
             return inputs
                 .AsParallel()
-                .Select( input =>
-                {
-                    var split = parser( input );
-                    if ( split.Length != dimensions.Length )
-                        throw new ArgumentException( $"Dimensions count doesn't match parsed string {input}" );
-
-                    var elements = split.Select( ( s , i ) => dimensions[i].Find( s ) ).Somes().ToSeq();
-                    var missings = dimensions
-                        .Select( d => elements.Find( o => o.DimensionName.Equals( d ) )
-                        .Some( _ => string.Empty ).None( () => d.Name ) ).Where( s => !string.IsNullOrEmpty( s ) )
-                        .ToSeq();
-
-                    if ( missings.Any() )
-                    {
-                        var missing = string.Join( ", " , missings );
-                        throw new ArgumentException( $"Some dimensions couldn't be resolved: {missing}." );
-                    }
-
-                    return new Skeleton(elements);
-                } )
+                .Select( input => BuildSkeleton( input , parser , dimensions ) )
                 .ToSeq();
+        }
+
+        public static Skeleton BuildSkeleton(
+            string input ,
+            Func<string , string[]> parser ,
+            Arr<Dimension> dimensions
+        )
+        {
+            return TryBuildSkeleton( input , parser , dimensions )
+                .Match( s => s , e => throw e );
+        }
+
+        public static Seq<Either<Error , Skeleton>> TryBuildSkeletons(
+            IEnumerable<string> inputs ,
+            Func<string , string[]> parser ,
+            Arr<Dimension> dimensions
+        )
+        {
+            return inputs
+                .AsParallel()
+                .Select( input => TryBuildSkeleton( input , parser , dimensions ) )
+                .ToSeq();
+        }
+
+        public static Either<Error , Skeleton> TryBuildSkeleton(
+            string input ,
+            Func<string , string[]> parser ,
+            Arr<Dimension> dimensions
+        )
+        {
+            var split = parser( input );
+            if ( split.Length != dimensions.Length )
+                return Error.New( new ArgumentException( $"Dimensions count doesn't match parsed string {input}" ) );
+
+            var elements = split.Select( ( s , i ) => dimensions[i].Find( s ) ).Somes().ToSeq();
+            var missings = dimensions.Select( x => x.Name )
+                .Except( elements.Select( o => o.DimensionName ) )
+                .ToSeq();
+
+            if ( missings.Any() )
+            {
+                var missing = string.Join( ", " , missings );
+                return Error.New( new ArgumentException( $"Some dimensions couldn't be resolved: {missing}." ) );
+            }
+
+            return new Skeleton( elements );
         }
 
         /// <summary>
@@ -51,7 +78,8 @@ namespace MultiDimensionsHierarchies.Core
         /// <returns>Sequence of properly defined Skeletons</returns>
         /// <exception cref="ArgumentException">Throws if a dimension of interest is not included in dimensions</exception>
         /// <exception cref="ApplicationException">Throws if skeleton creation can't find a required value in dimensions</exception>
-        public static Seq<Skeleton> BuildSkeletons<T>( IEnumerable<T> inputs ,
+        public static Seq<Skeleton> BuildSkeletons<T>(
+            IEnumerable<T> inputs ,
             Func<T , string , string> parser ,
             IEnumerable<Dimension> dimensions ,
             string[] dimensionsOfInterest = null )
@@ -72,11 +100,12 @@ namespace MultiDimensionsHierarchies.Core
         /// <returns>Sequence of properly defined Skeletons, containing data</returns>
         /// <exception cref="ArgumentException">Throws if a dimension of interest is not included in dimensions</exception>
         /// <exception cref="ApplicationException">Throws if skeleton creation can't find a required value in dimensions</exception>
-        public static Seq<Skeleton<T>> BuildSkeletons<T, TI>( IEnumerable<TI> inputs ,
-          Func<TI , string , string> parser ,
-          Func<TI , T> evaluator ,
-          IEnumerable<Dimension> dimensions ,
-          string[] dimensionsOfInterest = null )
+        public static Seq<Skeleton<T>> BuildSkeletons<T, TI>(
+            IEnumerable<TI> inputs ,
+            Func<TI , string , string> parser ,
+            Func<TI , T> evaluator ,
+            IEnumerable<Dimension> dimensions ,
+            string[] dimensionsOfInterest = null )
         {
             return CreateSkeletons( inputs , parser , evaluator , dimensions , dimensionsOfInterest ).ToSeq();
         }
@@ -92,7 +121,8 @@ namespace MultiDimensionsHierarchies.Core
         /// <returns>Sequence of properly defined Skeletons</returns>
         /// <exception cref="ArgumentException">Throws if a dimension of interest is not included in dimensions</exception>
         /// <exception cref="ApplicationException">Throws if skeleton creation can't find a required value in dimensions</exception>
-        public static Seq<Skeleton> BuildSkeletons( IEnumerable<string> stringInputs ,
+        public static Seq<Skeleton> BuildSkeletons(
+            IEnumerable<string> stringInputs ,
             Func<string , string[]> partitioner ,
             Func<string[] , string , string> selectioner ,
             IEnumerable<Dimension> dimensions ,
@@ -112,7 +142,8 @@ namespace MultiDimensionsHierarchies.Core
         /// <param name="dimensionsOfInterest">(Optional) Subset of dimensions to be used</param>
         /// <returns>Sequence of properly defined Skeletons</returns>
         /// <exception cref="ArgumentException">Throws if a dimension of interest is not included in dimensions</exception>
-        public static Seq<Either<Error , Skeleton>> TryBuildSkeletons<T>( IEnumerable<T> inputs ,
+        public static Seq<Either<Error , Skeleton>> TryBuildSkeletons<T>(
+            IEnumerable<T> inputs ,
             Func<T , string , string> parser ,
             IEnumerable<Dimension> dimensions ,
             string[] dimensionsOfInterest = null )
@@ -132,11 +163,12 @@ namespace MultiDimensionsHierarchies.Core
         /// <param name="dimensionsOfInterest">(Optional) Subset of dimensions to be used</param>
         /// <returns>Sequence of properly defined Skeletons, containing data</returns>
         /// <exception cref="ArgumentException">Throws if a dimension of interest is not included in dimensions</exception>
-        public static Seq<Either<Error , Skeleton<T>>> TryBuildSkeletons<T, TI>( IEnumerable<TI> inputs ,
-          Func<TI , string , string> parser ,
-          Func<TI , T> evaluator ,
-          IEnumerable<Dimension> dimensions ,
-          string[] dimensionsOfInterest = null )
+        public static Seq<Either<Error , Skeleton<T>>> TryBuildSkeletons<T, TI>(
+            IEnumerable<TI> inputs ,
+            Func<TI , string , string> parser ,
+            Func<TI , T> evaluator ,
+            IEnumerable<Dimension> dimensions ,
+            string[] dimensionsOfInterest = null )
         {
             return TryCreateSkeletons( inputs , parser , evaluator , dimensions , dimensionsOfInterest ).ToSeq();
         }
@@ -151,7 +183,8 @@ namespace MultiDimensionsHierarchies.Core
         /// <param name="dimensionsOfInterest">(Optional) Subset of dimensions to be used</param>
         /// <returns>Sequence of properly defined Skeletons</returns>
         /// <exception cref="ArgumentException">Throws if a dimension of interest is not included in dimensions</exception>
-        public static Seq<Either<Error , Skeleton>> TryBuildSkeletons( IEnumerable<string> stringInputs ,
+        public static Seq<Either<Error , Skeleton>> TryBuildSkeletons(
+            IEnumerable<string> stringInputs ,
             Func<string , string[]> partitioner ,
             Func<string[] , string , string> selectioner ,
             IEnumerable<Dimension> dimensions ,
@@ -161,21 +194,24 @@ namespace MultiDimensionsHierarchies.Core
                 selectioner , dimensions , dimensionsOfInterest );
         }
 
-        internal static IEnumerable<Skeleton> CreateSkeletons<T>( IEnumerable<T> inputs ,
+        internal static IEnumerable<Skeleton> CreateSkeletons<T>(
+            IEnumerable<T> inputs ,
             Func<T , string , string> parser ,
             IEnumerable<Dimension> dimensions ,
             string[] dimensionsOfInterest = null )
             => CreateSkeletons( inputs , parser , _ => Unit.Default , dimensions , dimensionsOfInterest )
                 .Select( s => s.Key );
 
-        internal static IEnumerable<Either<Error , Skeleton>> TryCreateSkeletons<T>( IEnumerable<T> inputs ,
+        internal static IEnumerable<Either<Error , Skeleton>> TryCreateSkeletons<T>(
+            IEnumerable<T> inputs ,
             Func<T , string , string> parser ,
             IEnumerable<Dimension> dimensions ,
             string[] dimensionsOfInterest = null )
             => TryCreateSkeletons( inputs , parser , _ => Unit.Default , dimensions , dimensionsOfInterest )
                 .Map( x => x.Map( s => s.Key ) );
 
-        internal static IEnumerable<Skeleton<U>> CreateSkeletons<T, U>( IEnumerable<T> inputs ,
+        internal static IEnumerable<Skeleton<U>> CreateSkeletons<T, U>(
+            IEnumerable<T> inputs ,
             Func<T , string , string> parser ,
             Func<T , U> evaluator ,
             IEnumerable<Dimension> dimensions ,
@@ -222,7 +258,8 @@ namespace MultiDimensionsHierarchies.Core
             } );
         }
 
-        internal static IEnumerable<Either<Error , Skeleton<U>>> TryCreateSkeletons<T, U>( IEnumerable<T> inputs ,
+        internal static IEnumerable<Either<Error , Skeleton<U>>> TryCreateSkeletons<T, U>(
+            IEnumerable<T> inputs ,
             Func<T , string , string> parser ,
             Func<T , U> evaluator ,
             IEnumerable<Dimension> dimensions ,
@@ -259,7 +296,10 @@ namespace MultiDimensionsHierarchies.Core
             } );
         }
 
-        internal static IEnumerable<Either<Error , Skeleton<U>>> TryCreateSkeletons<T, U>( T input , Func<T , U> evaluator , Either<string , Bone[]>[] bones )
+        internal static IEnumerable<Either<Error , Skeleton<U>>> TryCreateSkeletons<T, U>(
+            T input ,
+            Func<T , U> evaluator ,
+            Either<string , Bone[]>[] bones )
         {
             if ( bones.Lefts().Any() )
             {
@@ -278,7 +318,13 @@ namespace MultiDimensionsHierarchies.Core
             }
         }
 
-        internal static Either<string , Bone[]> FindBones<T>( T input , Func<T , string , string> parser , string dimensionName , ILookup<(string, string) , Bone> dimensionsLookup )
+        internal static Either<string , Bone[]> FindBones<T>(
+            T input ,
+            Func<T ,
+            string , string> parser ,
+            string dimensionName ,
+            ILookup<(string, string) ,
+            Bone> dimensionsLookup )
         {
             var boneLabel = parser( input , dimensionName );
             var bones = dimensionsLookup[(dimensionName, boneLabel)].ToArray();
