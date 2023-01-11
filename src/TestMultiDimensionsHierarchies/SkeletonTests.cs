@@ -627,4 +627,28 @@ public class SkeletonTests
         skeleton.GetBone( 0 ).Should().BeSameAs( boneA );
         skeleton.GetBone( 2 ).Should().BeSameAs( Bone.None );
     }
+
+    [Fact]
+    public void TestCheckUse()
+    {
+        var dimensions = new[] { "Dim A" };
+        var skeletons = AggregatorTests.GetLeavesSample( dimensions );
+        var targets = AggregatorTests.GetTargets( dimensions );
+        targets = Seq.create( targets.Find( "1" ) ).Somes();
+
+        var checks = skeletons.CheckUse( targets );
+        checks.Rights().Length.Should().Be( 4 );
+        checks.Lefts().Length.Should().Be( 4 );
+
+        dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+        skeletons = AggregatorTests.GetLeavesSample( dimensions );
+        targets = AggregatorTests.GetTargets( dimensions );
+        targets = Seq.create(
+            targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
+            ).Somes();
+
+        checks = skeletons.CheckUse( targets );
+        checks.Rights().Length.Should().Be( 2048 );
+        checks.Lefts().Length.Should().Be( 30720 );
+    }
 }

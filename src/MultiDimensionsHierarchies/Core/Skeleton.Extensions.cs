@@ -129,5 +129,18 @@ namespace MultiDimensionsHierarchies.Core
 
         public static long EstimateComplexity<T>( this IEnumerable<Skeleton<T>> skeletons )
             => skeletons.Select( s => s.Key ).EstimateComplexity();
+
+        public static Seq<Either<Skeleton , Skeleton<T>>> CheckUse<T>( this IEnumerable<Skeleton<T>> skeletons , IEnumerable<Skeleton> targets )
+        {
+            var bonesPerDimension = targets
+                .AsParallel()
+                .SelectMany( s => s.Bones.Flatten() )
+                .GroupBy( b => b.DimensionName )
+                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Select( x => x ) ) );
+
+            return skeletons
+                .AsParallel()
+                .Select<Skeleton<T> , Either<Skeleton , Skeleton<T>>>( s => s.Key.HasAnyBones( bonesPerDimension ) ? s : s.Key ).ToSeq();
+        }
     }
 }
