@@ -371,4 +371,53 @@ public class SkeletonFactoryTests
         skeletons.Rights().Count.Should().Be( 1 );
         skeletons.Lefts().Count.Should().Be( 2 );
     }
+
+    [Fact]
+    public void TestFastBuild()
+    {
+        var dimA = SkeletonTests.GetDimension( "Dimension A" );
+        var dimB = SkeletonTests.GetDimension( "Dimension B" );
+
+        var items = Seq.create( (DimA: "1.1", DimB: "2", Value: 4.6) , (DimA: "1.2", DimB: "2.3", Value: 7d) );
+        var parser = ( (string DimA, string DimB, double _) t , string dim ) => dim switch
+        {
+            "Dimension A" => t.DimA,
+            "Dimension B" => t.DimB,
+            _ => string.Empty,
+        };
+        var evaluator = ( (string DimA, string DimB, double Value) t ) => t.Value;
+
+        var skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) );
+        skeletons.Length.Should().Be( 2 );
+
+        skeletons.All( s => s.Bones.Length == 2 ).Should().BeTrue();
+        skeletons.Find( "1.1" , "2" )
+            .ShouldBeSome( s =>
+            {
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
+
+                s.Value.ShouldBeSome( v => v.Should().Be( 4.6 ) );
+                s.ValueUnsafe.Should().Be( 4.6 );
+            } );
+    }
+
+    [Fact]
+    public void TestFastBuildAndCheck()
+    {
+        var dimA = SkeletonTests.GetDimension( "Dimension A" );
+        var dimB = SkeletonTests.GetDimension( "Dimension B" );
+
+        var items = Seq.create( (DimA: "1.1", DimB: "2", Value: 4.6) , (DimA: "1.2", DimB: "2.3", Value: 7d) );
+        var parser = ( (string DimA, string DimB, double _) t , string dim ) => dim switch
+        {
+            "Dimension A" => t.DimA,
+            "Dimension B" => t.DimB,
+            _ => string.Empty,
+        };
+        var evaluator = ( (string DimA, string DimB, double Value) t ) => t.Value;
+
+        // var targets = Seq.create( new Skeleton( dimA.Find("1.2") , dimB.Find("2.3")));
+
+        var skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) );
+    }
 }

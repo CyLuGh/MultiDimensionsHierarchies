@@ -53,7 +53,7 @@ namespace Benchmark
                     Dimensions.Take( DimensionsCount ) ).ToArray();
         }
 
-        private static IEnumerable<ParentHierarchyInput<string>> BuildHierarchy( string id , Option<string> parentId , int maxDepth , int count = 1 )
+        internal static IEnumerable<ParentHierarchyInput<string>> BuildHierarchy( string id , Option<string> parentId , int maxDepth , int count = 1 )
         {
             var item = new ParentHierarchyInput<string> { Id = id };
 
@@ -72,7 +72,7 @@ namespace Benchmark
             }
         }
 
-        private static DataInput[] BuildSample( string[] labels , int sampleSize )
+        internal static DataInput[] BuildSample( string[] labels , int sampleSize )
         {
             Randomizer.Seed = new Random( 0 );
             var faker = new Faker();
@@ -87,6 +87,7 @@ namespace Benchmark
                   DimD = faker.PickRandom( labels ) ,
                   DimE = faker.PickRandom( labels ) ,
                   DimF = faker.PickRandom( labels ) ,
+                  DimG = faker.PickRandom( labels ) ,
                   Value = faker.Random.Double()
               } )
 
