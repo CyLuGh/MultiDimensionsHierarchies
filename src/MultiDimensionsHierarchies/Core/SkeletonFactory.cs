@@ -323,8 +323,7 @@ namespace MultiDimensionsHierarchies.Core
             T input ,
             Func<T , string , string> parser ,
             string dimensionName ,
-            ILookup<(string, string) ,
-            Bone> dimensionsLookup )
+            ILookup<(string, string) , Bone> dimensionsLookup )
         {
             var boneLabel = parser( input , dimensionName );
 
@@ -336,40 +335,74 @@ namespace MultiDimensionsHierarchies.Core
             return bones;
         }
 
-        public static Seq<Skeleton<O>> FastBuildAndCheck<I, O>(
-            Seq<I> inputs ,
+        public static Seq<Skeleton<O>> FastBuild<I, O, K>
+        (
+            IEnumerable<I> inputs ,
             Func<I , string , string> parser ,
             Func<I , O> evaluator ,
-            Seq<Dimension> dimensions ,
-            IEnumerable<Skeleton> targets
+            IEnumerable<Dimension> dimensions ,
+            Func<I , K> keySelector ,
+            Func<IGrouping<K , I> , I> inputsAggregator ,
+            Func<IEnumerable<O> , O> groupAggregator = null ,
+            IEnumerable<Skeleton> checkTargets = null
         )
         {
-            var bonesPerDimension = targets
-                .AsParallel()
-                .SelectMany( s => s.Bones )
-                .GroupBy( b => b.DimensionName )
-                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
+            inputs = inputs
+                .GroupBy( x => keySelector( x ) )
+                .Select( g => inputsAggregator( g ) );
 
-            return FastBuild( inputs , parser , evaluator , dimensions )
-                .Where( s => s.Key.CheckBones( bonesPerDimension ) );
+            return FastBuild( inputs , parser , evaluator , dimensions , groupAggregator , checkTargets );
         }
 
-        public static Seq<Skeleton<O>> FastBuild<I, O>(
-            Seq<I> inputs ,
+        public static Seq<Skeleton<O>> FastBuild<I, O>
+        (
+            IEnumerable<I> inputs ,
             Func<I , string , string> parser ,
             Func<I , O> evaluator ,
-            Seq<Dimension> dimensions
+            IEnumerable<Dimension> dimensions ,
+            Func<IEnumerable<O> , O> groupAggregator = null ,
+            IEnumerable<Skeleton> checkTargets = null
+        )
+        {
+            var skeletons = FastBuild( inputs , parser , evaluator , dimensions );
+
+            if ( groupAggregator != null )
+            {
+                skeletons = skeletons.GroupBy( x => x.Key )
+                    .Select( g => g.Aggregate( g.Key , groupAggregator ) );
+            }
+
+            if ( checkTargets != null )
+            {
+                var bonesPerDimension = checkTargets
+                                .AsParallel()
+                                .SelectMany( s => s.Bones )
+                                .GroupBy( b => b.DimensionName )
+                                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
+
+                skeletons = skeletons.Where( s => s.Key.CheckBones( bonesPerDimension ) );
+            }
+
+            return skeletons.ToSeq();
+        }
+
+        private static ParallelQuery<Skeleton<O>> FastBuild<I, O>(
+            IEnumerable<I> inputs ,
+            Func<I , string , string> parser ,
+            Func<I , O> evaluator ,
+            IEnumerable<Dimension> dimensions
         )
         {
             var dimSeq = dimensions
                 .Select( d => (d.Name, Bones: d.Flatten().GroupBy( b => b.Label ).ToDictionary( g => g.Key , g => g.ToSeq().Strict() )) )
+                .ToSeq()
                 .Strict();
 
             return FastBuild( inputs , parser , evaluator , dimSeq );
         }
 
-        private static Seq<Skeleton<O>> FastBuild<I, O>(
-            Seq<I> inputs ,
+        private static ParallelQuery<Skeleton<O>> FastBuild<I, O>(
+            IEnumerable<I> inputs ,
             Func<I , string , string> parser ,
             Func<I , O> evaluator ,
             Seq<(string Name, Dictionary<string , Seq<Bone>> Bones)> dimensions
@@ -377,14 +410,14 @@ namespace MultiDimensionsHierarchies.Core
         {
             return inputs
                 .AsParallel()
-                .SelectMany<I , Skeleton<O>>( input =>
+                .SelectMany( input =>
                 {
                     var bones = dimensions.Select( d => d.Bones.TryGetValue( parser( input , d.Name ) , out var b ) ? b : Seq<Bone>.Empty );
 
                     if ( bones.Any( b => b.IsEmpty ) )
                         return Seq<Skeleton<O>>.Empty;
 
-                    var components = bones.Aggregate<Seq<Bone> , List<Seq<Bone>>>( new List<Seq<Bone>>() ,
+                    var components = bones.Aggregate( new List<Seq<Bone>>() ,
                         ( list , bs ) =>
                         {
                             if ( list.Count == 0 )
@@ -395,8 +428,7 @@ namespace MultiDimensionsHierarchies.Core
 
                     return components.Select( bs => new Skeleton<O>( evaluator( input ) , bs ) )
                         .ToSeq();
-                } )
-                .ToSeq();
+                } );
         }
     }
 }

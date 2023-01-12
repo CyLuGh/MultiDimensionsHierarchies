@@ -3,6 +3,7 @@ using LanguageExt;
 using LanguageExt.UnitTesting;
 using MultiDimensionsHierarchies.Core;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
@@ -402,6 +403,90 @@ public class SkeletonFactoryTests
     }
 
     [Fact]
+    public void TestFastBuildGroupInput()
+    {
+        var dimA = SkeletonTests.GetDimension( "Dimension A" );
+        var dimB = SkeletonTests.GetDimension( "Dimension B" );
+
+        var items = Seq.create(
+            new SampleRecord( DimA: "1.1" , DimB: "2" , Value: 4.6 ) ,
+            new SampleRecord( DimA: "1.2" , DimB: "2.3" , Value: 7d ) ,
+            new SampleRecord( DimA: "1.1" , DimB: "2" , Value: 4d ) );
+        var parser = ( SampleRecord t , string dim ) => dim switch
+        {
+            "Dimension A" => t.DimA,
+            "Dimension B" => t.DimB,
+            _ => string.Empty,
+        };
+        var evaluator = ( SampleRecord t ) => t.Value;
+
+        var skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) );
+        skeletons.Length.Should().Be( items.Count );
+
+        skeletons.All( s => s.Bones.Length == 2 ).Should().BeTrue();
+        var found = skeletons.FindAll( "1.1" , "2" );
+        found.Length.Should().Be( 2 );
+        found.Sum( s => s.ValueUnsafe ).Should().Be( 8.6 );
+
+        skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) ,
+            r => new SampleKey( r.DimA , r.DimB ) ,
+            ( IGrouping<SampleKey , SampleRecord> records ) =>
+                new SampleRecord( DimA: records.Key.DimA , DimB: records.Key.DimB , Value: records.Sum( x => x.Value ) ) );
+        skeletons.Length.Should().Be( items.Count - 1 );
+        skeletons.All( s => s.Bones.Length == 2 ).Should().BeTrue();
+
+        skeletons.Find( "1.1" , "2" )
+            .ShouldBeSome( s =>
+            {
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
+
+                s.Value.ShouldBeSome( v => v.Should().Be( 8.6 ) );
+                s.ValueUnsafe.Should().Be( 8.6 );
+            } );
+    }
+
+    [Fact]
+    public void TestFastBuildGroupSkeletons()
+    {
+        var dimA = SkeletonTests.GetDimension( "Dimension A" );
+        var dimB = SkeletonTests.GetDimension( "Dimension B" );
+
+        var items = Seq.create(
+            new SampleRecord( DimA: "1.1" , DimB: "2" , Value: 4.6 ) ,
+            new SampleRecord( DimA: "1.2" , DimB: "2.3" , Value: 7d ) ,
+            new SampleRecord( DimA: "1.1" , DimB: "2" , Value: 4d ) );
+        var parser = ( SampleRecord t , string dim ) => dim switch
+        {
+            "Dimension A" => t.DimA,
+            "Dimension B" => t.DimB,
+            _ => string.Empty,
+        };
+        var evaluator = ( SampleRecord t ) => t.Value;
+
+        var skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) );
+        skeletons.Length.Should().Be( items.Count );
+
+        skeletons.All( s => s.Bones.Length == 2 ).Should().BeTrue();
+        var found = skeletons.FindAll( "1.1" , "2" );
+        found.Length.Should().Be( 2 );
+        found.Sum( s => s.ValueUnsafe ).Should().Be( 8.6 );
+
+        skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) ,
+            groupAggregator: ds => ds.Sum() );
+        skeletons.Length.Should().Be( items.Count - 1 );
+        skeletons.All( s => s.Bones.Length == 2 ).Should().BeTrue();
+
+        skeletons.Find( "1.1" , "2" )
+            .ShouldBeSome( s =>
+            {
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
+
+                s.Value.ShouldBeSome( v => v.Should().Be( 8.6 ) );
+                s.ValueUnsafe.Should().Be( 8.6 );
+            } );
+    }
+
+    [Fact]
     public void TestFastBuildAndCheck()
     {
         var dimA = SkeletonTests.GetDimension( "Dimension A" );
@@ -416,8 +501,11 @@ public class SkeletonFactoryTests
         };
         var evaluator = ( (string DimA, string DimB, double Value) t ) => t.Value;
 
-        // var targets = Seq.create( new Skeleton( dimA.Find("1.2") , dimB.Find("2.3")));
-
         var skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) );
+        skeletons.Length.Should().Be( 2 );
+
+        var targets = skeletons.FindAll( "1.2" , "2.3" ).Select( x => x.Key );
+        skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) , checkTargets: targets );
+        skeletons.Length.Should().Be( 1 );
     }
 }
