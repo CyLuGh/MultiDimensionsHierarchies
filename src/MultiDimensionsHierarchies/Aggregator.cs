@@ -15,15 +15,19 @@ namespace MultiDimensionsHierarchies
     public enum Method
     {
         Heuristic = 0,
+
         /// <summary>
         /// Computes all aggregates from source data in a bottom-top way.
         /// </summary>
         BottomTop = 1,
+
         BottomTopCached = 2,
+
         /// <summary>
         /// Computes limited aggregates in top-down way.
         /// </summary>
         TopDown = 3,
+
         BottomTopGroup = 11,
         BottomTopDictionary = 12,
         BottomTopGroupCached = 13,
@@ -107,7 +111,7 @@ namespace MultiDimensionsHierarchies
             groupAggregator ??= ( items ) => items.Aggregate( aggregator );
             var groupedInputs = inputs.GroupBy( x => x.Key )
                 .Select( g => g.Aggregate( g.Key , groupAggregator ) )
-                .ToArray();
+                .ToSeq();
 
             weightEffect ??= ( t , _ ) => t;
 
@@ -140,7 +144,7 @@ namespace MultiDimensionsHierarchies
                 _ => false
             };
 
-        internal static Method FindBestMethod<T>( Skeleton<T>[] inputs , LanguageExt.HashSet<Skeleton> targets )
+        internal static Method FindBestMethod<T>( Seq<Skeleton<T>> inputs , LanguageExt.HashSet<Skeleton> targets )
         {
             if ( inputs.Length == 0 || inputs[0].Bones.IsEmpty )
                 return Method.None;
@@ -168,7 +172,7 @@ namespace MultiDimensionsHierarchies
         private static Method FindBestNotCachedMethod( int inputsCount )
             => inputsCount < 1_000_000 ? Method.BottomTopGroup : Method.BottomTopDictionary;
 
-        private static AggregationResult<T> BottomTopAggregate<T>( Skeleton<T>[] baseData ,
+        private static AggregationResult<T> BottomTopAggregate<T>( Seq<Skeleton<T>> baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
@@ -195,7 +199,7 @@ namespace MultiDimensionsHierarchies
                 .ToSeq().Strict();
         }
 
-        private static AggregationResult<T> BottomTopGroupAggregate<T>( Skeleton<T>[] baseData ,
+        private static AggregationResult<T> BottomTopGroupAggregate<T>( Seq<Skeleton<T>> baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
@@ -229,7 +233,7 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        private static AggregationResult<T> BottomTopDictionaryAggregate<T>( Skeleton<T>[] baseData ,
+        private static AggregationResult<T> BottomTopDictionaryAggregate<T>( Seq<Skeleton<T>> baseData ,
                                                                   Func<T , T , T> aggregator ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
                                                                   Seq<Bone> ancestorsFilters ,
@@ -269,8 +273,8 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        private static (Skeleton<T>[], LanguageExt.HashSet<Skeleton>) SimplifyTargets<T>(
-            Skeleton<T>[] baseData ,
+        private static (Seq<Skeleton<T>>, LanguageExt.HashSet<Skeleton>) SimplifyTargets<T>(
+            Seq<Skeleton<T>> baseData ,
             LanguageExt.HashSet<Skeleton> targets ,
             Seq<Bone> uniqueTargetBaseBones ,
             Func<IEnumerable<T> , T> groupAggregator ,
@@ -284,14 +288,14 @@ namespace MultiDimensionsHierarchies
                .Select( d => d.Except( uniqueDimensions ) )
                .GroupBy( x => x.Key )
                .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
-               .ToArray();
+               .ToSeq();
 
             var hash = new LanguageExt.HashSet<Skeleton>().TryAddRange( targets.Select( s => s.Except( uniqueDimensions ) ) );
 
             return (simplifiedData, hash);
         }
 
-        private static AggregationResult<T> TopDownAggregate<T>( Skeleton<T>[] baseData ,
+        private static AggregationResult<T> TopDownAggregate<T>( Seq<Skeleton<T>> baseData ,
                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                  Func<IEnumerable<T> , T> groupAggregator ,
                                                                  Func<T , double , T> weightEffect ,
@@ -356,7 +360,7 @@ namespace MultiDimensionsHierarchies
             if ( method == Method.TopDown && hashTarget.Count == 0 )
                 return new DetailedAggregationResult<T>( AggregationStatus.NO_RUN , TimeSpan.Zero , "Method is Targeted but no targets have been defined!" );
 
-            var inputsArray = inputs.ToArray();
+            var inputsArray = inputs.ToSeq();
             // Check for most well suited method if Heuristic
             if ( method == Method.Heuristic )
             {
@@ -378,7 +382,7 @@ namespace MultiDimensionsHierarchies
             };
         }
 
-        private static DetailedAggregationResult<T> HeuristicDetailedGroupAggregate<T>( Skeleton<T>[] baseData ,
+        private static DetailedAggregationResult<T> HeuristicDetailedGroupAggregate<T>( Seq<Skeleton<T>> baseData ,
                                                                   Func<IEnumerable<(T, double)> , T> aggregator ,
                                                                   Seq<Bone> ancestorsFilters ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
@@ -411,7 +415,7 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        private static DetailedAggregationResult<T> HeuristicDetailedDictionaryAggregate<T>( Skeleton<T>[] baseData ,
+        private static DetailedAggregationResult<T> HeuristicDetailedDictionaryAggregate<T>( Seq<Skeleton<T>> baseData ,
                                                                   Func<IEnumerable<(T, double)> , T> aggregator ,
                                                                   Seq<Bone> ancestorsFilters ,
                                                                   LanguageExt.HashSet<Skeleton> targets ,
@@ -450,7 +454,7 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        private static DetailedAggregationResult<T> DetailedTargetedAggregate<T>( Skeleton<T>[] baseData ,
+        private static DetailedAggregationResult<T> DetailedTargetedAggregate<T>( Seq<Skeleton<T>> baseData ,
                                                                     Func<IEnumerable<(T, double)> , T> aggregator ,
                                                                     LanguageExt.HashSet<Skeleton> targets ,
                                                                     bool group = false ,
@@ -471,7 +475,7 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        public static IEnumerable<Skeleton<T>> StreamAggregateResults<T>( Skeleton<T>[] baseData ,
+        public static IEnumerable<Skeleton<T>> StreamAggregateResults<T>( Seq<Skeleton<T>> baseData ,
                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                  Func<IEnumerable<T> , T> groupAggregator ,
                                                                  Func<T , double , T> weightEffect = null ,
@@ -481,7 +485,7 @@ namespace MultiDimensionsHierarchies
             if ( baseData.Length == 0 || targets.Length == 0 )
                 return Seq<Skeleton<T>>.Empty;
 
-            baseData = checkUse ? baseData.CheckUse( targets ).Rights().ToArray() : baseData;
+            baseData = checkUse ? baseData.CheckUse( targets ).Rights() : baseData;
 
             if ( baseData.Length == 0 )
                 return Seq<Skeleton<T>>.Empty;
@@ -500,21 +504,115 @@ namespace MultiDimensionsHierarchies
                     SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , weightEffect )
                     : (baseData, targets);
 
+            if ( group )
+            {
+                return GroupTargets( simplifiedTargets.ToArray() , simplifiedData , groupAggregator , weightEffect , 0 , simplifiedData[0].Key.Bones.Length )
+                    .Select( r => r.Add( uniqueTargetBaseBones ) );
+            }
+
             var simplifiedMap = simplifiedData.ToDictionary( s => s.Key );
 
-            var results = !group
-                ? simplifiedTargets
+            return simplifiedTargets
                     .AsParallel()
                     .Select( t => t.GetComposingSkeletons( simplifiedMap ).Aggregate( t , groupAggregator , weightEffect ) )
-                    .Select( r => r.Add( uniqueTargetBaseBones ) )
-                : GroupTargets( simplifiedTargets.ToArray() , simplifiedData , groupAggregator , weightEffect , 0 , simplifiedData[0].Key.Bones.Length )
                     .Select( r => r.Add( uniqueTargetBaseBones ) );
+        }
 
-            return results;
+        public static IEnumerable<SkeletonsAccumulator<T>> StreamDetailedAggregateResults<T>( Seq<Skeleton<T>> baseData ,
+                                                                 LanguageExt.HashSet<Skeleton> targets ,
+                                                                 Func<IEnumerable<(T, double)> , T> aggregator ,
+                                                                 bool group = false ,
+                                                                 bool simplifyData = false ,
+                                                                 string[] dimensionsToPreserve = null ,
+                                                                 Func<IEnumerable<T> , T> groupAggregator = null ,
+                                                                 bool checkUse = false )
+        {
+            if ( baseData.Length == 0 || targets.Length == 0 )
+                return Seq<SkeletonsAccumulator<T>>.Empty;
+
+            baseData = checkUse ? baseData.CheckUse( targets ).Rights() : baseData;
+
+            if ( baseData.Length == 0 )
+                return Seq<SkeletonsAccumulator<T>>.Empty;
+
+            return simplifyData
+                ? StreamSimplifiedDetailedAggregateResults( baseData , targets , aggregator , dimensionsToPreserve , groupAggregator , group )
+                : StreamSourceDetailedAggregateResults( baseData , targets , aggregator , group );
+        }
+
+        private static IEnumerable<SkeletonsAccumulator<T>> StreamSimplifiedDetailedAggregateResults<T>( Seq<Skeleton<T>> baseData ,
+                                                                 LanguageExt.HashSet<Skeleton> targets ,
+                                                                 Func<IEnumerable<(T, double)> , T> aggregator ,
+                                                                 string[] dimensionsToPreserve ,
+                                                                 Func<IEnumerable<T> , T> groupAggregator ,
+                                                                 bool group = false )
+        {
+            if ( groupAggregator == null )
+                throw new ArgumentException( "Argument can't be null" , nameof( groupAggregator ) );
+
+            if ( dimensionsToPreserve == null )
+                throw new ArgumentException( "Argument can't be null" , nameof( dimensionsToPreserve ) );
+
+            baseData = baseData.GroupBy( x => x.Key )
+                    .Select( g => g.Aggregate( g.Key , groupAggregator ) )
+                    .ToSeq();
+
+            var uniqueTargetBaseBones = targets
+                   .SelectMany( t => t.Bones )
+                   .GroupBy( b => b.DimensionName )
+                   .Where( g => !dimensionsToPreserve.Contains( g.Key ) && g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) )
+                   .Select( g => g.First() )
+                   .ToSeq();
+
+            //TODO: check if weight effect is needed
+            var (simplifiedData, simplifiedTargets) =
+            uniqueTargetBaseBones.Any()
+                ? SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , ( t , _ ) => t )
+                : (baseData, targets);
+
+            if ( group )
+            {
+                return GroupTargets( simplifiedTargets.ToArray() , simplifiedData , aggregator , 0 , simplifiedData[0].Key.Bones.Length )
+                    .Select( s => new SkeletonsAccumulator<T>( s.Key.Add( uniqueTargetBaseBones ) , s.Components , s.Aggregator ) );
+            }
+
+            var dictionary = simplifiedData.AsParallel().GroupBy( s => s.Key )
+                    .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
+            return simplifiedTargets
+                    .AsParallel()
+                    .Select( skeleton =>
+                    {
+                        var components = skeleton
+                            .GetComposingSkeletons( dictionary )
+                            .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
+                        return new SkeletonsAccumulator<T>( skeleton.Add( uniqueTargetBaseBones ) , components , aggregator );
+                    } );
+        }
+
+        private static IEnumerable<SkeletonsAccumulator<T>> StreamSourceDetailedAggregateResults<T>( Seq<Skeleton<T>> baseData ,
+                                                                 LanguageExt.HashSet<Skeleton> targets ,
+                                                                 Func<IEnumerable<(T, double)> , T> aggregator ,
+                                                                 bool group = false )
+        {
+            if ( group )
+                return GroupTargets( targets.ToArray() , baseData , aggregator , 0 , baseData[0].Key.Bones.Length );
+
+            var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
+                    .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
+
+            return targets
+                    .AsParallel()
+                    .Select( skeleton =>
+                    {
+                        var components = skeleton
+                            .GetComposingSkeletons( dictionary )
+                            .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
+                        return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
+                    } );
         }
 
         private static IEnumerable<Skeleton<T>> GroupTargets<T>( Skeleton[] targets ,
-            Skeleton<T>[] data ,
+            Seq<Skeleton<T>> data ,
             Func<IEnumerable<T> , T> groupAggregator ,
             Func<T , double , T> weightEffect ,
             int boneIndex ,
@@ -531,103 +629,11 @@ namespace MultiDimensionsHierarchies
                 .WithDegreeOfParallelism( boneIndex == 0 ? Environment.ProcessorCount : 1 )
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
-                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToArray() , groupAggregator , weightEffect , boneIndex + 1 , dimensionsCount ) );
-        }
-
-        public static IEnumerable<SkeletonsAccumulator<T>> StreamDetailedAggregateResults<T>( Skeleton<T>[] baseData ,
-                                                                 LanguageExt.HashSet<Skeleton> targets ,
-                                                                 Func<IEnumerable<(T, double)> , T> aggregator ,
-                                                                 bool group = false ,
-                                                                 bool simplifyData = false ,
-                                                                 string[] dimensionsToPreserve = null ,
-                                                                 Func<IEnumerable<T> , T> groupAggregator = null ,
-                                                                 bool checkUse = false )
-        {
-            if ( baseData.Length == 0 || targets.Length == 0 )
-                return Seq<SkeletonsAccumulator<T>>.Empty;
-
-            baseData = checkUse ? baseData.CheckUse( targets ).Rights().ToArray() : baseData;
-
-            if ( baseData.Length == 0 )
-                return Seq<SkeletonsAccumulator<T>>.Empty;
-
-
-            return simplifyData
-                ? StreamSimplifiedDetailedAggregateResults( baseData , targets , aggregator , dimensionsToPreserve , groupAggregator , group )
-                : StreamSourceDetailedAggregateResults( baseData , targets , aggregator , group );
-        }
-
-        private static IEnumerable<SkeletonsAccumulator<T>> StreamSimplifiedDetailedAggregateResults<T>( Skeleton<T>[] baseData ,
-                                                                 LanguageExt.HashSet<Skeleton> targets ,
-                                                                 Func<IEnumerable<(T, double)> , T> aggregator ,
-                                                                 string[] dimensionsToPreserve ,
-                                                                 Func<IEnumerable<T> , T> groupAggregator ,
-                                                                 bool group = false )
-        {
-            if ( groupAggregator == null )
-                throw new ArgumentException( "Argument can't be null" , nameof( groupAggregator ) );
-
-            if ( dimensionsToPreserve == null )
-                throw new ArgumentException( "Argument can't be null" , nameof( dimensionsToPreserve ) );
-
-            baseData = baseData.GroupBy( x => x.Key )
-                    .Select( g => g.Aggregate( g.Key , groupAggregator ) )
-                    .ToArray();
-
-            var uniqueTargetBaseBones = targets
-                   .SelectMany( t => t.Bones )
-                   .GroupBy( b => b.DimensionName )
-                   .Where( g => !dimensionsToPreserve.Contains( g.Key ) && g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) )
-                   .Select( g => g.First() )
-                   .ToSeq();
-
-            //TODO: check if weight effect is needed
-            var (simplifiedData, simplifiedTargets) =
-            uniqueTargetBaseBones.Any()
-                ? SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , ( t , _ ) => t )
-                : (baseData, targets);
-
-            var dictionary = simplifiedData.AsParallel().GroupBy( s => s.Key )
-                    .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
-
-            return !group
-                ? simplifiedTargets
-                    .AsParallel()
-                    .Select( skeleton =>
-                    {
-                        var components = skeleton
-                            .GetComposingSkeletons( dictionary )
-                            .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
-                        return new SkeletonsAccumulator<T>( skeleton.Add( uniqueTargetBaseBones ) , components , aggregator );
-                    } )
-                : GroupTargets( simplifiedTargets.ToArray() , simplifiedData , aggregator , 0 , simplifiedData[0].Key.Bones.Length )
-                    .Select( s => new SkeletonsAccumulator<T>( s.Key.Add( uniqueTargetBaseBones ) , s.Components , s.Aggregator ) );
-        }
-
-        private static IEnumerable<SkeletonsAccumulator<T>> StreamSourceDetailedAggregateResults<T>( Skeleton<T>[] baseData ,
-                                                                 LanguageExt.HashSet<Skeleton> targets ,
-                                                                 Func<IEnumerable<(T, double)> , T> aggregator ,
-                                                                 bool group = false )
-        {
-
-            var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
-                    .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
-
-            return !group
-                ? targets
-                    .AsParallel()
-                    .Select( skeleton =>
-                    {
-                        var components = skeleton
-                            .GetComposingSkeletons( dictionary )
-                            .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
-                        return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
-                    } )
-                : GroupTargets( targets.ToArray() , baseData , aggregator , 0 , baseData[0].Key.Bones.Length );
+                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , groupAggregator , weightEffect , boneIndex + 1 , dimensionsCount ) );
         }
 
         private static IEnumerable<SkeletonsAccumulator<T>> GroupTargets<T>( Skeleton[] targets ,
-            Skeleton<T>[] data ,
+            Seq<Skeleton<T>> data ,
             Func<IEnumerable<(T, double)> , T> aggregator ,
             int boneIndex ,
             int dimensionsCount )
@@ -643,7 +649,7 @@ namespace MultiDimensionsHierarchies
                 .WithDegreeOfParallelism( boneIndex == 0 ? Environment.ProcessorCount : 1 )
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
-                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToArray() , aggregator , boneIndex + 1 , dimensionsCount ) );
+                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , aggregator , boneIndex + 1 , dimensionsCount ) );
         }
     }
 }
