@@ -352,3 +352,5 @@ MigrationBackup/
 src/inspectcode.xml
 .vscode/tasks.json
 .vscode/launch.json
+
+src/.idea/

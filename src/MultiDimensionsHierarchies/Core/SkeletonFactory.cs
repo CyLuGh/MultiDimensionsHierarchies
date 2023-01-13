@@ -252,9 +252,14 @@ namespace MultiDimensionsHierarchies.Core
                 }
 
                 return bones.Rights()
-                    .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
-                        ( skels , bs ) => skels.Cartesian( bs , ( s , b ) => s.Add( b ) ) )
-                   .Select( skel => new Skeleton<U>( evaluator( input ) , skel ) );
+                    .Aggregate( new List<Seq<Bone>>() ,
+                        ( list , bs ) =>
+                        {
+                            return list.Count == 0
+                                ? bs.Select( b => Seq.create( b ) ).ToList()
+                                : list.Cartesian( bs , ( seq , b ) => seq.Add( b ) ).ToList();
+                        } )
+                    .Select( bs => new Skeleton<U>( evaluator( input ) , bs ) );
             } );
         }
 
@@ -310,9 +315,14 @@ namespace MultiDimensionsHierarchies.Core
             else
             {
                 foreach ( var s in bones.Rights()
-                    .Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
-                        ( skels , bs ) => skels.Cartesian( bs , ( s , b ) => s.Add( b ) ) )
-                   .Select( skel => new Skeleton<U>( evaluator( input ) , skel ) ) )
+                             .Aggregate( new List<Seq<Bone>>() ,
+                                 ( list , bs ) =>
+                                 {
+                                     return list.Count == 0
+                                         ? bs.Select( b => Seq.create( b ) ).ToList()
+                                         : list.Cartesian( bs , ( seq , b ) => seq.Add( b ) ).ToList();
+                                 } )
+                             .Select( bs => new Skeleton<U>( evaluator( input ) , bs ) ) )
                 {
                     yield return s;
                 }
@@ -335,15 +345,30 @@ namespace MultiDimensionsHierarchies.Core
             return bones;
         }
 
-        public static Seq<Skeleton<O>> FastBuild<I, O, K>
+        /// <summary>
+        /// Build skeletons from raw data input, only returning valid items. No exception will be thrown for invalid inputs. Group raw data to reduce iterations.
+        /// </summary>
+        /// <param name="inputs">Raw data</param>
+        /// <param name="parser">Delegate to extract needed dimensions from input</param>
+        /// <param name="evaluator">Delegate to determine value associated to input</param>
+        /// <param name="dimensions">Dimensions to be used for hierarchical aggregates</param>
+        /// <param name="keySelector">Delegate to build group keys from input</param>
+        /// <param name="inputsAggregator">Delegate that will be applied to group of input data</param>
+        /// <param name="groupAggregator">Optional delegate that will be applied to group of skeletons; use to limit skeleton output</param>
+        /// <param name="checkTargets">Optional collection of targets; use to limit skeletons output</param>
+        /// <typeparam name="TI">Raw data type</typeparam>
+        /// <typeparam name="TO">Associated value type</typeparam>
+        /// <typeparam name="TK">Type of the key that will be used to group raw inputs</typeparam>
+        /// <returns>Sequence of skeletons</returns>
+        public static Seq<Skeleton<TO>> FastBuild<TI, TO, TK>
         (
-            IEnumerable<I> inputs ,
-            Func<I , string , string> parser ,
-            Func<I , O> evaluator ,
+            IEnumerable<TI> inputs ,
+            Func<TI , string , string> parser ,
+            Func<TI , TO> evaluator ,
             IEnumerable<Dimension> dimensions ,
-            Func<I , K> keySelector ,
-            Func<IGrouping<K , I> , I> inputsAggregator ,
-            Func<IEnumerable<O> , O> groupAggregator = null ,
+            Func<TI , TK> keySelector ,
+            Func<IGrouping<TK , TI> , TI> inputsAggregator ,
+            Func<IEnumerable<TO> , TO> groupAggregator = null ,
             IEnumerable<Skeleton> checkTargets = null
         )
         {
@@ -354,17 +379,29 @@ namespace MultiDimensionsHierarchies.Core
             return FastBuild( inputs , parser , evaluator , dimensions , groupAggregator , checkTargets );
         }
 
-        public static Seq<Skeleton<O>> FastBuild<I, O>
+        /// <summary>
+        /// Build skeletons from raw data input, only returning valid items. No exception will be thrown for invalid inputs.
+        /// </summary>
+        /// <param name="inputs">Raw data</param>
+        /// <param name="parser">Delegate to extract needed dimensions from input</param>
+        /// <param name="evaluator">Delegate to determine value associated to input</param>
+        /// <param name="dimensions">Dimensions to be used for hierarchical aggregates</param>
+        /// <param name="groupAggregator">Optional delegate that will be applied to group of skeletons; use to limit skeleton output</param>
+        /// <param name="checkTargets">Optional collection of targets; use to limit skeletons output</param>
+        /// <typeparam name="TI">Raw data type</typeparam>
+        /// <typeparam name="TO">Associated value type</typeparam>
+        /// <returns>Sequence of skeletons</returns>
+        public static Seq<Skeleton<TO>> FastBuild<TI, TO>
         (
-            IEnumerable<I> inputs ,
-            Func<I , string , string> parser ,
-            Func<I , O> evaluator ,
+            IEnumerable<TI> inputs ,
+            Func<TI , string , string> parser ,
+            Func<TI , TO> evaluator ,
             IEnumerable<Dimension> dimensions ,
-            Func<IEnumerable<O> , O> groupAggregator = null ,
+            Func<IEnumerable<TO> , TO> groupAggregator = null ,
             IEnumerable<Skeleton> checkTargets = null
         )
         {
-            var skeletons = FastBuild( inputs , parser , evaluator , dimensions );
+            var skeletons = FastParse( inputs , parser , evaluator , dimensions );
 
             if ( groupAggregator != null )
             {
@@ -386,10 +423,10 @@ namespace MultiDimensionsHierarchies.Core
             return skeletons.ToSeq();
         }
 
-        private static ParallelQuery<Skeleton<O>> FastBuild<I, O>(
-            IEnumerable<I> inputs ,
-            Func<I , string , string> parser ,
-            Func<I , O> evaluator ,
+        private static ParallelQuery<Skeleton<TO>> FastParse<TI, TO>(
+            IEnumerable<TI> inputs ,
+            Func<TI , string , string> parser ,
+            Func<TI , TO> evaluator ,
             IEnumerable<Dimension> dimensions
         )
         {
@@ -398,13 +435,13 @@ namespace MultiDimensionsHierarchies.Core
                 .ToSeq()
                 .Strict();
 
-            return FastBuild( inputs , parser , evaluator , dimSeq );
+            return FastParse( inputs , parser , evaluator , dimSeq );
         }
 
-        private static ParallelQuery<Skeleton<O>> FastBuild<I, O>(
-            IEnumerable<I> inputs ,
-            Func<I , string , string> parser ,
-            Func<I , O> evaluator ,
+        private static ParallelQuery<Skeleton<TO>> FastParse<TI, TO>(
+            IEnumerable<TI> inputs ,
+            Func<TI , string , string> parser ,
+            Func<TI , TO> evaluator ,
             Seq<(string Name, Dictionary<string , Seq<Bone>> Bones)> dimensions
         )
         {
@@ -415,18 +452,18 @@ namespace MultiDimensionsHierarchies.Core
                     var bones = dimensions.Select( d => d.Bones.TryGetValue( parser( input , d.Name ) , out var b ) ? b : Seq<Bone>.Empty );
 
                     if ( bones.Any( b => b.IsEmpty ) )
-                        return Seq<Skeleton<O>>.Empty;
+                        return Seq<Skeleton<TO>>.Empty;
 
                     var components = bones.Aggregate( new List<Seq<Bone>>() ,
                         ( list , bs ) =>
                         {
-                            if ( list.Count == 0 )
-                                return bs.Select( b => Seq.create( b ) ).ToList();
-
-                            return list.Cartesian( bs , ( seq , b ) => seq.Add( b ) ).ToList();
+                            return list.Count == 0 
+                                ? bs.Select( b => Seq.create( b ) ).ToList() 
+                                : list.Cartesian( bs , ( seq , b ) => seq.Add( b ) ).ToList();
                         } );
 
-                    return components.Select( bs => new Skeleton<O>( evaluator( input ) , bs ) )
+                    return components
+                        .Select( bs => new Skeleton<TO>( evaluator( input ) , bs ) )
                         .ToSeq();
                 } );
         }

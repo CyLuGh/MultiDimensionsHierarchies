@@ -10,7 +10,7 @@ using Spectre.Console;
 using System.Diagnostics;
 using System.Globalization;
 
-AnsiConsole.Write( new FigletText( "MDH demo" ).LeftAligned() );
+AnsiConsole.Write( new FigletText( "MDH demo" ) );
 
 AnsiConsole.WriteLine( "Welcome to this small demo that will try to explain the purpose of this library." );
 await Task.Delay( TimeSpan.FromSeconds( 1 ) );

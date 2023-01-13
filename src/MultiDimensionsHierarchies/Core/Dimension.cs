@@ -45,9 +45,8 @@ namespace MultiDimensionsHierarchies.Core
 
             unchecked
             {
-                var hashCode = Name.GetHashCode();
-                foreach ( var bone in Frame.Flatten() )
-                    hashCode += bone.GetHashCode();
+                var hashCode = Name.GetHashCode() 
+                               + Enumerable.Sum( Frame.Flatten() , bone => bone.GetHashCode() );
 
                 _hashCode = hashCode;
                 return hashCode;
