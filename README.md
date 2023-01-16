@@ -2,7 +2,11 @@
 
 [![NuGet](https://raw.githubusercontent.com/NuGet/Media/main/Images/MainLogo/32x32/nuget_32.png)](https://www.nuget.org/packages/MultiDimensionsHierarchies/) [![CodeQL](https://github.com/CyLuGh/MultiDimensionsHierarchies/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/CyLuGh/MultiDimensionsHierarchies/actions/workflows/codeql-analysis.yml) [![CodeFactor](https://www.codefactor.io/repository/github/cylugh/multidimensionshierarchies/badge)](https://www.codefactor.io/repository/github/cylugh/multidimensionshierarchies) 
 
-It is quite easy to do some aggregates along a single hierarchy through recursive methods. It is still easy enough with two hierarchies. But what happens when there are *n* hierarchies to iterate through? This library tries to bring an easy answer to this problem, even if it has some limitations: this won't replace a true data cube solution.
+It is quite easy to do some aggregates along a single hierarchy through recursive methods. It is still easy enough with two hierarchies. But what happens when there are *n* hierarchies to iterate through? This library tries to bring an answer to this problem, even if it has some limitations: this won't replace a true data cube solution.
+
+The library can also keep track of data contribution, which may then be used to compute extra information, such as primary confidentiality.
+
+*This library is still a work in progress, even if already used in several working applications. The results are correct but there's always room for improvements. A cleanup might occur soon, as it could make sense keeping around slower methods, but the API shouldn't change.*
 
 ## Dimensions
 
@@ -57,6 +61,10 @@ Oil --> Colza
 *Dimension*s can't be directly created. The *DimensionFactory* class offers three methods to create a dimension, which can be chosen depending on how the hierarchies are defined in input.
 
 **A bone may have several children but can never have more than one parent.**
+
+|||
+|--|--|
+|⚠|**The identifiers must be unique. An element can be found several times at different places in a hierarchy, but this will be handled by its label, its id has to be unique (by containing the path of all its parent for example).**|
 
 #### With parent link:
 Each item is defined with a reference to its parent. Data could look like:
@@ -129,61 +137,89 @@ public static Dimension BuildWithMultipleChildrenLink<TA, TB>(
 
 ## Skeletons
 
-A *Skeleton*, as a collection of **n** *Bone*s, defines an entry in **n** *Dimension*s. The generic type *Skeleton\<T\>* associates an entry and a value of type T.
+A *Skeleton*, as a collection of **n** *Bone*s, defines an entry in **n** *Dimension*s. They are the tool that allows us to navigate through the hierarchies. The generic type *Skeleton\<T>* associates an entry and a value of type T. *SkeletonsAccumulator\<T>* keeps track of all the components that are used to determine its associated value.
 
-If we wished to identify the fries produced in Belgium and cooked properly, we'd have `Belgium` for the **GEO** dimension and `Beef` for the **COOKING** dimension. The resulting skeleton would look like `Beef:Belgium`. **Inside a *Skeleton*, the *Bones* are sorted by the alphabetical order of their *Dimension* name.**
+If we wished to identify the fries produced in Belgium and cooked properly, we'd have `Belgium` for the **GEO** dimension and `Beef` for the **COOKING** dimension. The resulting skeleton would look like `Beef:Belgium`. Inside a *Skeleton*, the *Bones* are sorted by the alphabetical order of their *Dimension* name, so don't worry if its key looks different from the input.
 
-***A Skeleton can't have two dimensions with the same name.*** If for some reason, we'd need two countries definition, you'd have to create a **GEO1** and a **GEO2**, or be more explicit with **PRODUCTION_COUNTRY** and **CONSUMPTION_COUNTRY**.
+|||
+|--|--|
+|⚠|***A Skeleton can't have two dimensions with the same name.*** |
+
+If for some reason, we'd need two countries definition, you'd have to create a **GEO1** and a **GEO2**, or be more explicit with **PRODUCTION_COUNTRY** and **CONSUMPTION_COUNTRY**.
 
 ### SkeletonFactory
 
-As the library uses immutables to improve memory and speed, *Skeleton*s must be created through a factory.
+As the library uses references to improve memory and speed, *Skeleton*s should be created through a factory.
 
-```csharp
-// Build skeletons from source items.
-public static Seq<Skeleton> BuildSkeletons<T>( IEnumerable<T> inputs ,
-    Func<T , string , string> parser ,
-    IEnumerable<Dimension> dimensions ,
-    string[] dimensionsOfInterest = null )
-```
+The factory offers several methods:
 
-```csharp
-// Build skeletons with their associated value from source items.
-public static Seq<Skeleton<T>> BuildSkeletons<T, TI>( IEnumerable<TI> inputs ,
-    Func<TI , string , string> parser ,
-    Func<TI , T> evaluator ,
-    IEnumerable<Dimension> dimensions ,
-    string[] dimensionsOfInterest = null )
-```
-
-```csharp
-// Build skeletons from string sources
-public static Seq<Skeleton> BuildSkeletons( IEnumerable<string> stringInputs ,
-    Func<string , string[]> partitioner ,
-    Func<string[] , string , string> selectioner ,
-    IEnumerable<Dimension> dimensions ,
-    string[] dimensionsOfInterest = null )
-```
+- `BuildSkeletons` will create *Skeleton*s in defined dimensions. This method will throw exceptions if data aren't matching.
+- `TryBuildSkeletons` will create *Skeleton*s in defined dimensions. This method will return two collections: properly created items and error messages, but won't throw exceptions.
+- `FastBuild` will create *Skeleton*s in defined dimensions, but will ignore invalid elements. It also offers some options that may speed up *Skeleton*s build if the data weren't cleaned up beforehands.
 
 ## Aggregation
 
-The *Aggregator* class offers two methods, whether the output should be limited to a defined set or not.
+When computing aggregation, it is important to know whether or not you will limit the results to a defined set. Computing every keys with multiple hierarchical dimensions often makes no sense: results count exponentially grows and most of those keys don't have a real meaning.
+
+The library offers two kind of algorithms: working from source data to higher elements in the hierarchy (BottomTop) or starting from a list of desired result keys (TopDown).
+
+The **Aggregator** class exposes the API used to make the computations.
 
 ```csharp
-public static AggregationResult<T> Aggregate<T>( Method method,
+public static AggregationResult<T> Aggregate<T>(
+    Method method ,
     IEnumerable<Skeleton<T>> inputs ,
-    Func<T , T , T> aggregator , 
-    Func<IEnumerable<T> , T> groupAggregator = null , 
-    Func<T , double , T> weightEffect = null )
+    Func<T , T , T> aggregator ,
+    Func<IEnumerable<T> , T> groupAggregator = null ,
+    Func<T , double , T> weightEffect = null ,
+    bool useCachedSkeletons = true ,
+    bool checkUse = false );
 ```
 
 ```csharp
-public static AggregationResult<T> Aggregate<T>( Method method ,
+public static AggregationResult<T> Aggregate<T>(
+    Method method ,
     IEnumerable<Skeleton<T>> inputs ,
-    Func<T , T , T> aggregator , 
-    IEnumerable<Skeleton> targets , 
+    Func<T , T , T> aggregator ,
+    IEnumerable<Skeleton> targets ,
     Func<IEnumerable<T> , T> groupAggregator = null ,
-    Func<T , double , T> weightEffect = null )
+    Func<T , double , T> weightEffect = null ,
+    bool useCachedSkeletons = true ,
+    bool checkUse = false )
+```
+
+```csharp
+public static DetailedAggregationResult<T> DetailedAggregate<T>(
+    Method method ,
+    IEnumerable<Skeleton<T>> inputs ,
+    Func<IEnumerable<(T value, double weight)> , T> aggregator ,
+    IEnumerable<Skeleton> targets = null ,
+    bool simplifyData = false ,
+    string[] dimensionsToPreserve = null ,
+    Func<IEnumerable<T> , T> groupAggregator = null )
+```
+
+```csharp
+public static IEnumerable<Skeleton<T>> StreamAggregateResults<T>( 
+    Seq<Skeleton<T>> baseData ,
+    LanguageExt.HashSet<Skeleton> targets ,
+    Func<IEnumerable<T> , T> groupAggregator ,
+    Func<T , double , T> weightEffect = null ,
+    bool group = false ,
+    bool checkUse = false )
+        
+```
+
+```csharp
+public static IEnumerable<SkeletonsAccumulator<T>> StreamDetailedAggregateResults<T>( 
+    Seq<Skeleton<T>> baseData ,
+    LanguageExt.HashSet<Skeleton> targets ,
+    Func<IEnumerable<(T, double)> , T> aggregator ,
+    bool group = false ,
+    bool simplifyData = false ,
+    string[] dimensionsToPreserve = null ,
+    Func<IEnumerable<T> , T> groupAggregator = null ,
+    bool checkUse = false )
 ```
 
 ### Algorithms
@@ -216,27 +252,10 @@ The **BottomTop** method tends to be memory efficient but may less scale with mu
 
 The *TopDown* algorithm requires a defined output set. For each target, it will find which input items are contributing and compute the result. While a little less efficient, this algorithm tends to be able to put more pressure on the CPU, making use of higher CPUs count.
 
+*TopDownGroup* algorithm is the latest algorithm, iterating on the previous algorithm, but using the *GroupBy* operator. This currently is the fastest algorithm.
+
 ## Samples
+
+*Demo project needs to be updated to showcase latest developments*
+
 Some samples can be found in the [Demo project](https://github.com/CyLuGh/MultiDimensionsHierarchies/tree/main/src/Demo) and in the [Unit tests](https://github.com/CyLuGh/MultiDimensionsHierarchies/tree/main/src/TestMultiDimensionsHierarchies)
-
-## Benchmarks (WIP) -- Outdated by new implementations
-
-
-| TargetsCount | AggregationMethod | SampleSize | DimensionsCount | Mean | Allocated |
-| --: | --: | --: | --: | --: | --: |
-| 1000 | TopDown | 100000 | 4 | 50,7 | 41.07 GB
-| 1000 | TopDown | 100000 | 5 | 49,24 | 41.38 GB
-| 1000 | TopDown | 200000 | 4 | 94,01 | 78.37 GB
-| 1000 | TopDown | 200000 | 5 | 93,83 | 79.11 GB
-| 1000 | TopDownGroup | 100000 | 4	| 11,5 | 5.84 GB
-| 1000 | TopDownGroup | 100000 | 5	| 12,11 | 6.23 GB
-| 1000 | TopDownGroup | 200000 | 4	| 24,23 | 11.25 GB
-| 1000 | TopDownGroup | 200000 | 5	| 25,03 | 12 GB
-| 2000 | TopDown | 100000 | 4 | 78,55| 67.11 GB
-| 2000 | TopDown | 100000 | 5 | 83,69| 67.5 GB
-| 2000 | TopDown | 200000 | 4 | 148,01| 128.5 GB
-| 2000 | TopDown | 200000 | 5 | 147,26| 129.15 GB
-| 2000 | TopDownGroup | 100000 | 4 | 12,94 | 7.25 GB
-| 2000 | TopDownGroup | 100000 | 5 | 14 | 7.63 GB
-| 2000 | TopDownGroup | 200000 | 4 | 25,97 | 13.89 GB
-| 2000 | TopDownGroup | 200000 | 5 | 27,9 | 14.68 GB
