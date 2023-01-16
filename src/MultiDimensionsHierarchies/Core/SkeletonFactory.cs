@@ -345,6 +345,22 @@ namespace MultiDimensionsHierarchies.Core
             return bones;
         }
 
+        public static Seq<Skeleton> FastBuild<T>(
+            IEnumerable<T> inputs ,
+            Func<T , string , string> parser ,
+            IEnumerable<Dimension> dimensions )
+            => FastBuild( inputs , parser , _ => Unit.Default , dimensions )
+               .Select( s => s.Key );
+
+        public static Seq<Skeleton> FastBuild<T, TK>(
+            IEnumerable<T> inputs ,
+            Func<T , string , string> parser ,
+            IEnumerable<Dimension> dimensions ,
+            Func<T , TK> keySelector ,
+            Func<IGrouping<TK , T> , T> inputsAggregator )
+            => FastBuild( inputs , parser , _ => Unit.Default , dimensions , keySelector , inputsAggregator )
+                .Select( s => s.Key );
+
         /// <summary>
         /// Build skeletons from raw data input, only returning valid items. No exception will be thrown for invalid inputs. Group raw data to reduce iterations.
         /// </summary>
@@ -457,8 +473,8 @@ namespace MultiDimensionsHierarchies.Core
                     var components = bones.Aggregate( new List<Seq<Bone>>() ,
                         ( list , bs ) =>
                         {
-                            return list.Count == 0 
-                                ? bs.Select( b => Seq.create( b ) ).ToList() 
+                            return list.Count == 0
+                                ? bs.Select( b => Seq.create( b ) ).ToList()
                                 : list.Cartesian( bs , ( seq , b ) => seq.Add( b ) ).ToList();
                         } );
 

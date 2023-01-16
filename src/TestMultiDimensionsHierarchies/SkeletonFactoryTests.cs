@@ -77,6 +77,37 @@ public class SkeletonFactoryTests
     }
 
     [Fact]
+    public void TestFastBuild()
+    {
+        var dimA = SkeletonTests.GetDimension( "Dimension A" );
+        var dimB = SkeletonTests.GetDimension( "Dimension B" );
+
+        var items = new[] { (DimA: "1.1", dimB: "2") , (DimA: "1.2", dimB: "2.3") };
+        var parser = ( (string DimA, string DimB) t , string dim ) => dim switch
+        {
+            "Dimension A" => t.DimA,
+            "Dimension B" => t.DimB,
+            _ => string.Empty,
+        };
+
+        var skeletons = SkeletonFactory.FastBuild( items , parser , new[] { dimA , dimB } );
+        skeletons.Length.Should().Be( 2 );
+
+        skeletons[0].Bones.Length.Should().Be( 2 );
+        skeletons.Find( ("1.1", "Dimension A") , ("2", "Dimension B") )
+            .ShouldBeSome( s => dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) ) );
+
+        var skeletons2 = SkeletonFactory.FastBuild( items , parser , new[] { dimA , dimB } );
+        skeletons2.Length.Should().Be( 2 );
+
+        skeletons2[0].Bones.Length.Should().Be( 2 );
+        skeletons2.Find( ("1.1", "Dimension A") , ("2", "Dimension B") )
+            .ShouldBeSome( s => dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) ) );
+
+        skeletons.Should().BeEquivalentTo( skeletons2 );
+    }
+
+    [Fact]
     public void TestMissingDimension()
     {
         var dimA = SkeletonTests.GetDimension( "Dimension A" );
@@ -374,7 +405,7 @@ public class SkeletonFactoryTests
     }
 
     [Fact]
-    public void TestFastBuild()
+    public void TestFastBuildGeneric()
     {
         var dimA = SkeletonTests.GetDimension( "Dimension A" );
         var dimB = SkeletonTests.GetDimension( "Dimension B" );
