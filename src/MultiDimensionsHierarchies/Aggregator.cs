@@ -187,7 +187,7 @@ namespace MultiDimensionsHierarchies
                .GroupBy( b => b.DimensionName )
                .Select( g => (g.Key, HashSet.createRange( g )) ) );
 
-        private static Func<Skeleton , Seq<Skeleton>> GetAncestorsBuilder( Seq<Bone> ancestorsFilters , NonBlocking.ConcurrentDictionary<string , Skeleton> cache , LanguageExt.HashSet<Skeleton> targets )
+        private static Func<Skeleton , Seq<Skeleton>> GetAncestorsBuilder( Seq<Bone> ancestorsFilters , AtomHashMap<string , Skeleton> cache , LanguageExt.HashSet<Skeleton> targets )
         {
             if ( targets.Count == 0 )
                 return s => s.Ancestors( ancestorsFilters , cache );
@@ -209,7 +209,7 @@ namespace MultiDimensionsHierarchies
             {
                 var stopWatch = Stopwatch.StartNew();
                 var cache = useCachedSkeletons ?
-                    new NonBlocking.ConcurrentDictionary<string , Skeleton>( Environment.ProcessorCount , 1_000_000 ) : null;
+                    Prelude.AtomHashMap<string , Skeleton>() : null;
 
                 var res = baseData
                     .AsParallel()
@@ -243,9 +243,9 @@ namespace MultiDimensionsHierarchies
             {
                 var stopWatch = Stopwatch.StartNew();
 
-                var results = new NonBlocking.ConcurrentDictionary<Skeleton , Option<T>>( Environment.ProcessorCount , 500_000 );
+                var results = Prelude.AtomHashMap<Skeleton , Option<T>>();
                 var cache = useCachedSkeletons ?
-                    new NonBlocking.ConcurrentDictionary<string , Skeleton>( Environment.ProcessorCount , 1_000_000 ) : null;
+                    Prelude.AtomHashMap<string , Skeleton>() : null;
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
@@ -255,9 +255,11 @@ namespace MultiDimensionsHierarchies
                         var wVal = from v in skeleton.Value
                                    select weightEffect( v , weight );
 
-                        results.AddOrUpdate( ancestor , wVal , ( _ , data ) => from d in data
-                                                                               from v in wVal
-                                                                               select aggregator( d , v ) );
+                        results.AddOrUpdate( ancestor ,
+                            data => from d in data
+                                    from v in wVal
+                                    select aggregator( d , v ) ,
+                            wVal );
                     }
                 } );
 
@@ -391,7 +393,7 @@ namespace MultiDimensionsHierarchies
             {
                 var stopWatch = Stopwatch.StartNew();
                 var cache = useCachedSkeletons ?
-                    new NonBlocking.ConcurrentDictionary<string , Skeleton>( Environment.ProcessorCount , 1_000_000 ) : null;
+                    Prelude.AtomHashMap<string , Skeleton>() : null;
 
                 var res = baseData
                     .AsParallel()
@@ -425,9 +427,9 @@ namespace MultiDimensionsHierarchies
                 var stopWatch = Stopwatch.StartNew();
 
                 var results =
-                    new NonBlocking.ConcurrentDictionary<Skeleton , List<(double, Skeleton<T>)>>( Environment.ProcessorCount , 500_000 );
+                    Prelude.AtomHashMap<Skeleton , List<(double, Skeleton<T>)>>();
                 var cache = useCachedSkeletons ?
-                    new NonBlocking.ConcurrentDictionary<string , Skeleton>( Environment.ProcessorCount , 1_000_000 ) : null;
+                    Prelude.AtomHashMap<string , Skeleton>() : null;
 
                 Parallel.ForEach( baseData , skeleton =>
                 {
@@ -435,8 +437,9 @@ namespace MultiDimensionsHierarchies
                     {
                         var weight = Skeleton.ComputeResultingWeight( skeleton.Key , ancestor );
 
-                        results.AddOrUpdate( ancestor , new List<(double, Skeleton<T>)> { (weight, skeleton) } ,
-                            ( _ , list ) => { list.Add( (weight, skeleton) ); return list; } );
+                        results.AddOrUpdate( ancestor ,
+                            list => { list.Add( (weight, skeleton) ); return list; } ,
+                            new List<(double, Skeleton<T>)> { (weight, skeleton) } );
                     }
                 } );
 
