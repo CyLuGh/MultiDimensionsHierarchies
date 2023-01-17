@@ -437,7 +437,7 @@ public class SkeletonTests
             new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:1.1.1" ),
             new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:2" )
         };
-        
+
         dimA.Find( "2" )
             .ShouldBeSome( boneA =>
             {
@@ -455,7 +455,42 @@ public class SkeletonTests
                     } );
             } );
     }
-    
+
+    [Fact]
+    public void TestBuildComposingSkeletons()
+    {
+        var dimA = GetDimension( "Dim A" );
+        var dimB = GetDimension( "Dim B" );
+        var dimC = GetDimension( "Dim C" );
+
+        var mapped = new[]
+        {
+            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:1.1.1" , 42 ),
+            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:2" , 69)
+        };
+
+        dimA.Find( "2" )
+            .ShouldBeSome( boneA =>
+            {
+                dimB.Find( "1.1" )
+                    .ShouldBeSome( boneB =>
+                    {
+                        dimC.Find( "1.1.1" )
+                            .ShouldBeSome( boneC =>
+                            {
+                                var skeleton = new Skeleton( boneA , boneB , boneC );
+                                var composing = skeleton.BuildComposingSkeletons( mapped , cm => cm.Value ).ToArray();
+                                composing.Length.Should().Be( 1 );
+
+                                var listDim = Arr.create( "Dim C" , "Dim A" , "Dim B" );
+                                var key = composing[0].Key.GenerateKey( listDim );
+                                key.Should().Be( "1.1.1:2.1:1.1.1" );
+                                composing[0].Value.ShouldBeSome( v => v.Should().Be( 42 ) );
+                            } );
+                    } );
+            } );
+    }
+
     [Fact]
     public void TestComposingSkeletons()
     {
