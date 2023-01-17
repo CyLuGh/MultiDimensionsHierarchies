@@ -122,7 +122,7 @@ public class SkeletonTests
         var dimB = GetDimension( "Dim B" );
         var dimC = GetDimension( "Dim C" );
 
-        var cache = new NonBlocking.ConcurrentDictionary<string , Skeleton>();
+        var cache = Prelude.AtomHashMap<string , Skeleton>();
 
         dimA.Find( "2.1" )
             .ShouldBeSome( boneA =>
@@ -501,10 +501,6 @@ public class SkeletonTests
                 }
                 return new Skeleton<int>( value , s );
             } );
-
-        //var multipMap = Map.createRange( multiSkels
-        //    .GroupBy( s => s.Key )
-        //    .Select( g => (g.Key, g.ToSeq()) ) );
 
         var multipMap = multiSkels
             .GroupBy( s => s.Key )

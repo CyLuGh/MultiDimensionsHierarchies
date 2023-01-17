@@ -16,7 +16,6 @@
 	<ItemGroup>
 		<PackageReference Include="LanguageExt.Core" Version="4.4.0" />
 		<PackageReference Include="morelinq" Version="3.3.2" />
-		<PackageReference Include="NonBlocking" Version="2.1.1" />
 	</ItemGroup>
 
   <ItemGroup>

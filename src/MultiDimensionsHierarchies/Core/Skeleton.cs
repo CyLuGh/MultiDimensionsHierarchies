@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace MultiDimensionsHierarchies.Core
 {
-    public class Skeleton : IEquatable<Skeleton>, IComparable<Skeleton>
+    public sealed class Skeleton : IEquatable<Skeleton>, IComparable<Skeleton>
     {
         public Arr<Bone> Bones { get; }
         public Arr<string> Dimensions => Bones.Select( b => b.DimensionName );
@@ -94,15 +94,22 @@ namespace MultiDimensionsHierarchies.Core
 
         private Seq<Skeleton> _ancestors = Seq.empty<Skeleton>();
 
-        public Seq<Skeleton> Ancestors( NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
+        public Seq<Skeleton> Ancestors()
+            => Ancestors( Option<AtomHashMap<string , Skeleton>>.None );
+        
+        public Seq<Skeleton> Ancestors( Option<AtomHashMap<string , Skeleton>> cache )
             => Ancestors( Seq<Bone>.Empty , cache );
 
-        public Seq<Skeleton> Ancestors( Seq<Bone> filters , NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
+        public Seq<Skeleton> Ancestors( Seq<Bone> filters )
+            => Ancestors( filters , Option<AtomHashMap<string , Skeleton>>.None );
+
+        public Seq<Skeleton> Ancestors( Seq<Bone> filters , Option<AtomHashMap<string , Skeleton>> cache )
         {
             if ( _ancestors.IsEmpty )
             {
-                _ancestors = cache != null ? Prelude.Atom( BuildAncestors( cache ).ToSeq().Strict() )
-                    : Prelude.Atom( BuildAncestors().ToSeq().Strict() );
+                _ancestors = cache
+                        .Some( atomCache => Prelude.Atom( BuildAncestors( atomCache ).ToSeq().Strict() ) )
+                        .None( () => Prelude.Atom( BuildAncestors().ToSeq().Strict() ));
             }
 
             if ( filters.IsEmpty )
@@ -127,7 +134,7 @@ namespace MultiDimensionsHierarchies.Core
                              lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
             .Select( l => new Skeleton( l ) );
 
-        private IEnumerable<Skeleton> BuildAncestors( NonBlocking.ConcurrentDictionary<string , Skeleton> cache )
+        private IEnumerable<Skeleton> BuildAncestors( AtomHashMap<string , Skeleton> cache )
             => Bones.Select( x => x.Ancestors().ToArray() )
                      .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
                          ( lists , bones ) =>
@@ -135,7 +142,7 @@ namespace MultiDimensionsHierarchies.Core
                      .Select( l =>
                      {
                          var key = l.ToComposedString();
-                         return cache.GetOrAdd( key , _ => new Skeleton( l ) );
+                         return cache.FindOrAdd( key , new Skeleton( l ) );
                      } );
 
         private IEnumerable<Skeleton> BuildAncestors()
@@ -154,7 +161,7 @@ namespace MultiDimensionsHierarchies.Core
                              lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
                     .Select( l => new Skeleton( l ) );
 
-        private IEnumerable<Skeleton> BuildDescendants( NonBlocking.ConcurrentDictionary<string , Skeleton> cache )
+        private IEnumerable<Skeleton> BuildDescendants( AtomHashMap<string , Skeleton> cache )
             => Bones.Select( x => x.Descendants().ToArray() )
                     .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
                          ( lists , bones ) =>
@@ -162,15 +169,19 @@ namespace MultiDimensionsHierarchies.Core
                     .Select( l =>
                     {
                         var key = l.ToComposedString();
-                        return cache.GetOrAdd( key , _ => new Skeleton( l ) );
+                        return cache.FindOrAdd( key , new Skeleton( l ) );
                     } );
 
-        public Seq<Skeleton> Descendants( NonBlocking.ConcurrentDictionary<string , Skeleton> cache = null )
+        public Seq<Skeleton> Descendants()
+            => Descendants( Option<AtomHashMap<string , Skeleton>>.None );
+
+        public Seq<Skeleton> Descendants( Option<AtomHashMap<string , Skeleton>> cache )
         {
             if ( _descendants.IsEmpty )
             {
-                _descendants = cache != null ? Prelude.Atom( BuildDescendants( cache ).ToSeq().Strict() )
-                    : Prelude.Atom( BuildDescendants().ToSeq().Strict() );
+                _descendants = cache
+                    .Some( atomCache => Prelude.Atom( BuildDescendants( atomCache ).ToSeq().Strict() ) )
+                    .None( () => Prelude.Atom( BuildDescendants().ToSeq().Strict() ) );
             }
 
             return _descendants;
@@ -416,9 +427,9 @@ namespace MultiDimensionsHierarchies.Core
             => DetermineWeight( current , ancestor );
 
         public int CompareTo( Skeleton other )
-            => string.Compare( FullPath , other.FullPath );
+            => string.CompareOrdinal( FullPath , other.FullPath );
 
-        internal static Func<Skeleton , Skeleton , double> DetermineWeight =
+        private static readonly Func<Skeleton , Skeleton , double> DetermineWeight =
             ( current , ancestor ) =>
             {
                 if ( current.Equals( ancestor ) )
