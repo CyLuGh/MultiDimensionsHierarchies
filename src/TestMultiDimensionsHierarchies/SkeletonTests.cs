@@ -426,6 +426,37 @@ public class SkeletonTests
     }
 
     [Fact]
+    public void TestComposingItems()
+    {
+        var dimA = GetDimension( "Dim A" );
+        var dimB = GetDimension( "Dim B" );
+        var dimC = GetDimension( "Dim C" );
+
+        var mapped = new[]
+        {
+            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:1.1.1" ),
+            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:2" )
+        };
+        
+        dimA.Find( "2" )
+            .ShouldBeSome( boneA =>
+            {
+                dimB.Find( "1.1" )
+                    .ShouldBeSome( boneB =>
+                    {
+                        dimC.Find( "1.1.1" )
+                            .ShouldBeSome( boneC =>
+                            {
+                                var skeleton = new Skeleton( boneA , boneB , boneC );
+                                var composingItems = skeleton.GetComposingItems( mapped ).ToArray();
+
+                                composingItems.Length.Should().Be( 1 );
+                            } );
+                    } );
+            } );
+    }
+    
+    [Fact]
     public void TestComposingSkeletons()
     {
         var dimA = GetDimension( "Dim A" );
