@@ -323,7 +323,8 @@ namespace MultiDimensionsHierarchies.Core
 
         public IEnumerable<Skeleton<TO>> BuildComposingSkeletons<TI, TO>(
             IEnumerable<TI> inputs ,
-            Func<TI , TO> evaluator ) where TI : IMappedComponents
+            Func<TI , TO> evaluator ,
+            bool filterComponents = true ) where TI : IMappedComponents
         {
             var dimSeq = Bones
                 .Select( bone => (bone.DimensionName, Bones: bone.Descendants().GroupBy( b => b.Label ).ToDictionary( g => g.Key , g => g.ToSeq().Strict() )) )
@@ -332,7 +333,7 @@ namespace MultiDimensionsHierarchies.Core
 
             static string Parse( TI input , string dimName ) => input.Components.Find( dimName ).Match( s => s , () => string.Empty );
 
-            return SkeletonFactory.FastParse( GetComposingItems( inputs ) , Parse , evaluator , dimSeq );
+            return SkeletonFactory.FastParse( filterComponents ? GetComposingItems( inputs ) : inputs , Parse , evaluator , dimSeq );
         }
 
         public bool Equals( Skeleton other )

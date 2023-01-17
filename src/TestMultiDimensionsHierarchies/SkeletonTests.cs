@@ -486,6 +486,12 @@ public class SkeletonTests
                                 var key = composing[0].Key.GenerateKey( listDim );
                                 key.Should().Be( "1.1.1:2.1:1.1.1" );
                                 composing[0].Value.ShouldBeSome( v => v.Should().Be( 42 ) );
+
+                                composing = skeleton.BuildComposingSkeletons( mapped , cm => cm.Value , false ).ToArray();
+                                composing.Length.Should().Be( 1 );
+                                key = composing[0].Key.GenerateKey( listDim );
+                                key.Should().Be( "1.1.1:2.1:1.1.1" );
+                                composing[0].Value.ShouldBeSome( v => v.Should().Be( 42 ) );
                             } );
                     } );
             } );
