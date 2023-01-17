@@ -463,25 +463,31 @@ namespace MultiDimensionsHierarchies.Core
         {
             return inputs
                 .AsParallel()
-                .SelectMany( input =>
+                .SelectMany( input => FastBuild( input , parser , evaluator , dimensions ) );
+        }
+
+        public static Seq<Skeleton<TO>> FastBuild<TI , TO>(
+            TI input ,
+            Func<TI , string , string> parser ,
+            Func<TI , TO> evaluator ,
+            Seq<(string Name , Dictionary<string , Seq<Bone>> Bones)> dimensions
+        )
+        {
+            var bones = dimensions.Select( d => d.Bones.TryGetValue( parser( input , d.Name ) , out var b ) ? b : Seq<Bone>.Empty );
+            if ( bones.Any( b => b.IsEmpty ) )
+                return Seq<Skeleton<TO>>.Empty;
+            
+            var components = bones.Aggregate( new List<Seq<Bone>>() ,
+                ( list , bs ) =>
                 {
-                    var bones = dimensions.Select( d => d.Bones.TryGetValue( parser( input , d.Name ) , out var b ) ? b : Seq<Bone>.Empty );
-
-                    if ( bones.Any( b => b.IsEmpty ) )
-                        return Seq<Skeleton<TO>>.Empty;
-
-                    var components = bones.Aggregate( new List<Seq<Bone>>() ,
-                        ( list , bs ) =>
-                        {
-                            return list.Count == 0
-                                ? bs.Select( b => Seq.create( b ) ).ToList()
-                                : list.Cartesian( bs , ( seq , b ) => seq.Add( b ) ).ToList();
-                        } );
-
-                    return components
-                        .Select( bs => new Skeleton<TO>( evaluator( input ) , bs ) )
-                        .ToSeq();
+                    return list.Count == 0
+                        ? bs.Select( b => Seq.create( b ) ).ToList()
+                        : list.Cartesian( bs , ( seq , b ) => seq.Add( b ) ).ToList();
                 } );
+            
+            return components
+                .Select( bs => new Skeleton<TO>( evaluator( input ) , bs ) )
+                .ToSeq();
         }
     }
 }
