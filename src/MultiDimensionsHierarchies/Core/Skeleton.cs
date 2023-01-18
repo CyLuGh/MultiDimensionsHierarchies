@@ -305,20 +305,24 @@ namespace MultiDimensionsHierarchies.Core
             return mappedData.Values.Collect( o => o ).ToSeq();
         }
 
-        public IEnumerable<T> GetComposingItems<T>( IEnumerable<T> mappedComponents ) where T : IMappedComponents
+        public Seq<T> GetComposingItems<T>( IEnumerable<T> mappedComponents ) where T : IMappedComponents
         {
+            var components = mappedComponents.ToSeq();
+
             foreach ( var bone in Bones )
             {
-                var expectedBones = bone.Descendants().Select( b => b.Label ).ToHashSet();
-                mappedComponents = mappedComponents
+                var expectedBones = HashSet.createRange( bone.Descendants().Select( b => b.Label ));
+                components = components
                     .AsParallel()
                     .Where( mc =>
                         mc.Components.Find( bone.DimensionName )
                             .Some( label => expectedBones.Contains( label ) )
-                            .None( () => false ) );
+                            .None( () => false ) )
+                    .ToSeq()
+                    .Strict();
             }
 
-            return mappedComponents;
+            return components;
         }
 
         public IEnumerable<Skeleton<TO>> BuildComposingSkeletons<TI, TO>(
