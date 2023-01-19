@@ -64,6 +64,8 @@ namespace MultiDimensionsHierarchies.Core
         public bool IsRoot()
             => Bones.Values.All( b => !b.HasParent() );
 
+        public Bone GetBone( string dimensionName ) => Key.GetBone( dimensionName );
+
         public override string ToString()
             => $"{Key} => {Value.Some( v => v.ToString() ).None( () => "/" )}";
 

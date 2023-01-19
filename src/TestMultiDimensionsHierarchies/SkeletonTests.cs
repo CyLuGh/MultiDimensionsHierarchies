@@ -10,21 +10,13 @@ namespace TestMultiDimensionsHierarchies;
 
 public class SkeletonTests
 {
-    internal static Dimension GetDimension( string dimensionName )
-        => DimensionFactory.BuildWithParentLink(
-            dimensionName ,
-            DimensionFactoryTests.GetParentLinkHierarchy() ,
-            x => x.Id ,
-            o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None ,
-            x => x.Label );
+    internal static Dimension GetDimension( string dimensionName ) =>
+        DimensionFactory.BuildWithParentLink( dimensionName , DimensionFactoryTests.GetParentLinkHierarchy() ,
+            x => x.Id , o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None , x => x.Label );
 
-    internal static Dimension GetDimensionWithRedundantLabel( string dimensionName )
-        => DimensionFactory.BuildWithParentLink(
-            dimensionName ,
-            DimensionFactoryTests.GetRedundantDefinitionSample() ,
-            x => x.Id ,
-            o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None ,
-            x => x.Label ,
+    internal static Dimension GetDimensionWithRedundantLabel( string dimensionName ) =>
+        DimensionFactory.BuildWithParentLink( dimensionName , DimensionFactoryTests.GetRedundantDefinitionSample() ,
+            x => x.Id , o => !string.IsNullOrEmpty( o.ParentId ) ? o.ParentId : Option<string?>.None , x => x.Label ,
             x => x.Weight );
 
     [Fact]
@@ -47,11 +39,11 @@ public class SkeletonTests
         var boneA2 = new Bone( "A2" , "Dimension A" );
 
         var act = () => new Skeleton( bone , boneA1 );
-        act.Should().Throw<ArgumentException>()
-            .WithMessage( "A bone should always define its dimension name!" );
+        act.Should().Throw<ArgumentException>().WithMessage( "A bone should always define its dimension name!" );
 
         act = () => new Skeleton( boneA1 , boneA2 );
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage( "A bone with the same dimension name has been defined more than once!" );
     }
 
@@ -170,12 +162,13 @@ public class SkeletonTests
                     {
                         var skeleton = new Skeleton( boneA , boneB );
 
-                        dimA.Find( "2" ).ShouldBeSome( filterA =>
-                        {
-                            var filters = Seq.create( filterA );
-                            var ancestors = skeleton.Ancestors( filters );
-                            ancestors.Length.Should().Be( 2 );
-                        } );
+                        dimA.Find( "2" )
+                            .ShouldBeSome( filterA =>
+                            {
+                                var filters = Seq.create( filterA );
+                                var ancestors = skeleton.Ancestors( filters );
+                                ancestors.Length.Should().Be( 2 );
+                            } );
                     } );
 
                 dimB.Find( "1.1.1" )
@@ -183,15 +176,17 @@ public class SkeletonTests
                     {
                         var skeleton = new Skeleton( boneA , boneB );
 
-                        dimA.Find( "2" ).ShouldBeSome( filterA =>
-                        {
-                            dimB.Find( "1.1" ).ShouldBeSome( filterB =>
+                        dimA.Find( "2" )
+                            .ShouldBeSome( filterA =>
                             {
-                                var filters = Seq.create( filterA , filterB );
-                                var ancestors = skeleton.Ancestors( filters );
-                                ancestors.Length.Should().Be( 1 );
+                                dimB.Find( "1.1" )
+                                    .ShouldBeSome( filterB =>
+                                    {
+                                        var filters = Seq.create( filterA , filterB );
+                                        var ancestors = skeleton.Ancestors( filters );
+                                        ancestors.Length.Should().Be( 1 );
+                                    } );
                             } );
-                        } );
                     } );
             } );
     }
@@ -213,10 +208,13 @@ public class SkeletonTests
 
                         var root = skeleton.Root();
                         root.Bones["Dim A"]
-                            .ToString().Should().Be( dimA.Find( "2" ).Some( b => b.ToString() ).None( () => "" ) );
+                            .ToString()
+                            .Should()
+                            .Be( dimA.Find( "2" ).Some( b => b.ToString() ).None( () => "" ) );
 
-                        root.Bones["Dim A"].Should().BeSameAs(
-                            dimA.Find( "2" ).Some( b => b ).None( () => Bone.None ) );
+                        root.Bones["Dim A"]
+                            .Should()
+                            .BeSameAs( dimA.Find( "2" ).Some( b => b ).None( () => Bone.None ) );
                     } );
 
                 dimB.Find( "1.1.1" )
@@ -228,12 +226,15 @@ public class SkeletonTests
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
                                 var root = skeleton.Root();
 
-                                root.Bones["Dim A"].Should().BeSameAs(
-                            dimA.Find( "2" ).Some( b => b ).None( () => Bone.None ) );
-                                root.Bones["Dim B"].Should().BeSameAs(
-                            dimB.Find( "1" ).Some( b => b ).None( () => Bone.None ) );
-                                root.Bones["Dim C"].Should().BeSameAs(
-                            dimC.Find( "1" ).Some( b => b ).None( () => Bone.None ) );
+                                root.Bones["Dim A"]
+                                    .Should()
+                                    .BeSameAs( dimA.Find( "2" ).Some( b => b ).None( () => Bone.None ) );
+                                root.Bones["Dim B"]
+                                    .Should()
+                                    .BeSameAs( dimB.Find( "1" ).Some( b => b ).None( () => Bone.None ) );
+                                root.Bones["Dim C"]
+                                    .Should()
+                                    .BeSameAs( dimC.Find( "1" ).Some( b => b ).None( () => Bone.None ) );
                             } );
                     } );
             } );
@@ -299,14 +300,12 @@ public class SkeletonTests
 
         var dictionaryHit = new[]
         {
-            (Key: "Dim A", Values : new [] {"2","2.1"}),
-            (Key: "Dim B", Values : new [] {"1.2","1.1"})
+            ( Key: "Dim A" , Values: new[] { "2" , "2.1" } ) , ( Key: "Dim B" , Values: new[] { "1.2" , "1.1" } )
         }.ToDictionary( x => x.Key , x => x.Values );
 
         var dictionaryNoHit = new[]
         {
-            (Key: "Dim A", Values : new [] {"2","2.1"}),
-            (Key: "Dim B", Values : new [] {"2.2","2.1"})
+            ( Key: "Dim A" , Values: new[] { "2" , "2.1" } ) , ( Key: "Dim B" , Values: new[] { "2.2" , "2.1" } )
         }.ToDictionary( x => x.Key , x => x.Values );
 
         dimA.Find( "2" )
@@ -434,7 +433,7 @@ public class SkeletonTests
 
         var mapped = new[]
         {
-            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:1.1.1" ),
+            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:1.1.1" ) ,
             new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:2" )
         };
 
@@ -465,8 +464,8 @@ public class SkeletonTests
 
         var mapped = new[]
         {
-            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:1.1.1" , 42 ),
-            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:2" , 69)
+            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:1.1.1" , 42 ) ,
+            new ComponentMapper( "Dim A:2.1|Dim B:1.1.1|Dim C:2" , 69 )
         };
 
         dimA.Find( "2" )
@@ -487,7 +486,8 @@ public class SkeletonTests
                                 key.Should().Be( "1.1.1:2.1:1.1.1" );
                                 composing[0].Value.ShouldBeSome( v => v.Should().Be( 42 ) );
 
-                                composing = skeleton.BuildComposingSkeletons( mapped , cm => cm.Value , false ).ToArray();
+                                composing = skeleton.BuildComposingSkeletons( mapped , cm => cm.Value , false )
+                                    .ToArray();
                                 composing.Length.Should().Be( 1 );
                                 key = composing[0].Key.GenerateKey( listDim );
                                 key.Should().Be( "1.1.1:2.1:1.1.1" );
@@ -504,8 +504,7 @@ public class SkeletonTests
         var dimB = GetDimension( "Dim B" );
         var dimC = GetDimension( "Dim C" );
 
-        var skels = Arr.create( dimA , dimB , dimC )
-            .Combine();
+        var skels = Arr.create( dimA , dimB , dimC ).Combine();
 
         dimA.Find( "2" )
             .ShouldBeSome( boneA =>
@@ -534,11 +533,7 @@ public class SkeletonTests
 
         var dimensions = Arr.create( dimA , dimB , dimC );
 
-        var skels = dimensions
-            .Combine()
-            .Select( s => new Skeleton<Unit>( s ) );
-
-        var map = skels.ToDictionary( s => s.Key );
+        var skels = dimensions.Combine().Select( s => new Skeleton<Unit>( s ) );
 
         dimA.Find( "2" )
             .ShouldBeSome( boneA =>
@@ -550,15 +545,14 @@ public class SkeletonTests
                             .ShouldBeSome( boneC =>
                             {
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
-                                var composing = skeleton.GetComposingSkeletons( map );
+                                var composing = skeleton.GetComposingSkeletons( skels );
                                 /* 5 in A * 4 in B * 2 in C = 40 */
                                 composing.Length.Should().Be( 40 );
                             } );
                     } );
             } );
 
-        var multiSkels = dimensions
-            .Combine()
+        var multiSkels = dimensions.Combine()
             .Concat( new[] { dimensions.BuildSkeleton( "2" , "1.1" , "1.1.1" ) } )
             .Select( s =>
             {
@@ -567,32 +561,11 @@ public class SkeletonTests
                 {
                     foreach ( var part in bone.Label.Split( '.' ) )
                     {
-                        if ( int.TryParse( part , out int v ) )
-                            value += v;
+                        if ( int.TryParse( part , out int v ) ) value += v;
                     }
                 }
+
                 return new Skeleton<int>( value , s );
-            } );
-
-        var multipMap = multiSkels
-            .GroupBy( s => s.Key )
-            .ToDictionary( g => g.Key , g => g.ToSeq() );
-
-        dimA.Find( "2" )
-            .ShouldBeSome( boneA =>
-            {
-                dimB.Find( "1.1" )
-                    .ShouldBeSome( boneB =>
-                    {
-                        dimC.Find( "1.1.1" )
-                            .ShouldBeSome( boneC =>
-                            {
-                                var skeleton = new Skeleton( boneA , boneB , boneC );
-                                var composing = skeleton.GetComposingSkeletons( multipMap );
-                                /* 5 in A * 4 in B * 2 in C = 40 + 1 manual add */
-                                composing.Length.Should().Be( 41 );
-                            } );
-                    } );
             } );
     }
 
@@ -603,8 +576,7 @@ public class SkeletonTests
         var dimB = GetDimension( "Dim B" );
         var dimC = GetDimension( "Dim C" );
 
-        var skels = Arr.create( dimA , dimB , dimC )
-            .Combine();
+        var skels = Arr.create( dimA , dimB , dimC ).Combine();
 
         dimA.Find( "2" )
             .ShouldBeSome( boneA =>
@@ -624,8 +596,7 @@ public class SkeletonTests
                                 skeletonA.Should().NotBeRankedEquallyTo( skeletonC );
                                 skeletonA.Should().NotBeRankedEquallyTo( skeletonD );
 
-                                skeletonA.StripHierarchies()
-                                    .Should().BeEquivalentTo( skeletonD.StripHierarchies() );
+                                skeletonA.StripHierarchies().Should().BeEquivalentTo( skeletonD.StripHierarchies() );
                             } );
                     } );
             } );
@@ -638,8 +609,7 @@ public class SkeletonTests
         var dimB = GetDimensionWithRedundantLabel( "Dim B" );
         var dimC = GetDimensionWithRedundantLabel( "Dim C" );
 
-        var skels = Arr.create( dimA , dimB , dimC )
-            .Combine().ToSeq();
+        var skels = Arr.create( dimA , dimB , dimC ).Combine().ToSeq();
 
         var items = skels.FindAll( "1" , "0" , "1" );
         items.Length.Should().Be( 2 );
@@ -647,7 +617,8 @@ public class SkeletonTests
         var root = skels.Find( "1" , "1" , "1" );
         root.ShouldBeSome( r =>
         {
-            r.Descendants().Find( "1" , "0" , "1" )
+            r.Descendants()
+                .Find( "1" , "0" , "1" )
                 .ShouldBeSome( s =>
                 {
                     var other = items.First( s => !s.Root().Equals( r ) );
@@ -655,10 +626,12 @@ public class SkeletonTests
                     Skeleton.ComputeResultingWeight( s , other ).Should().Be( 0 );
                 } );
 
-            r.Descendants().Find( "1" , "0" , "0" )
+            r.Descendants()
+                .Find( "1" , "0" , "0" )
                 .ShouldBeSome( s => Skeleton.ComputeResultingWeight( s , r ).Should().Be( .25 ) );
 
-            r.Descendants().Find( "0" , "0" , "0" )
+            r.Descendants()
+                .Find( "0" , "0" , "0" )
                 .ShouldBeSome( s => Skeleton.ComputeResultingWeight( s , r ).Should().Be( .125 ) );
         } );
     }
@@ -671,14 +644,14 @@ public class SkeletonTests
         var dimC = GetDimensionWithRedundantLabel( "Dim C" );
         var dimD = GetDimensionWithRedundantLabel( "Dim D" );
 
-        var skels = Arr.create( dimA , dimB , dimC , dimD )
-            .Combine().ToSeq();
+        var skels = Arr.create( dimA , dimB , dimC , dimD ).Combine().ToSeq();
 
         var items = skels.FindAll( new[] { "1" , "1" , "1" , "0" } , new[] { "2" , "1" , "1" , "0" } );
         items.Length.Should().Be( 4 );
 
-        var items2 = skels.FindAll( new[] { ("1", "Dim A") , ("1", "Dim B") , ("1", "Dim C") , ("0", "Dim D") } ,
-            new[] { ("2", "Dim A") , ("1", "Dim B") , ("1", "Dim C") , ("0", "Dim D") } );
+        var items2 =
+            skels.FindAll( new[] { ( "1" , "Dim A" ) , ( "1" , "Dim B" ) , ( "1" , "Dim C" ) , ( "0" , "Dim D" ) } ,
+                new[] { ( "2" , "Dim A" ) , ( "1" , "Dim B" ) , ( "1" , "Dim C" ) , ( "0" , "Dim D" ) } );
         items2.Length.Should().Be( 4 );
 
         items.SequenceEqual( items2 ).Should().BeTrue();
@@ -692,7 +665,7 @@ public class SkeletonTests
 
         var skeleton = new Skeleton( boneB , boneA );
 
-        skeleton.GetBone( "Dimension A").Should().BeSameAs( boneA );
+        skeleton.GetBone( "Dimension A" ).Should().BeSameAs( boneA );
         skeleton.GetBone( "Dimension X" ).Should().BeSameAs( Bone.None );
     }
 
@@ -711,9 +684,9 @@ public class SkeletonTests
         dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
         skeletons = AggregatorTests.GetLeavesSample( dimensions );
         targets = AggregatorTests.GetTargets( dimensions );
-        targets = Seq.create(
-            targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
-            ).Somes();
+        targets = Seq.create( targets.Find( "1" , "2" , "2" , "2" , "2" ) ,
+                targets.Find( "2" , "2" , "2" , "2" , "2" ) )
+            .Somes();
 
         checks = skeletons.CheckUse( targets );
         checks.Rights().Length.Should().Be( 2048 );
