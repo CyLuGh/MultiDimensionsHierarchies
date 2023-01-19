@@ -54,35 +54,53 @@ namespace MultiDimensionsHierarchies.Core
             => new( skeletons.Select( o => o.Value ).Somes().Aggregate( default , aggregator ) , key );
 
         public static Option<Skeleton> Find( this IEnumerable<Skeleton> skeletons , params string[] labels )
-            => skeletons.Find( s => s.Bones.Length == labels.Length
-                && Enumerable.Range( 0 , labels.Length ).All( i => s.Bones[i].Label.Equals( labels[i] ) ) );
+            => skeletons.Find( s =>
+            {
+                var bonesArray = s.Bones.Values.OrderBy( v => v.DimensionName ).ToArray();
+                return s.Bones.Length == labels.Length
+                    && Enumerable.Range( 0 , labels.Length ).All( i => bonesArray[i].Label.Equals( labels[i] ) );
+            } );
 
         public static Option<Skeleton> Find( this IEnumerable<Skeleton> skeletons , params (string label, string dimensionName)[] bones )
-            => skeletons.Find( s => bones.All( b => s.Bones.Find( x => x.DimensionName.Equals( b.dimensionName ) && x.Label.Equals( b.label ) ).IsSome ) );
+            => skeletons.Find( s =>
+                bones.All( b => s.Bones.Find( b.dimensionName ).Match( x => x.Label.Equals( b.label ) , () => false ) ) );
 
         public static Option<Skeleton<T>> Find<T>( this IEnumerable<Skeleton<T>> skeletons , params string[] labels )
-            => skeletons.Find( s => s.Bones.Length == labels.Length
-                && Enumerable.Range( 0 , labels.Length ).All( i => s.Bones[i].Label.Equals( labels[i] ) ) );
+            => skeletons.Find( s =>
+            {
+                var bonesArray = s.Bones.Values.OrderBy( v => v.DimensionName ).ToArray();
+                return s.Bones.Length == labels.Length
+                    && Enumerable.Range( 0 , labels.Length ).All( i => bonesArray[i].Label.Equals( labels[i] ) );
+            } );
 
+        // TODO
         public static Option<Skeleton<T>> Find<T>( this IEnumerable<Skeleton<T>> skeletons , params (string label, string dimensionName)[] bones )
-            => skeletons.Find( s => bones.All( b => s.Bones.Find( x => x.DimensionName.Equals( b.dimensionName ) && x.Label.Equals( b.label ) ).IsSome ) );
+            => skeletons.Find( s => bones.All( b => s.Bones.Find( b.dimensionName ).Match( x => x.Label.Equals( b.label ) , () => false ) ) );
 
         public static Seq<Skeleton> FindAll( this IEnumerable<Skeleton> skeletons , params string[] labels )
-            => skeletons.Where( s => s.Bones.Length == labels.Length
-                 && Enumerable.Range( 0 , labels.Length ).All( i => s.Bones[i].Label.Equals( labels[i] ) ) )
+            => skeletons.Where( s =>
+            {
+                var bonesArray = s.Bones.Values.OrderBy( v => v.DimensionName ).ToArray();
+                return s.Bones.Length == labels.Length
+                    && Enumerable.Range( 0 , labels.Length ).All( i => bonesArray[i].Label.Equals( labels[i] ) );
+            } )
             .ToSeq();
 
         public static Seq<Skeleton> FindAll( this IEnumerable<Skeleton> skeletons , params (string label, string dimensionName)[] bones )
-            => skeletons.Where( s => bones.All( b => s.Bones.Find( x => x.DimensionName.Equals( b.dimensionName ) && x.Label.Equals( b.label ) ).IsSome ) )
+            => skeletons.Where( s => bones.All( b => s.Bones.Find( b.dimensionName ).Match( x => x.Label.Equals( b.label ) , () => false ) ) )
             .ToSeq();
 
         public static Seq<Skeleton<T>> FindAll<T>( this IEnumerable<Skeleton<T>> skeletons , params string[] labels )
-            => skeletons.Where( s => s.Bones.Length == labels.Length
-                 && Enumerable.Range( 0 , labels.Length ).All( i => s.Bones[i].Label.Equals( labels[i] ) ) )
+            => skeletons.Where( s =>
+            {
+                var bonesArray = s.Bones.Values.OrderBy( v => v.DimensionName ).ToArray();
+                return s.Bones.Length == labels.Length
+                    && Enumerable.Range( 0 , labels.Length ).All( i => bonesArray[i].Label.Equals( labels[i] ) );
+            } )
             .ToSeq();
 
         public static Seq<Skeleton<T>> FindAll<T>( this IEnumerable<Skeleton<T>> skeletons , params (string label, string dimensionName)[] bones )
-            => skeletons.Where( s => bones.All( b => s.Bones.Find( x => x.DimensionName.Equals( b.dimensionName ) && x.Label.Equals( b.label ) ).IsSome ) )
+            => skeletons.Where( s => bones.All( b => s.Bones.Find( b.dimensionName ).Match( x => x.Label.Equals( b.label ) , () => false ) ) )
             .ToSeq();
 
         public static Seq<Skeleton> FindAll( this IEnumerable<Skeleton> skeletons , params string[][] labels )
@@ -121,7 +139,7 @@ namespace MultiDimensionsHierarchies.Core
         {
             var dimCount = skeletons.First().Bones.Length;
             var complexity = skeletons.AsParallel()
-                    .Sum( x => x.Bones.Select( b => b.Depth )
+                    .Sum( x => x.Bones.Values.Select( b => b.Depth )
                         .Aggregate( 1L , ( a , b ) => a * b ) / dimCount );
 
             return complexity;
@@ -134,7 +152,7 @@ namespace MultiDimensionsHierarchies.Core
         {
             var bonesPerDimension = targets
                 .AsParallel()
-                .SelectMany( s => s.Bones )
+                .SelectMany( s => s.Bones.Values )
                 .GroupBy( b => b.DimensionName )
                 .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
 

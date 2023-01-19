@@ -239,7 +239,7 @@ namespace MultiDimensionsHierarchies.Core
             => DetermineWeight( current , ancestor );
 
         public int CompareTo( Bone other )
-            => string.Compare( FullPath , other.FullPath , StringComparison.Ordinal)
+            => string.Compare( FullPath , other.FullPath , StringComparison.Ordinal )
                 & Weight.CompareTo( other.Weight );
 
         internal static Func<Bone , Bone , double> DetermineWeight =

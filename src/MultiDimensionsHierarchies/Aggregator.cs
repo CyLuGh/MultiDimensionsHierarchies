@@ -183,7 +183,7 @@ namespace MultiDimensionsHierarchies
         }
 
         private static HashMap<string , LanguageExt.HashSet<Bone>> BuildFiltersFromTargets( LanguageExt.HashSet<Skeleton> targets )
-           => HashMap.createRange( targets.SelectMany( t => t.Bones )
+           => HashMap.createRange( targets.SelectMany( t => t.Bones.Values )
                .GroupBy( b => b.DimensionName )
                .Select( g => (g.Key, HashSet.createRange( g )) ) );
 
@@ -285,7 +285,7 @@ namespace MultiDimensionsHierarchies
             var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, b.Descendants()) ).ToHashMap();
 
             var simplifiedData = baseData
-               .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
+               .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( i.Key ).Some( b => b ).None( () => Bone.None ) ) ) )
                .Select( d => d.Except( uniqueDimensions ) )
                .GroupBy( x => x.Key )
                .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
@@ -495,7 +495,7 @@ namespace MultiDimensionsHierarchies
             weightEffect ??= ( t , _ ) => t;
 
             var uniqueTargetBaseBones = targets
-                    .SelectMany( t => t.Bones )
+                    .SelectMany( t => t.Bones.Values )
                     .GroupBy( b => b.DimensionName )
                     .Where( g => g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) )
                     .Select( g => g.First() )
@@ -508,7 +508,7 @@ namespace MultiDimensionsHierarchies
 
             if ( group )
             {
-                return GroupTargets( simplifiedTargets.ToArray() , simplifiedData , groupAggregator , weightEffect , 0 , simplifiedData[0].Key.Bones.Length )
+                return GroupTargets( simplifiedTargets.ToArray() , simplifiedData , groupAggregator , weightEffect , 0 , simplifiedData[0].Key.Bones.Keys.ToArray() )
                     .Select( r => r.Add( uniqueTargetBaseBones ) );
             }
 
@@ -560,7 +560,7 @@ namespace MultiDimensionsHierarchies
                     .ToSeq();
 
             var uniqueTargetBaseBones = targets
-                   .SelectMany( t => t.Bones )
+                   .SelectMany( t => t.Bones.Values )
                    .GroupBy( b => b.DimensionName )
                    .Where( g => !dimensionsToPreserve.Contains( g.Key ) && g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) )
                    .Select( g => g.First() )
@@ -574,7 +574,7 @@ namespace MultiDimensionsHierarchies
 
             if ( group )
             {
-                return GroupTargets( simplifiedTargets.ToArray() , simplifiedData , aggregator , 0 , simplifiedData[0].Key.Bones.Length )
+                return GroupTargets( simplifiedTargets.ToArray() , simplifiedData , aggregator , 0 , simplifiedData[0].Key.Bones.Keys.ToArray() )
                     .Select( s => new SkeletonsAccumulator<T>( s.Key.Add( uniqueTargetBaseBones ) , s.Components , s.Aggregator ) );
             }
 
@@ -597,7 +597,7 @@ namespace MultiDimensionsHierarchies
                                                                  bool group = false )
         {
             if ( group )
-                return GroupTargets( targets.ToArray() , baseData , aggregator , 0 , baseData[0].Key.Bones.Length );
+                return GroupTargets( targets.ToArray() , baseData , aggregator , 0 , baseData[0].Key.Bones.Keys.ToArray() );
 
             var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
                     .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
@@ -618,40 +618,40 @@ namespace MultiDimensionsHierarchies
             Func<IEnumerable<T> , T> groupAggregator ,
             Func<T , double , T> weightEffect ,
             int boneIndex ,
-            int dimensionsCount )
+            string[] dimensions )
         {
-            if ( targets.Length == 1 && boneIndex == dimensionsCount )
+            if ( targets.Length == 1 && boneIndex == dimensions.Length )
                 return new[] { data.Aggregate( targets[0] , groupAggregator , weightEffect ) };
 
-            if ( boneIndex >= dimensionsCount )
+            if ( boneIndex >= dimensions.Length )
                 return Array.Empty<Skeleton<T>>();
 
             return targets
                 .AsParallel()
                 .WithDegreeOfParallelism( boneIndex == 0 ? Environment.ProcessorCount : 1 )
-                .GroupBy( s => s.GetBone( boneIndex ) )
+                .GroupBy( s => s.GetBone( dimensions[boneIndex] ) )
                 .SelectMany( g =>
-                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , groupAggregator , weightEffect , boneIndex + 1 , dimensionsCount ) );
+                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , groupAggregator , weightEffect , boneIndex + 1 , dimensions ) );
         }
 
         private static IEnumerable<SkeletonsAccumulator<T>> GroupTargets<T>( Skeleton[] targets ,
             Seq<Skeleton<T>> data ,
             Func<IEnumerable<(T, double)> , T> aggregator ,
             int boneIndex ,
-            int dimensionsCount )
+            string[] dimensions )
         {
-            if ( targets.Length == 1 && boneIndex == dimensionsCount )
+            if ( targets.Length == 1 && boneIndex == dimensions.Length )
                 return new[] { new SkeletonsAccumulator<T>( targets[0] , data.Select( s => (Skeleton.ComputeResultingWeight( s.Key , targets[0] ), s) ) , aggregator ) };
 
-            if ( boneIndex >= dimensionsCount )
+            if ( boneIndex >= dimensions.Length )
                 return Array.Empty<SkeletonsAccumulator<T>>();
 
             return targets
                 .AsParallel()
                 .WithDegreeOfParallelism( boneIndex == 0 ? Environment.ProcessorCount : 1 )
-                .GroupBy( s => s.GetBone( boneIndex ) )
+                .GroupBy( s => s.GetBone( dimensions[boneIndex] ) )
                 .SelectMany( g =>
-                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , aggregator , boneIndex + 1 , dimensionsCount ) );
+                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , aggregator , boneIndex + 1 , dimensions ) );
         }
     }
 }

@@ -32,6 +32,6 @@ namespace MultiDimensionsHierarchies.Core
         }
 
         public int Count => Components.Count;
-        public Arr<Bone> Bones => Key.Bones;
+        public HashMap<string , Bone> Bones => Key.Bones;
     }
 }

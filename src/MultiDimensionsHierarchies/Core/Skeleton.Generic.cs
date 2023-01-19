@@ -1,6 +1,7 @@
 ﻿using LanguageExt;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MultiDimensionsHierarchies.Core
 {
@@ -10,7 +11,7 @@ namespace MultiDimensionsHierarchies.Core
         public Option<T> Value { get; }
         public T ValueUnsafe => Value.MatchUnsafe( v => v , () => default );
 
-        public Arr<Bone> Bones => Key.Bones;
+        public HashMap<string , Bone> Bones => Key.Bones;
 
         public Skeleton( Skeleton key )
         {
@@ -58,10 +59,10 @@ namespace MultiDimensionsHierarchies.Core
             => new( value.Some( _ => value ).None( () => Value ) , key ?? Key );
 
         public bool IsLeaf()
-            => Bones.All( b => b.IsLeaf() );
+            => Bones.Values.All( b => b.IsLeaf() );
 
         public bool IsRoot()
-            => Bones.All( b => !b.HasParent() );
+            => Bones.Values.All( b => !b.HasParent() );
 
         public override string ToString()
             => $"{Key} => {Value.Some( v => v.ToString() ).None( () => "/" )}";
