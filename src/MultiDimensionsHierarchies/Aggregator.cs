@@ -621,7 +621,7 @@ namespace MultiDimensionsHierarchies
 
             return targets
                 .AsParallel()
-                .WithDegreeOfParallelism( boneIndex == 0 ? Environment.ProcessorCount : 1 )
+                .WithDegreeOfParallelism( boneIndex < 3 ? Environment.ProcessorCount : 1 )
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
                     GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , groupAggregator , weightEffect , boneIndex + 1 , dimensionsCount ) );
@@ -641,7 +641,7 @@ namespace MultiDimensionsHierarchies
 
             return targets
                 .AsParallel()
-                .WithDegreeOfParallelism( boneIndex == 0 ? Environment.ProcessorCount : 1 )
+                .WithDegreeOfParallelism( boneIndex < 3 ? Environment.ProcessorCount : 1 )
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
                     GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , aggregator , boneIndex + 1 , dimensionsCount ) );

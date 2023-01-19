@@ -9,16 +9,16 @@ using System.Linq;
 
 namespace Benchmark
 {
-    [/*SimpleJob( RuntimeMoniker.Net472 , iterationCount: 3 , warmupCount: 1 ),*/
+    [SimpleJob( RuntimeMoniker.Net472 , iterationCount: 3 , warmupCount: 1 ),
     //  SimpleJob( RuntimeMoniker.Net60 , iterationCount: 3 , warmupCount: 1 ),
      SimpleJob( RuntimeMoniker.Net70 , iterationCount: 3 , warmupCount: 1 )]
     [MemoryDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
-        [Params( 1000 )]
+        [Params( 1000 , 2000 , 5000 )]
         public int TargetsCount { get; set; }
 
-        [Params( Method.TopDown , Method.TopDownGroup )]
+        [Params(Method.TopDown , Method.TopDownGroup )]
         public Method AggregationMethod { get; set; }
 
         public Skeleton[] Targets;
