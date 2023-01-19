@@ -15,7 +15,7 @@ namespace Benchmark
     [MemoryDiagnoser]
     public class TargetedAggregate : AllMethodsAggregate
     {
-        [Params( 1000 , 2000 )]
+        [Params( 1000 )]
         public int TargetsCount { get; set; }
 
         [Params( Method.TopDown , Method.TopDownGroup )]

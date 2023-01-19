@@ -1,6 +1,7 @@
 ﻿using LanguageExt;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MultiDimensionsHierarchies.Core
 {
@@ -75,6 +76,8 @@ namespace MultiDimensionsHierarchies.Core
             return With( value: t );
         }
 
+        
+        
         public bool Equals( Skeleton<T> other )
         {
             if ( other is null ) return false;

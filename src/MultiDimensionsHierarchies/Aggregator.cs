@@ -512,11 +512,9 @@ namespace MultiDimensionsHierarchies
                     .Select( r => r.Add( uniqueTargetBaseBones ) );
             }
 
-            var simplifiedMap = simplifiedData.ToDictionary( s => s.Key );
-
             return simplifiedTargets
                     .AsParallel()
-                    .Select( t => t.GetComposingSkeletons( simplifiedMap ).Aggregate( t , groupAggregator , weightEffect ) )
+                    .Select( t => t.GetComposingSkeletons( simplifiedData ).Aggregate( t , groupAggregator , weightEffect ) )
                     .Select( r => r.Add( uniqueTargetBaseBones ) );
         }
 
@@ -578,14 +576,12 @@ namespace MultiDimensionsHierarchies
                     .Select( s => new SkeletonsAccumulator<T>( s.Key.Add( uniqueTargetBaseBones ) , s.Components , s.Aggregator ) );
             }
 
-            var dictionary = simplifiedData.AsParallel().GroupBy( s => s.Key )
-                    .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
             return simplifiedTargets
                     .AsParallel()
                     .Select( skeleton =>
                     {
                         var components = skeleton
-                            .GetComposingSkeletons( dictionary )
+                            .GetComposingSkeletons( simplifiedData )
                             .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
                         return new SkeletonsAccumulator<T>( skeleton.Add( uniqueTargetBaseBones ) , components , aggregator );
                     } );
@@ -599,15 +595,12 @@ namespace MultiDimensionsHierarchies
             if ( group )
                 return GroupTargets( targets.ToArray() , baseData , aggregator , 0 , baseData[0].Key.Bones.Length );
 
-            var dictionary = baseData.AsParallel().GroupBy( s => s.Key )
-                    .ToDictionary( g => g.Key , g => g.ToSeq().Strict() );
-
             return targets
                     .AsParallel()
                     .Select( skeleton =>
                     {
                         var components = skeleton
-                            .GetComposingSkeletons( dictionary )
+                            .GetComposingSkeletons( baseData )
                             .Select( cmp => (Skeleton.ComputeResultingWeight( cmp.Key , skeleton ), cmp) );
                         return new SkeletonsAccumulator<T>( skeleton , components , aggregator );
                     } );

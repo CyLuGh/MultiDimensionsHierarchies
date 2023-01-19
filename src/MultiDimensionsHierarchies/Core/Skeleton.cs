@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace MultiDimensionsHierarchies.Core
 {
-    public sealed class Skeleton : IEquatable<Skeleton>, IComparable<Skeleton>
+    public sealed class Skeleton : IEquatable<Skeleton> , IComparable<Skeleton>
     {
         public Arr<Bone> Bones { get; }
         public Arr<string> Dimensions => Bones.Select( b => b.DimensionName );
@@ -30,9 +30,9 @@ namespace MultiDimensionsHierarchies.Core
 
         public Skeleton Add( Bone addedBone ) => Add( new[] { addedBone } );
 
-        public Skeleton Add( IEnumerable<Bone> addedBones ) => new( Bones.Concat( addedBones ) );
+        public Skeleton Add( IEnumerable<Bone> addedBones ) => new(Bones.Concat( addedBones ));
 
-        public Skeleton Concat( params Bone[] bones ) => new( Bones.Concat( bones ) );
+        public Skeleton Concat( params Bone[] bones ) => new(Bones.Concat( bones ));
 
         public Skeleton Extract( params string[] dimensions )
         {
@@ -67,7 +67,7 @@ namespace MultiDimensionsHierarchies.Core
 
         public bool IsRoot() => Bones.All( b => !b.HasParent() );
 
-        public Skeleton Root() => new( Bones.Select( b => b.Root() ) );
+        public Skeleton Root() => new(Bones.Select( b => b.Root() ));
 
         private Seq<Skeleton> _leaves = Seq.empty<Skeleton>();
 
@@ -108,7 +108,7 @@ namespace MultiDimensionsHierarchies.Core
             Bones.Select( x =>
                 {
                     var ancestors = from set in filters.Find( x.DimensionName )
-                                    select x.Ancestors().Where( o => set.Contains( o ) );
+                        select x.Ancestors().Where( o => set.Contains( o ) );
                     return ancestors.Match( a => a , () => Seq<Bone>.Empty );
                 } )
                 .Aggregate<Seq<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
@@ -218,7 +218,7 @@ namespace MultiDimensionsHierarchies.Core
         public Dimension[] DimensionsSubset() =>
             Bones.Select( b => new Dimension( b.DimensionName , new[] { b } ) ).ToArray();
 
-        public Skeleton StripHierarchies() => new( Bones.Select( b => new Bone( b.Label , b.DimensionName ) ) );
+        public Skeleton StripHierarchies() => new(Bones.Select( b => new Bone( b.Label , b.DimensionName ) ));
 
         public string ToCompleteString() => string.Join( ":" , Bones.Select( b => $"{b.DimensionName}|{b.Label}" ) );
 
@@ -242,67 +242,52 @@ namespace MultiDimensionsHierarchies.Core
             }
         }
 
+        public Seq<Skeleton> GetComposingSkeletons( IEnumerable<Skeleton> sourceSkeletons ) =>
+            GetComposingSkeletons( sourceSkeletons.ToSeq() );
+
+        public Seq<Skeleton> GetComposingSkeletons( Seq<Skeleton> sourceSkeletons )
+        {
+            var components = sourceSkeletons.Strict();
+
+            for ( int i = 0 ; i < Bones.Count ; i++ )
+            {
+                var expectedBones = HashSet.createRange( Bones[i].Descendants() );
+                components = components.AsParallel()
+                    .Where( s => expectedBones.Contains( s.GetBone( i ) ) )
+                    .ToSeq()
+                    .Strict();
+            }
+
+            return components;
+        }
+
         public Seq<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<Skeleton> sourceSkeletons )
         {
             var targetSkeleton = Update( dimensions );
-            var bones = targetSkeleton.Bones.ToDictionary( b => b.DimensionName ,
-                b => new System.Collections.Generic.HashSet<string>( b.Descendants().Select( x => x.Label ) ) );
-            var composingElements = new System.Collections.Generic.HashSet<Skeleton>( sourceSkeletons );
-            foreach ( var expectedBones in bones )
-            {
-                var rejectedElements = new ConcurrentBag<Skeleton>();
-                composingElements.GroupBy( x => x.Bones.First( b => b.DimensionName.Equals( expectedBones.Key ) ) )
-                    .AsParallel()
-                    .ForEach( group =>
-                    {
-                        if ( !expectedBones.Value.Contains( group.Key.Label ) )
-                            group.ForEach( s => rejectedElements.Add( s ) );
-                    } );
-                foreach ( var r in rejectedElements ) composingElements.Remove( r );
-            }
-
-            return composingElements.ToSeq();
+            return targetSkeleton.GetComposingSkeletons( sourceSkeletons );
         }
 
         public Seq<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<string> completeKeys ) =>
-            GetComposingSkeletons( dimensions , completeKeys.Distinct().Select( ParseCompleteString ) );
+            GetComposingSkeletons( dimensions , completeKeys.Distinct().Select( s => ParseCompleteString( s ) ) );
 
-        public Seq<Skeleton<T>> GetComposingSkeletons<T>( IDictionary<Skeleton , Skeleton<T>> map )
+        public Seq<Skeleton<T>> GetComposingSkeletons<T>( IEnumerable<Skeleton<T>> skeletons )
+            => GetComposingSkeletons( skeletons.ToSeq() );
+        
+        public Seq<Skeleton<T>> GetComposingSkeletons<T>( Seq<Skeleton<T>> skeletons )
         {
-            var mappedData = new Dictionary<Skeleton , Skeleton<T>>( map );
-            foreach ( var bone in Bones )
+            var components = skeletons.Strict();
+
+            for ( int i = 0 ; i < Bones.Count ; i++ )
             {
-                var expectedBones = bone.Descendants();
-                var unneededKeys = mappedData.Values
-                    .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
-                        .Some( b => !expectedBones.Contains( b ) )
-                        .None( () => false ) )
-                    .Select( s => s.Key )
+                var expectedBones = HashSet.createRange( Bones[i].Descendants() );
+                components = components
+                    .AsParallel()
+                    .Where( s => expectedBones.Contains( s.Key.GetBone( i ) ) )
                     .ToSeq()
                     .Strict();
-                foreach ( var key in unneededKeys ) mappedData.Remove( key );
             }
-
-            return mappedData.Values.ToSeq();
-        }
-
-        public Seq<Skeleton<T>> GetComposingSkeletons<T>( IDictionary<Skeleton , Seq<Skeleton<T>>> map )
-        {
-            var mappedData = new Dictionary<Skeleton , Seq<Skeleton<T>>>( map );
-            foreach ( var bone in Bones )
-            {
-                var expectedBones = bone.Descendants();
-                var unneededKeys = mappedData.Keys
-                    .Where( s => s.Bones.Find( x => x.DimensionName.Equals( bone.DimensionName ) )
-                        .Some( b => !expectedBones.Contains( b ) )
-                        .None( () => false ) )
-                    .Select( s => s )
-                    .ToSeq()
-                    .Strict();
-                foreach ( var key in unneededKeys ) mappedData.Remove( key );
-            }
-
-            return mappedData.Values.Collect( o => o ).ToSeq();
+            
+            return components;
         }
 
         public Seq<T> GetComposingItems<T>( IEnumerable<T> mappedComponents ) where T : IMappedComponents
@@ -311,9 +296,8 @@ namespace MultiDimensionsHierarchies.Core
 
             foreach ( var bone in Bones )
             {
-                var expectedBones = HashSet.createRange( bone.Descendants().Select( b => b.Label ));
-                components = components
-                    .AsParallel()
+                var expectedBones = HashSet.createRange( bone.Descendants().Select( b => b.Label ) );
+                components = components.AsParallel()
                     .Where( mc =>
                         mc.Components.Find( bone.DimensionName )
                             .Some( label => expectedBones.Contains( label ) )
@@ -325,19 +309,21 @@ namespace MultiDimensionsHierarchies.Core
             return components;
         }
 
-        public IEnumerable<Skeleton<TO>> BuildComposingSkeletons<TI, TO>(
-            IEnumerable<TI> inputs ,
-            Func<TI , TO> evaluator ,
-            bool filterComponents = true ) where TI : IMappedComponents
+        public IEnumerable<Skeleton<TO>> BuildComposingSkeletons<TI , TO>( IEnumerable<TI> inputs ,
+            Func<TI , TO> evaluator , bool filterComponents = true ) where TI : IMappedComponents
         {
-            var dimSeq = Bones
-                .Select( bone => (bone.DimensionName, Bones: bone.Descendants().GroupBy( b => b.Label ).ToDictionary( g => g.Key , g => g.ToSeq().Strict() )) )
+            var dimSeq = Bones.Select( bone => ( bone.DimensionName ,
+                    Bones: bone.Descendants()
+                        .GroupBy( b => b.Label )
+                        .ToDictionary( g => g.Key , g => g.ToSeq().Strict() ) ) )
                 .ToSeq()
                 .Strict();
 
-            static string Parse( TI input , string dimName ) => input.Components.Find( dimName ).Match( s => s , () => string.Empty );
+            static string Parse( TI input , string dimName ) =>
+                input.Components.Find( dimName ).Match( s => s , () => string.Empty );
 
-            return SkeletonFactory.FastParse( filterComponents ? GetComposingItems( inputs ) : inputs , Parse , evaluator , dimSeq );
+            return SkeletonFactory.FastParse( filterComponents ? GetComposingItems( inputs ) : inputs , Parse ,
+                evaluator , dimSeq );
         }
 
         public bool Equals( Skeleton other )
@@ -369,12 +355,12 @@ namespace MultiDimensionsHierarchies.Core
         }
 
         public static Skeleton ParseCompleteString( string s ) =>
-            new( s.Split( ':' )
+            new(s.Split( ':' )
                 .Select( x =>
                 {
                     var parts = x.Split( '|' );
                     return new Bone( parts[1] , parts[0] );
-                } ) );
+                } ));
 
         public static Skeleton ParseCompleteString( string input , Seq<Dimension> dimensions )
         {
@@ -415,11 +401,7 @@ namespace MultiDimensionsHierarchies.Core
             return weight;
         };
 
-        public Bone GetBone( int index )
-        {
-            if ( index < Bones.Length ) return Bones[index];
-            return Bone.None;
-        }
+        public Bone GetBone( int index ) => index < Bones.Length ? Bones[index] : Bone.None;
 
         public Bone GetBone( string dimensionName ) =>
             Bones.Find( b => b.DimensionName.Equals( dimensionName ) ).Match( b => b , () => Bone.None );
