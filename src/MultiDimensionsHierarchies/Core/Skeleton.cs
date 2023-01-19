@@ -236,7 +236,11 @@ namespace MultiDimensionsHierarchies.Core
             foreach ( var bone in Bones.Values )
             {
                 var expectedBones = HashSet.createRange( bone.Descendants() );
-                //components = components.Where( s => s.HasAnyBone())
+                components = components
+                    .AsParallel()
+                    .Where( s => expectedBones.Contains( s.GetBone( bone.DimensionName ) ) )
+                    .ToSeq()
+                    .Strict();
             }
 
             return components;
@@ -244,27 +248,8 @@ namespace MultiDimensionsHierarchies.Core
 
         public Seq<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<Skeleton> sourceSkeletons )
         {
-            // TODO: replace
-            return Seq<Skeleton>.Empty;
-
-            //var targetSkeleton = Update( dimensions );
-            //var bones = targetSkeleton.Bones.ToDictionary( b => b.DimensionName ,
-            //    b => new System.Collections.Generic.HashSet<string>( b.Descendants().Select( x => x.Label ) ) );
-            //var composingElements = new System.Collections.Generic.HashSet<Skeleton>( sourceSkeletons );
-            //foreach ( var expectedBones in bones )
-            //{
-            //    var rejectedElements = new ConcurrentBag<Skeleton>();
-            //    composingElements.GroupBy( x => x.Bones.First( b => b.DimensionName.Equals( expectedBones.Key ) ) )
-            //        .AsParallel()
-            //        .ForEach( group =>
-            //        {
-            //            if ( !expectedBones.Value.Contains( group.Key.Label ) )
-            //                group.ForEach( s => rejectedElements.Add( s ) );
-            //        } );
-            //    foreach ( var r in rejectedElements ) composingElements.Remove( r );
-            //}
-
-            //return composingElements.ToSeq();
+            var targetSkeleton = Update( dimensions );
+            return targetSkeleton.GetComposingSkeletons( sourceSkeletons );
         }
 
         public Seq<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<string> completeKeys ) =>

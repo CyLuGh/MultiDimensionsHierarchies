@@ -17,7 +17,7 @@ public class AggregatorTests
             .Select( s =>
             {
                 int value = 0;
-                foreach ( var bone in s.Bones )
+                foreach ( var bone in s.Bones.Values )
                 {
                     foreach ( var part in bone.Label.Split( '.' ) )
                     {
@@ -35,7 +35,7 @@ public class AggregatorTests
             .Select( s =>
             {
                 int value = 0;
-                foreach ( var bone in s.Bones )
+                foreach ( var bone in s.Bones.Values )
                 {
                     foreach ( var part in bone.Label.Split( '.' ) )
                     {
@@ -53,7 +53,7 @@ public class AggregatorTests
             .Select( s =>
             {
                 int value = 0;
-                foreach ( var bone in s.Bones )
+                foreach ( var bone in s.Bones.Values )
                 {
                     foreach ( var part in bone.Label.Split( '.' ) )
                     {
@@ -71,7 +71,7 @@ public class AggregatorTests
             .Select( s =>
             {
                 double value = 0;
-                foreach ( var bone in s.Bones )
+                foreach ( var bone in s.Bones.Values )
                 {
                     foreach ( var part in bone.Label.Split( '.' ) )
                     {

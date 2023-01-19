@@ -429,7 +429,7 @@ namespace MultiDimensionsHierarchies.Core
             {
                 var bonesPerDimension = checkTargets
                                 .AsParallel()
-                                .SelectMany( s => s.Bones )
+                                .SelectMany( s => s.Bones.Values )
                                 .GroupBy( b => b.DimensionName )
                                 .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
 

@@ -132,8 +132,11 @@ namespace MultiDimensionsHierarchies.Core
             => skeletons.AsParallel().SelectMany( s => s.Key.Ancestors() ).Distinct();
 
         public static Option<SkeletonsAccumulator<T>> Find<T>( this IEnumerable<SkeletonsAccumulator<T>> skeletons , params string[] labels )
-            => skeletons.Find( s => s.Bones.Length == labels.Length
-                && Enumerable.Range( 0 , labels.Length ).All( i => s.Bones[i].Label.Equals( labels[i] ) ) );
+            => skeletons.Find( s => {
+                var bonesArray = s.Bones.Values.OrderBy( v => v.DimensionName ).ToArray();
+                return s.Bones.Length == labels.Length
+                       && Enumerable.Range( 0 , labels.Length ).All( i => bonesArray[i].Label.Equals( labels[i] ) );
+            } );
 
         public static long EstimateComplexity( this IEnumerable<Skeleton> skeletons )
         {

@@ -35,8 +35,8 @@ public class SkeletonTests
 
         var skeleton = new Skeleton( boneB , boneA );
 
-        skeleton.Bones[0].Should().BeSameAs( boneA );
-        skeleton.Bones[1].Should().BeSameAs( boneB );
+        skeleton.Bones["Dimension A"].Should().BeSameAs( boneA );
+        skeleton.Bones["Dimension B"].Should().BeSameAs( boneB );
     }
 
     [Fact]
@@ -65,16 +65,16 @@ public class SkeletonTests
         var skeleton = new Skeleton( boneC , boneB );
         skeleton = skeleton.Add( boneA );
 
-        skeleton.Bones[0].Should().BeSameAs( boneA );
-        skeleton.Bones[1].Should().BeSameAs( boneB );
-        skeleton.Bones[2].Should().BeSameAs( boneC );
+        skeleton.Bones["Dimension A"].Should().BeSameAs( boneA );
+        skeleton.Bones["Dimension B"].Should().BeSameAs( boneB );
+        skeleton.Bones["Dimension C"].Should().BeSameAs( boneC );
 
         skeleton = new Skeleton( boneB );
         skeleton = skeleton.Add( new Bone[] { boneA , boneC } );
 
-        skeleton.Bones[0].Should().BeSameAs( boneA );
-        skeleton.Bones[1].Should().BeSameAs( boneB );
-        skeleton.Bones[2].Should().BeSameAs( boneC );
+        skeleton.Bones["Dimension A"].Should().BeSameAs( boneA );
+        skeleton.Bones["Dimension B"].Should().BeSameAs( boneB );
+        skeleton.Bones["Dimension C"].Should().BeSameAs( boneC );
     }
 
     [Fact]
@@ -212,10 +212,10 @@ public class SkeletonTests
                         var skeleton = new Skeleton( boneA , boneB );
 
                         var root = skeleton.Root();
-                        root.Bones[0]
+                        root.Bones["Dim A"]
                             .ToString().Should().Be( dimA.Find( "2" ).Some( b => b.ToString() ).None( () => "" ) );
 
-                        root.Bones[0].Should().BeSameAs(
+                        root.Bones["Dim A"].Should().BeSameAs(
                             dimA.Find( "2" ).Some( b => b ).None( () => Bone.None ) );
                     } );
 
@@ -228,11 +228,11 @@ public class SkeletonTests
                                 var skeleton = new Skeleton( boneA , boneB , boneC );
                                 var root = skeleton.Root();
 
-                                root.Bones[0].Should().BeSameAs(
+                                root.Bones["Dim A"].Should().BeSameAs(
                             dimA.Find( "2" ).Some( b => b ).None( () => Bone.None ) );
-                                root.Bones[1].Should().BeSameAs(
+                                root.Bones["Dim B"].Should().BeSameAs(
                             dimB.Find( "1" ).Some( b => b ).None( () => Bone.None ) );
-                                root.Bones[2].Should().BeSameAs(
+                                root.Bones["Dim C"].Should().BeSameAs(
                             dimC.Find( "1" ).Some( b => b ).None( () => Bone.None ) );
                             } );
                     } );
@@ -563,7 +563,7 @@ public class SkeletonTests
             .Select( s =>
             {
                 int value = 0;
-                foreach ( var bone in s.Bones )
+                foreach ( var bone in s.Bones.Values )
                 {
                     foreach ( var part in bone.Label.Split( '.' ) )
                     {
@@ -692,8 +692,8 @@ public class SkeletonTests
 
         var skeleton = new Skeleton( boneB , boneA );
 
-        skeleton.GetBone( 0 ).Should().BeSameAs( boneA );
-        skeleton.GetBone( 2 ).Should().BeSameAs( Bone.None );
+        skeleton.GetBone( "Dimension A").Should().BeSameAs( boneA );
+        skeleton.GetBone( "Dimension X" ).Should().BeSameAs( Bone.None );
     }
 
     [Fact]

@@ -3,7 +3,6 @@ using LanguageExt;
 using LanguageExt.UnitTesting;
 using MultiDimensionsHierarchies.Core;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
@@ -326,7 +325,7 @@ public class SkeletonFactoryTests
         skeletons.Find( "1.1" , "2" )
             .ShouldBeSome( s =>
             {
-                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones["Dimension A"].Should().BeSameAs( d ) );
 
                 s.Value.ShouldBeSome( v => v.Should().Be( 4.6 ) );
                 s.ValueUnsafe.Should().Be( 4.6 );
@@ -355,7 +354,7 @@ public class SkeletonFactoryTests
         skeletons.Rights().Find( "1.1" , "2" )
             .ShouldBeSome( s =>
             {
-                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones["Dimension A"].Should().BeSameAs( d ) );
 
                 s.Value.ShouldBeSome( v => v.Should().Be( 4.6 ) );
                 s.ValueUnsafe.Should().Be( 4.6 );
@@ -426,7 +425,7 @@ public class SkeletonFactoryTests
         skeletons.Find( "1.1" , "2" )
             .ShouldBeSome( s =>
             {
-                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones["Dimension A"].Should().BeSameAs( d ) );
 
                 s.Value.ShouldBeSome( v => v.Should().Be( 4.6 ) );
                 s.ValueUnsafe.Should().Be( 4.6 );
@@ -460,8 +459,7 @@ public class SkeletonFactoryTests
         found.Sum( s => s.ValueUnsafe ).Should().Be( 8.6 );
 
         skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) ,
-            r => new SampleKey( r.DimA , r.DimB ) ,
-            ( IGrouping<SampleKey , SampleRecord> records ) =>
+            r => new SampleKey( r.DimA , r.DimB ) , records =>
                 new SampleRecord( DimA: records.Key.DimA , DimB: records.Key.DimB , Value: records.Sum( x => x.Value ) ) );
         skeletons.Length.Should().Be( items.Count - 1 );
         skeletons.All( s => s.Bones.Length == 2 ).Should().BeTrue();
@@ -469,7 +467,7 @@ public class SkeletonFactoryTests
         skeletons.Find( "1.1" , "2" )
             .ShouldBeSome( s =>
             {
-                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones["Dimension A"].Should().BeSameAs( d ) );
 
                 s.Value.ShouldBeSome( v => v.Should().Be( 8.6 ) );
                 s.ValueUnsafe.Should().Be( 8.6 );
@@ -510,7 +508,7 @@ public class SkeletonFactoryTests
         skeletons.Find( "1.1" , "2" )
             .ShouldBeSome( s =>
             {
-                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones[0].Should().BeSameAs( d ) );
+                dimA.Find( "1.1" ).ShouldBeSome( d => s.Bones["Dimension A"].Should().BeSameAs( d ) );
 
                 s.Value.ShouldBeSome( v => v.Should().Be( 8.6 ) );
                 s.ValueUnsafe.Should().Be( 8.6 );

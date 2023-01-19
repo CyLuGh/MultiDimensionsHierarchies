@@ -1,5 +1,4 @@
 ﻿using FluentAssertions;
-using LanguageExt;
 using MultiDimensionsHierarchies.Core;
 using System;
 using System.Linq;
@@ -22,8 +21,8 @@ public class GenericSkeletonTests
 
         var skeleton = new Skeleton<double>( new Skeleton( boneB , boneA ) );
 
-        skeleton.Bones[0].Should().BeSameAs( boneA );
-        skeleton.Bones[1].Should().BeSameAs( boneB );
+        skeleton.Bones["Dimension A"].Should().BeSameAs( boneA );
+        skeleton.Bones["Dimension B"].Should().BeSameAs( boneB );
     }
 
     [Fact]
@@ -60,8 +59,8 @@ public class GenericSkeletonTests
         {
             s.Value.IsSome.Should().BeTrue();
             s.Value.IfSome( v => v.Should().Be( 30 ) );
-            s.Bones[0].Should().BeSameAs( boneA );
-            s.Bones[1].Should().BeSameAs( boneB );
+            s.Bones["Dimension A"].Should().BeSameAs( boneA );
+            s.Bones["Dimension B"].Should().BeSameAs( boneB );
         } );
 
         skeleton = new Skeleton<int>( boneA , boneB );
@@ -72,8 +71,8 @@ public class GenericSkeletonTests
         {
             s.Value.IsSome.Should().BeTrue();
             s.Value.IfSome( v => v.Should().Be( 16 ) );
-            s.Bones[0].Should().BeSameAs( boneA );
-            s.Bones[1].Should().BeSameAs( boneB );
+            s.Bones["Dimension A"].Should().BeSameAs( boneA );
+            s.Bones["Dimension B"].Should().BeSameAs( boneB );
         } );
 
         skeleton2 = new Skeleton<int>( boneA , boneB );
@@ -93,7 +92,7 @@ public class GenericSkeletonTests
         var skelTest2 = new Skeleton<TestObject>( new TestObject { Value = 4 } , boneA , boneB );
         var skelTest3 = new Skeleton<TestObject>( new TestObject { Value = 9 } , boneA , boneB );
 
-        var aggregator = ( TestObject a , TestObject b )
+        var aggregator = ( TestObject? a , TestObject? b )
             => new TestObject { Value = ( a?.Value ?? 0 ) + ( b?.Value ?? 0 ) };
 
         var sumTest = new[] { skelTest1 , skelTest2 , skelTest3 }.Aggregate( aggregator );
@@ -136,8 +135,8 @@ public class GenericSkeletonTests
         {
             s.Value.IsSome.Should().BeTrue();
             s.Value.IfSome( v => v.Should().Be( 24 ) );
-            s.Bones[0].Should().BeSameAs( boneA );
-            s.Bones[1].Should().BeSameAs( boneB );
+            s.Bones["Dimension A"].Should().BeSameAs( boneA );
+            s.Bones["Dimension B"].Should().BeSameAs( boneB );
         } );
 
         var boneTotA = new Bone( "AAA" , "Dimension A" );
@@ -150,10 +149,10 @@ public class GenericSkeletonTests
         {
             s.Value.IsSome.Should().BeTrue();
             s.Value.IfSome( v => v.Should().Be( 24 ) );
-            s.Bones[0].Should().NotBeSameAs( boneA );
-            s.Bones[1].Should().NotBeSameAs( boneB );
-            s.Bones[0].Should().BeSameAs( boneTotA );
-            s.Bones[1].Should().BeSameAs( boneTotB );
+            s.Bones["Dimension A"].Should().NotBeSameAs( boneA );
+            s.Bones["Dimension B"].Should().NotBeSameAs( boneB );
+            s.Bones["Dimension A"].Should().BeSameAs( boneTotA );
+            s.Bones["Dimension B"].Should().BeSameAs( boneTotB );
         } );
 
         skeleton = new Skeleton<int>( boneB , boneA );
@@ -164,8 +163,8 @@ public class GenericSkeletonTests
         {
             s.Value.IsSome.Should().BeTrue();
             s.Value.IfSome( v => v.Should().Be( default ) );
-            s.Bones[0].Should().BeSameAs( boneA );
-            s.Bones[1].Should().BeSameAs( boneB );
+            s.Bones["Dimension A"].Should().BeSameAs( boneA );
+            s.Bones["Dimension B"].Should().BeSameAs( boneB );
         } );
     }
 }
