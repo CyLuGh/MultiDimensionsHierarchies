@@ -502,5 +502,31 @@ namespace MultiDimensionsHierarchies.Core
                 .Select( bs => new Skeleton<TO>( evaluator( input ) , bs ) )
                 .ToSeq();
         }
+
+        public static Seq<(TI,Skeleton<TO>)> FastTagBuild<TI,TO>(
+            IEnumerable<TI> inputs,
+            Func<TI , TO> evaluator ,
+            IEnumerable<Dimension> dimensions
+        ) where TI : IMappedComponents
+        {
+            var dimSeq = dimensions
+                .Select( d => (d.Name, Bones: d.Flatten().GroupBy( b => b.Label ).ToDictionary( g => g.Key , g => g.ToSeq().Strict() )) )
+                .ToSeq()
+                .Strict();
+
+            return FastTagBuild(inputs,evaluator,dimSeq);
+        }
+
+        public static Seq<(TI,Skeleton<TO>)> FastTagBuild<TI,TO>(
+            IEnumerable<TI> inputs,
+            Func<TI , TO> evaluator ,
+            Seq<(string Name, Dictionary<string , Seq<Bone>> Bones)> dimensions
+        ) where TI : IMappedComponents
+        {
+            static string Parse( TI input , string dimName ) =>
+                input.Components.Find( dimName ).Match( s => s , () => string.Empty );
+
+            return FastTagParse(inputs, Parse, evaluator, dimensions).ToSeq();
+        }
     }
 }
