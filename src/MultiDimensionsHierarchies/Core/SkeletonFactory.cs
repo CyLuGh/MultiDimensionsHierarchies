@@ -466,6 +466,19 @@ namespace MultiDimensionsHierarchies.Core
                 .SelectMany( input => FastParse( input , parser , evaluator , dimensions ) );
         }
 
+        internal static ParallelQuery<(TI Input, Skeleton<TO> Result)> FastTagParse<TI, TO>(
+            IEnumerable<TI> inputs ,
+            Func<TI , string , string> parser ,
+            Func<TI , TO> evaluator ,
+            Seq<(string Name, Dictionary<string , Seq<Bone>> Bones)> dimensions
+        )
+        {
+            return inputs
+                .AsParallel()
+                .SelectMany( input => FastParse( input , parser , evaluator , dimensions )
+                    .Select( r => (input, r) ) );
+        }
+
         public static Seq<Skeleton<TO>> FastParse<TI, TO>(
             TI input ,
             Func<TI , string , string> parser ,

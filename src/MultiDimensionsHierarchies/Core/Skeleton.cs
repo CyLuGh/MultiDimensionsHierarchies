@@ -326,6 +326,23 @@ namespace MultiDimensionsHierarchies.Core
                 evaluator , dimSeq );
         }
 
+        public IEnumerable<(TI Input,Skeleton<TO> Result)> BuildComposingTagSkeletons<TI , TO>( IEnumerable<TI> inputs ,
+            Func<TI , TO> evaluator , bool filterComponents = true ) where TI : IMappedComponents
+        {
+            var dimSeq = Bones.Select( bone => ( bone.DimensionName ,
+                    Bones: bone.Descendants()
+                        .GroupBy( b => b.Label )
+                        .ToDictionary( g => g.Key , g => g.ToSeq().Strict() ) ) )
+                .ToSeq()
+                .Strict();
+
+            static string Parse( TI input , string dimName ) =>
+                input.Components.Find( dimName ).Match( s => s , () => string.Empty );
+
+            return SkeletonFactory.FastTagParse( filterComponents ? GetComposingItems( inputs ) : inputs , Parse ,
+                evaluator , dimSeq );
+        }
+
         public bool Equals( Skeleton other )
         {
             if ( other is null ) return false;
