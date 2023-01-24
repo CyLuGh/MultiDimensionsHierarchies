@@ -272,7 +272,7 @@ namespace MultiDimensionsHierarchies.Core
 
         public Seq<Skeleton<T>> GetComposingSkeletons<T>( IEnumerable<Skeleton<T>> skeletons )
             => GetComposingSkeletons( skeletons.ToSeq() );
-        
+
         public Seq<Skeleton<T>> GetComposingSkeletons<T>( Seq<Skeleton<T>> skeletons )
         {
             var components = skeletons.Strict();
@@ -286,7 +286,7 @@ namespace MultiDimensionsHierarchies.Core
                     .ToSeq()
                     .Strict();
             }
-            
+
             return components;
         }
 

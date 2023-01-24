@@ -76,8 +76,6 @@ namespace MultiDimensionsHierarchies.Core
             return With( value: t );
         }
 
-        
-        
         public bool Equals( Skeleton<T> other )
         {
             if ( other is null ) return false;
