@@ -1,7 +1,6 @@
 [
     {
         "Name": "COOKING",
-        "Position": 2,
         "Members": [
             {
                 "Id": 0,
@@ -52,7 +51,7 @@
             },
             {
                 "Id": 8,
-                "Name": "COLZA",
+                "Name": "RAPESEED",
                 "ParentId": 6,
                 "Weight": 1
             },
@@ -61,22 +60,23 @@
                 "Name": "SUNFLOWER",
                 "ParentId": 6,
                 "Weight": 1
-            }
-        ]
-    },
-    {
-        "Name": "GEO_CONSUMPTION",
-        "Position": 1,
-        "Members": [
+            },
             {
-                // "Id": 0 https://meta.wikimedia.org/wiki/List_of_countries_by_regional_classification
-                //https://unstats.un.org/unsd/methodology/m49/
+                "Id": 10,
+                "Name": "PEANUT",
+                "ParentId": 6,
+                "Weight": 1
+            },
+            {
+                "Id": 11,
+                "Name": "PIG",
+                "ParentId": 2,
+                "Weight": 1
             }
         ]
     },
     {
         "Name": "SHAPE",
-        "Position": 3,
         "Members": [
             {
                 "Id": 0,
@@ -109,13 +109,7 @@
         ]
     },
     {
-        "Name": "GEO_GROWTH",
-        "Position": 4,
-        "Members": []
-    },
-    {
         "Name": "MODE",
-        "Position": 5,
         "Members": [
             {
                 "Id": 0,
@@ -137,7 +131,6 @@
     },
     {
         "Name": "SEX",
-        "Position": 6,
         "Members": [
             {
                 "Id": 0,

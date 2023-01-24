@@ -13,17 +13,18 @@ namespace MultiDimensionsHierarchies.Core
         public Arr<string> Dimensions => Bones.Select( b => b.DimensionName );
         public int Depth => Bones.Max( b => b.Depth );
 
-        public Skeleton( IEnumerable<Bone> bones ) : this( bones.ToArray() )
+        public Skeleton( IEnumerable<Bone> bones )
         {
+            Bones = Arr.createRange( bones.OrderBy( x => x.DimensionName ) );
         }
 
         public Skeleton( params Bone[] bones )
         {
-            if ( bones.Any( x => string.IsNullOrWhiteSpace( x.DimensionName ) ) )
-                throw new ArgumentException( "A bone should always define its dimension name!" );
-            if ( bones.GroupBy( x => x.DimensionName ).Any( g => g.Count() > 1 ) )
-                throw new ArgumentException( "A bone with the same dimension name has been defined more than once!" );
-            Bones = Arr.create( bones.OrderBy( x => x.DimensionName ).ToArray() );
+            // if ( bones.Any( x => string.IsNullOrWhiteSpace( x.DimensionName ) ) )
+            //     throw new ArgumentException( "A bone should always define its dimension name!" );
+            // if ( bones.GroupBy( x => x.DimensionName ).Any( g => g.Count() > 1 ) )
+            //     throw new ArgumentException( "A bone with the same dimension name has been defined more than once!" );
+            Bones = Arr.createRange( bones.OrderBy( x => x.DimensionName ) );
         }
 
         public Skeleton Add( Skeleton other ) => Add( other.Bones );
@@ -74,7 +75,7 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Skeleton> Leaves()
         {
             if ( _leaves.IsEmpty )
-                _leaves = Prelude.Atom( Bones.AsParallel().Select( b => b.Leaves().ToArray() ).Combine().ToSeq() );
+                _leaves = Prelude.Atom( Bones.AsParallel().Select( b => b.Leaves().Strict() ).Combine().ToSeq() );
             return _leaves;
         }
 
@@ -270,8 +271,8 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Skeleton> GetComposingSkeletons( Dimension[] dimensions , IEnumerable<string> completeKeys ) =>
             GetComposingSkeletons( dimensions , completeKeys.Distinct().Select( s => ParseCompleteString( s ) ) );
 
-        public Seq<Skeleton<T>> GetComposingSkeletons<T>( IEnumerable<Skeleton<T>> skeletons )
-            => GetComposingSkeletons( skeletons.ToSeq() );
+        public Seq<Skeleton<T>> GetComposingSkeletons<T>( IEnumerable<Skeleton<T>> skeletons ) =>
+            GetComposingSkeletons( skeletons.ToSeq() );
 
         public Seq<Skeleton<T>> GetComposingSkeletons<T>( Seq<Skeleton<T>> skeletons )
         {
@@ -280,8 +281,7 @@ namespace MultiDimensionsHierarchies.Core
             for ( int i = 0 ; i < Bones.Count ; i++ )
             {
                 var expectedBones = HashSet.createRange( Bones[i].Descendants() );
-                components = components
-                    .AsParallel()
+                components = components.AsParallel()
                     .Where( s => expectedBones.Contains( s.Key.GetBone( i ) ) )
                     .ToSeq()
                     .Strict();
@@ -326,8 +326,9 @@ namespace MultiDimensionsHierarchies.Core
                 evaluator , dimSeq );
         }
 
-        public IEnumerable<(TI Input,Skeleton<TO> Result)> BuildComposingTagSkeletons<TI , TO>( IEnumerable<TI> inputs ,
-            Func<TI , TO> evaluator , bool filterComponents = true ) where TI : IMappedComponents
+        public IEnumerable<(TI Input , Skeleton<TO> Result)> BuildComposingTagSkeletons<TI , TO>(
+            IEnumerable<TI> inputs , Func<TI , TO> evaluator , bool filterComponents = true )
+            where TI : IMappedComponents
         {
             var dimSeq = Bones.Select( bone => ( bone.DimensionName ,
                     Bones: bone.Descendants()

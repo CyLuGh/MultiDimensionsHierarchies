@@ -25,7 +25,7 @@ namespace MultiDimensionsHierarchies.Core
 
         public Seq<Bone> Leaves() => Frame.SelectMany( d => d.Leaves() ).ToSeq();
 
-        public int Complexity => Frame.Sum( d => d.Complexity );
+        public long Complexity => Frame.Sum( d => d.Complexity );
 
         public Either<string , bool> Check()
             => Frame.Check();
