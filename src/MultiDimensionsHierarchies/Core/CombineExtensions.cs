@@ -16,6 +16,7 @@ namespace MultiDimensionsHierarchies.Core
             => dimensions
                 .Aggregate<Seq<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
                     ( lists , bones ) => lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                .AsParallel()
                 .Select( l => new Skeleton( l ) );
 
         public static IEnumerable<Skeleton> Extract( this IEnumerable<Skeleton> skeletons , params string[] concepts )

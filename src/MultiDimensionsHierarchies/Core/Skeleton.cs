@@ -11,7 +11,7 @@ namespace MultiDimensionsHierarchies.Core
     {
         public Arr<Bone> Bones { get; }
         public Arr<string> Dimensions => Bones.Select( b => b.DimensionName );
-        public int Depth => Bones.Max( b => b.Depth );
+        public int Depth => Bones.Sum( b => b.Depth );
 
         public Skeleton( IEnumerable<Bone> bones )
         {

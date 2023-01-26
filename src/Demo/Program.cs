@@ -8,6 +8,7 @@ using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
 using Newtonsoft.Json;
+using SampleGenerator;
 using Spectre.Console;
 using System.Diagnostics;
 using System.Globalization;
@@ -15,109 +16,28 @@ using System.Reflection.Emit;
 
 AnsiConsole.WriteLine( "Welcome to MDH demo" );
 
-var dimensions = CreateDimensions();
+var generator = new Generator(100);
 
-var samples = GenerateDataSample( dimensions,100 );
-var dataSkeletons = SkeletonFactory.FastBuild( samples , ( o , s ) => o.Get( s ) , o => o.Value, dimensions );
-var targets = dimensions.Combine().AsParallel().Where( x => !x.IsLeaf() ).ToSeq();
+AnsiConsole.WriteLine(generator.Dimensions.Complexity().ToString("N"));
 
-AnsiConsole.WriteLine(targets.Length);
+var samples = generator.Skeletons;
+
+foreach(var s in samples)
+    AnsiConsole.WriteLine("{0}", s);
+
+var test = generator.GenerateTargets().ToArray();
+
+// var samples = GenerateDataSample( dimensions,100 );
+// var dataSkeletons = SkeletonFactory.FastBuild( samples , ( o , s ) => o.Get( s ) , o => o.Value, dimensions );
+// var targets = dimensions.Combine().AsParallel()
+//     .Where( x => !x.IsLeaf() )
+//     .OrderBy( s=> s.Depth )
+//     .Take( 200 ).ToSeq();
+
 
 Console.ReadLine();
 
-Seq<Sample> GenerateDataSample( Seq<Dimension> dimensions , int sampleSize )
-{
-    Randomizer.Seed = new Random( sampleSize ); // So that samples of the same size always generate the same data
-    
-    var leaves =
-        HashMap.createRange( dimensions.Select( d => ( d.Name , d.Leaves().Select( b => b.Label ).Strict() ) ) );
 
-    var sampler = new Faker<Sample>().RuleFor( o => o.Consumer , f => f.PickRandom<string>( leaves["Consumers"] ) )
-        .RuleFor( o => o.Producer , f => f.PickRandom<string>( leaves["Producers"] ) )
-        .RuleFor( o => o.Cooking , f => f.PickRandom<string>( leaves["COOKING"] ) )
-        .RuleFor( o => o.Shape , f => f.PickRandom<string>( leaves["SHAPE"] ) )
-        .RuleFor( o => o.Mode , f => f.PickRandom<string>( leaves["MODE"] ) )
-        .RuleFor( o => o.Sex , f => f.PickRandom<string>( leaves["SEX"] ) )
-        .RuleFor( o => o.Value , f => f.Random.Int( min: 0 , max: 50 ) );
-
-    return Seq.createRange( sampler.Generate( sampleSize ) );
-}
-
-Seq<Dimension> CreateDimensions()
-{
-    var countriesInfo = GetCountriesInfo();
-    var producerDimension = BuildGeoDimension( "Producers" , countriesInfo );
-    var consumerDimension = BuildGeoDimension( "Consumers" , countriesInfo );
-    var dimensions = BuildDimensions( GetDimensionInputs() );
-
-    return Seq.create( dimensions[0] , consumerDimension , dimensions[1] , dimensions[2] , producerDimension ,
-        dimensions[3] );
-}
-
-Seq<Dimension> BuildDimensions( Seq<DimensionInput> inputs )
-{
-    return inputs.Select( input => DimensionFactory.BuildWithParentLink( input.Name , input.Members , x => x.Id ,
-        x => x.ParentId.HasValue ? x.ParentId.Value : Option<int>.None , x => x.Name ) );
-}
-
-Dimension BuildGeoDimension( string name , Seq<CountryInfo> countries )
-{
-    var raw = countries.Select( c => c.Global )
-        .Distinct()
-        .SelectMany( s =>
-        {
-            (string Label , Guid Id , Guid ParentId) global = ( Label: s , Id: Guid.NewGuid() , ParentId: Guid.Empty );
-            var regions = BuildRegions( global.Id , countries.Where( c => c.Global == global.Label ) ).Strict();
-            return regions.Add( global );
-        } )
-        .ToSeq();
-
-    return DimensionFactory.BuildWithParentLink( name , raw , x => x.Id ,
-        x => x.ParentId != Guid.Empty ? x.ParentId : Option<Guid>.None , x => x.Label );
-}
-
-Seq<(string Label , Guid Id , Guid ParentId)> BuildRegions( Guid globalGuid , Seq<CountryInfo> countries )
-{
-    return countries.Select( c => c.Region )
-        .Distinct()
-        .SelectMany( s =>
-        {
-            var region = ( Label: s , Id: Guid.NewGuid() , ParentId: globalGuid );
-            var cnts = BuildCountries( region.Id , countries.Where( c => c.Region == region.Label ) ).Strict();
-
-            return cnts.Add( region );
-        } )
-        .ToSeq();
-}
-
-Seq<(string Label , Guid Id , Guid ParentId)> BuildCountries( Guid parentGuid , Seq<CountryInfo> countries )
-{
-    return countries.Select( c => ( c.Code , Guid.NewGuid() , parentGuid ) );
-}
-
-Seq<CountryInfo> GetCountriesInfo()
-{
-    var path = Path.Combine( Path.GetDirectoryName( System.Reflection.Assembly.GetExecutingAssembly().Location ) ?? string.Empty ,
-        "samples" , "countries.json" );
-
-    if ( !File.Exists( path ) ) return Seq<CountryInfo>.Empty;
-
-    using var rdr = new StreamReader( path );
-    var json = rdr.ReadToEnd();
-    return JsonConvert.DeserializeObject<Seq<CountryInfo>>( json );
-}
-
-Seq<DimensionInput> GetDimensionInputs()
-{
-    var path = Path.Combine( Path.GetDirectoryName( System.Reflection.Assembly.GetExecutingAssembly().Location ) ?? string.Empty ,
-        "samples" , "dimensions.json" );
-
-    if ( !File.Exists( path ) ) return Seq<DimensionInput>.Empty;
-
-    using var rdr = new StreamReader( path );
-    var json = rdr.ReadToEnd();
-    return JsonConvert.DeserializeObject<Seq<DimensionInput>>( json );
-}
 
 // AnsiConsole.Write( new FigletText( "MDH demo" ) );
 //

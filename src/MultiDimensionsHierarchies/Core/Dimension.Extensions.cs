@@ -1,4 +1,5 @@
 ﻿using LanguageExt;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
@@ -25,7 +26,7 @@ namespace MultiDimensionsHierarchies.Core
         public static Seq<Option<Bone>> Find( this IEnumerable<Dimension> dimensions , params (string dimName, string label)[] searchItems )
             => searchItems.Select( x =>
             {
-                return from dimension in dimensions.Find( d => string.Compare( d.Name , x.dimName ) == 0 )
+                return from dimension in dimensions.Find( d => String.CompareOrdinal( d.Name , x.dimName ) == 0 )
                        from bone in dimension.Find( x.label )
                        select bone;
             }

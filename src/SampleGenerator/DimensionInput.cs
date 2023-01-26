@@ -1,4 +1,4 @@
-﻿namespace Demo;
+﻿namespace SampleGenerator;
 
 public class DimensionInput
 {
