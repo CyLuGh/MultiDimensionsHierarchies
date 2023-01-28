@@ -1,43 +1,25 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using Bogus;
-using CsvHelper;
-using CsvHelper.Configuration;
-using Demo;
-using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
-using Newtonsoft.Json;
 using SampleGenerator;
 using Spectre.Console;
-using System.Diagnostics;
-using System.Globalization;
-using System.Reflection.Emit;
 
 AnsiConsole.WriteLine( "Welcome to MDH demo" );
 
-var generator = new Generator(100);
-
-AnsiConsole.WriteLine(generator.Dimensions.Complexity().ToString("N"));
+var generator = new Generator( 1000 , 6 );
 
 var samples = generator.Skeletons;
+var targets = generator.GenerateTargets( 3 );
 
-foreach(var s in samples)
-    AnsiConsole.WriteLine("{0}", s);
+AnsiConsole.WriteLine("{0} {1}", samples[0], targets[0]);
 
-var test = generator.GenerateTargets().ToArray();
+var result = Aggregator.Aggregate( Method.TopDownGroup , samples , ( a , b ) => a + b , targets );
 
-// var samples = GenerateDataSample( dimensions,100 );
-// var dataSkeletons = SkeletonFactory.FastBuild( samples , ( o , s ) => o.Get( s ) , o => o.Value, dimensions );
-// var targets = dimensions.Combine().AsParallel()
-//     .Where( x => !x.IsLeaf() )
-//     .OrderBy( s=> s.Depth )
-//     .Take( 200 ).ToSeq();
-
+AnsiConsole.WriteLine( "{0}: computed {1} results in {2}" , result.Information , result.Results.Count ,
+    result.Duration );
 
 Console.ReadLine();
-
-
 
 // AnsiConsole.Write( new FigletText( "MDH demo" ) );
 //

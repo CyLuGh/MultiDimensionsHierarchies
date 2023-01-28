@@ -9,14 +9,17 @@ namespace SampleGenerator;
 public class Generator
 {
     private readonly int _sampleSize;
+    private readonly int _dimensionsCount;
+
     private Seq<Sample> _samples;
     private Seq<Skeleton<int>> _skeletons;
 
     public Seq<Dimension> Dimensions { get; }
 
-    public Generator( int sampleSize )
+    public Generator( int sampleSize , int dimensionsCount )
     {
         _sampleSize = sampleSize;
+        _dimensionsCount = dimensionsCount;
         Dimensions = CreateDimensions();
     }
 
@@ -35,42 +38,48 @@ public class Generator
         get
         {
             if ( _skeletons.IsEmpty )
-                _skeletons = SkeletonFactory.FastBuild( Samples , ( o , s ) => o.Get( s ) , o => o.Value , Dimensions );
+                _skeletons = SkeletonFactory.FastBuild( Samples , ( o , s ) => o.Get( s ) , o => o.Value ,
+                    Dimensions.Take( _dimensionsCount ) );
 
             return _skeletons;
         }
     }
 
-    public IEnumerable<Skeleton> GenerateTargets()
+    public Seq<Skeleton> GenerateTargets( int size )
     {
-        var depths = Dimensions.Select( d =>
-            d.Flatten().Select( b => b.Depth ).Distinct().OrderBy( x => x ).ToSeq().Strict() );
-        
-        var cartesians = depths.Aggregate<Seq<int> , IEnumerable<Seq<int>>>( new[] { Seq<int>.Empty } ,
+        var parsed = Dimensions.Take( _dimensionsCount )
+            .Select( ( d , i ) =>
+            {
+                var flat = d.Flatten();
+                var depths = flat.Select( b => b.Depth ).Distinct().OrderBy( x => x ).ToSeq().Strict();
+                var map = HashMap.createRange( flat.GroupBy( x => x.Depth )
+                    .Select( g => ( g.Key , g.ToSeq().Strict() ) ) );
+
+                return ( Index: i , Depths: depths , Map: map );
+            } )
+            .ToSeq();
+
+        var cartesians = parsed.OrderBy( t => t.Index )
+            .Select( t => t.Depths )
+            .Aggregate<Seq<int> , IEnumerable<Seq<int>>>( new[] { Seq<int>.Empty } ,
                 ( array , ds ) => array.Cartesian( ds , ( s , i ) => s.Add( i ) ) )
             .ToSeq();
 
-        var test = cartesians
-            .OrderBy( x => x.Sum() )
-            .ThenBy( x => x[0] )
-            .ThenBy( x => x[1] )
-            .ThenBy( x => x[2] )
-            .ThenBy( x => x[3] )
-            .ThenBy( x => x[4] )
-            .ThenBy( x => x[5] )
-            .Take( 3 )
-            .Select( x =>
-            {
-                return x.SelectMany( ( depth , i ) => Dimensions[i].Flatten().Where( o => o.Depth == depth ).Strict() ).ToSeq().Strict();
-            } )
-            .Combine()
+        var bonesMaps = HashMap.createRange( parsed.Select( t => ( t.Index , t.Map ) ) );
+
+        var targets = cartesians.OrderBy( x => x.Sum() );
+
+        for ( int i = 0 ; i < _dimensionsCount ; i++ )
+        {
+            var idx = i;
+            targets = targets.ThenBy( x => x[idx] );
+        }
+        
+        return targets
+            .Take( size )
+            .SelectMany( depths => { return depths.Select( ( d , i ) => bonesMaps[i][d] ).Combine(); } )
             .ToSeq()
             .Strict();
-
-        // var test = Dimensions.Select( d => d.Flatten().Strict() )
-        //     .Aggregate<Seq<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
-        //         ( lists , bones ) => lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) );
-        yield return new Skeleton();
     }
 
     private Seq<Sample> GenerateDataSample()
@@ -115,16 +124,19 @@ public class Generator
 
     private static Dimension BuildGeoDimension( string name , Seq<CountryInfo> countries )
     {
+        var world = ( Label: "World" , Id: Guid.NewGuid() , ParentId: Guid.Empty );
+
         var raw = countries.Select( c => c.Global )
             .Distinct()
             .SelectMany( s =>
             {
                 (string Label , Guid Id , Guid ParentId) global = ( Label: s , Id: Guid.NewGuid() ,
-                    ParentId: Guid.Empty );
+                    ParentId: world.Id );
                 var regions = BuildRegions( global.Id , countries.Where( c => c.Global == global.Label ) ).Strict();
                 return regions.Add( global );
             } )
-            .ToSeq();
+            .ToSeq()
+            .Add( world );
 
         return DimensionFactory.BuildWithParentLink( name , raw , x => x.Id ,
             x => x.ParentId != Guid.Empty ? x.ParentId : Option<Guid>.None , x => x.Label );
