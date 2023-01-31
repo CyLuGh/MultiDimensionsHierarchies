@@ -38,14 +38,18 @@ public class Generator
         get
         {
             if ( _skeletons.IsEmpty )
+            {
                 _skeletons = SkeletonFactory.FastBuild( Samples , ( o , s ) => o.Get( s ) , o => o.Value ,
                     Dimensions.Take( _dimensionsCount ) );
+            }
 
             return _skeletons;
         }
     }
 
-    public Seq<Skeleton> GenerateTargets( int size )
+    public Seq<Skeleton> GenerateTargets( int size ) => ComposeTargets( size ).Take( size );
+
+    private Seq<Skeleton> ComposeTargets( int size )
     {
         var parsed = Dimensions.Take( _dimensionsCount )
             .Select( ( d , i ) =>
@@ -53,9 +57,9 @@ public class Generator
                 var flat = d.Flatten();
                 var depths = flat.Select( b => b.Depth ).Distinct().OrderBy( x => x ).ToSeq().Strict();
                 var map = HashMap.createRange( flat.GroupBy( x => x.Depth )
-                    .Select( g => ( g.Key , g.ToSeq().Strict() ) ) );
+                    .Select( g => (g.Key, g.ToSeq().Strict()) ) );
 
-                return ( Index: i , Depths: depths , Map: map );
+                return (Index: i, Depths: depths, Map: map);
             } )
             .ToSeq();
 
@@ -65,21 +69,39 @@ public class Generator
                 ( array , ds ) => array.Cartesian( ds , ( s , i ) => s.Add( i ) ) )
             .ToSeq();
 
-        var bonesMaps = HashMap.createRange( parsed.Select( t => ( t.Index , t.Map ) ) );
+        var bonesMaps = HashMap.createRange( parsed.Select( t => (t.Index, t.Map) ) );
 
-        var targets = cartesians.OrderBy( x => x.Sum() );
+        var tgts = cartesians.OrderBy( x => x.Sum() );
 
         for ( int i = 0 ; i < _dimensionsCount ; i++ )
         {
             var idx = i;
-            targets = targets.ThenBy( x => x[idx] );
+            tgts = tgts.ThenBy( x => x[idx] );
         }
-        
-        return targets
-            .Take( size )
-            .SelectMany( depths => { return depths.Select( ( d , i ) => bonesMaps[i][d] ).Combine(); } )
-            .ToSeq()
-            .Strict();
+
+        var targets = tgts.ToSeq();
+
+        // var sampling = (int) Math.Round( (double) size / _dimensionsCount , MidpointRounding.ToPositiveInfinity );
+        var sampling = (int) Math.Round( targets.Count * .2 , MidpointRounding.ToPositiveInfinity );
+
+        var sample = targets
+            .Take( sampling )
+            .AsParallel()
+            .SelectMany( depths => depths.Select( ( d , i ) => bonesMaps[i][d] ).Combine() )
+            .ToSeq();
+
+        while ( sample.Length < size && sampling < targets.Count )
+        {
+            sampling = Math.Min( targets.Count ,
+                sampling + (int) Math.Round( targets.Count * .1 , MidpointRounding.ToPositiveInfinity ) );
+            sample = targets
+                .Take( sampling )
+                .AsParallel()
+                .SelectMany( depths => depths.Select( ( d , i ) => bonesMaps[i][d] ).Combine() )
+                .ToSeq();
+        }
+
+        return sample;
     }
 
     private Seq<Sample> GenerateDataSample()
@@ -92,7 +114,7 @@ public class Generator
         Randomizer.Seed = new Random( sampleSize ); // So that samples of the same size always generate the same data
 
         var leaves = HashMap.createRange( dimensions.Select( d =>
-            ( d.Name , d.Leaves().Select( b => b.Label ).Distinct().OrderBy( x => x ).ToSeq().Strict() ) ) );
+            (d.Name, d.Leaves().Select( b => b.Label ).Distinct().OrderBy( x => x ).ToSeq().Strict()) ) );
 
         var sampler = new Faker<Sample>().RuleFor( o => o.Consumer , f => f.PickRandom<string>( leaves["Consumers"] ) )
             .RuleFor( o => o.Producer , f => f.PickRandom<string>( leaves["Producers"] ) )
@@ -124,14 +146,14 @@ public class Generator
 
     private static Dimension BuildGeoDimension( string name , Seq<CountryInfo> countries )
     {
-        var world = ( Label: "World" , Id: Guid.NewGuid() , ParentId: Guid.Empty );
+        var world = (Label: "World", Id: Guid.NewGuid(), ParentId: Guid.Empty);
 
         var raw = countries.Select( c => c.Global )
             .Distinct()
             .SelectMany( s =>
             {
-                (string Label , Guid Id , Guid ParentId) global = ( Label: s , Id: Guid.NewGuid() ,
-                    ParentId: world.Id );
+                (string Label, Guid Id, Guid ParentId) global = (Label: s, Id: Guid.NewGuid(),
+                    ParentId: world.Id);
                 var regions = BuildRegions( global.Id , countries.Where( c => c.Global == global.Label ) ).Strict();
                 return regions.Add( global );
             } )
@@ -142,14 +164,14 @@ public class Generator
             x => x.ParentId != Guid.Empty ? x.ParentId : Option<Guid>.None , x => x.Label );
     }
 
-    private static Seq<(string Label , Guid Id , Guid ParentId)> BuildRegions( Guid globalGuid ,
+    private static Seq<(string Label, Guid Id, Guid ParentId)> BuildRegions( Guid globalGuid ,
         Seq<CountryInfo> countries )
     {
         return countries.Select( c => c.Region )
             .Distinct()
             .SelectMany( s =>
             {
-                var region = ( Label: s , Id: Guid.NewGuid() , ParentId: globalGuid );
+                var region = (Label: s, Id: Guid.NewGuid(), ParentId: globalGuid);
                 var cnts = BuildCountries( region.Id , countries.Where( c => c.Region == region.Label ) ).Strict();
 
                 return cnts.Add( region );
@@ -157,10 +179,10 @@ public class Generator
             .ToSeq();
     }
 
-    private static Seq<(string Label , Guid Id , Guid ParentId)> BuildCountries( Guid parentGuid ,
+    private static Seq<(string Label, Guid Id, Guid ParentId)> BuildCountries( Guid parentGuid ,
         Seq<CountryInfo> countries )
     {
-        return countries.Select( c => ( c.Code , Guid.NewGuid() , parentGuid ) );
+        return countries.Select( c => (c.Code, Guid.NewGuid(), parentGuid) );
     }
 
     private static Seq<CountryInfo> GetCountriesInfo()

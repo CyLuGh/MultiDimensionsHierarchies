@@ -8,16 +8,18 @@ using Spectre.Console;
 AnsiConsole.WriteLine( "Welcome to MDH demo" );
 
 var generator = new Generator( 1000 , 6 );
+//
+// var samples = generator.Skeletons;
+var targets = generator.GenerateTargets( 5000 );
 
-var samples = generator.Skeletons;
-var targets = generator.GenerateTargets( 3 );
 
-AnsiConsole.WriteLine("{0} {1}", samples[0], targets[0]);
 
-var result = Aggregator.Aggregate( Method.TopDownGroup , samples , ( a , b ) => a + b , targets );
-
-AnsiConsole.WriteLine( "{0}: computed {1} results in {2}" , result.Information , result.Results.Count ,
-    result.Duration );
+// AnsiConsole.WriteLine("{0} {1}", samples[0], targets[0]);
+//
+// var result = Aggregator.Aggregate( Method.TopDownGroup , samples , ( a , b ) => a + b , targets );
+//
+// AnsiConsole.WriteLine( "{0}: computed {1} results in {2}" , result.Information , result.Results.Count ,
+//     result.Duration );
 
 Console.ReadLine();
 

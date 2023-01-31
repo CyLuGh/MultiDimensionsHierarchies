@@ -14,7 +14,8 @@ public static class Program
 
     public static void Main( string[] args )
     {
-        BenchmarkRunner.Run<TargetedAggregate>();
+        BenchmarkRunner.Run<SampleBenchmark>();
+        //BenchmarkRunner.Run<TargetedAggregate>();
         //BenchmarkRunner.Run<HeuristicAggregate>();
         // BenchmarkRunner.Run<SkelFactory>();
 

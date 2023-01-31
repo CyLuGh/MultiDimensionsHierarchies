@@ -13,18 +13,21 @@ namespace MultiDimensionsHierarchies.Core
         public Arr<string> Dimensions => Bones.Select( b => b.DimensionName );
         public int Depth => Bones.Sum( b => b.Depth );
 
-        public Skeleton( IEnumerable<Bone> bones )
+        private Skeleton( IOrderedEnumerable<Bone> sortedBones )
         {
-            Bones = Arr.createRange( bones.OrderBy( x => x.DimensionName ) );
+            Bones = Arr.createRange( sortedBones );
+        }
+        
+        public Skeleton( IEnumerable<Bone> bones ) : this(bones.OrderBy( x => x.DimensionName ) )
+        {
         }
 
-        public Skeleton( params Bone[] bones )
+        public Skeleton( params Bone[] bones ): this(bones.OrderBy( x => x.DimensionName ) )
         {
             // if ( bones.Any( x => string.IsNullOrWhiteSpace( x.DimensionName ) ) )
             //     throw new ArgumentException( "A bone should always define its dimension name!" );
             // if ( bones.GroupBy( x => x.DimensionName ).Any( g => g.Count() > 1 ) )
             //     throw new ArgumentException( "A bone with the same dimension name has been defined more than once!" );
-            Bones = Arr.createRange( bones.OrderBy( x => x.DimensionName ) );
         }
 
         public Skeleton Add( Skeleton other ) => Add( other.Bones );
