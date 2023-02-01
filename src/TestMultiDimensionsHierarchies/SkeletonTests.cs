@@ -38,10 +38,10 @@ public class SkeletonTests
         var boneA1 = new Bone( "A1" , "Dimension A" );
         var boneA2 = new Bone( "A2" , "Dimension A" );
 
-        var act = () => new Skeleton( bone , boneA1 );
+        var act = () => new Skeleton( true , bone , boneA1 );
         act.Should().Throw<ArgumentException>().WithMessage( "A bone should always define its dimension name!" );
 
-        act = () => new Skeleton( boneA1 , boneA2 );
+        act = () => new Skeleton( true , boneA1 , boneA2 );
         act.Should()
             .Throw<ArgumentException>()
             .WithMessage( "A bone with the same dimension name has been defined more than once!" );
@@ -632,8 +632,8 @@ public class SkeletonTests
         items.Length.Should().Be( 4 );
 
         var items2 =
-            skels.FindAll( new[] { ( "1" , "Dim A" ) , ( "1" , "Dim B" ) , ( "1" , "Dim C" ) , ( "0" , "Dim D" ) } ,
-                new[] { ( "2" , "Dim A" ) , ( "1" , "Dim B" ) , ( "1" , "Dim C" ) , ( "0" , "Dim D" ) } );
+            skels.FindAll( new[] { ("1", "Dim A") , ("1", "Dim B") , ("1", "Dim C") , ("0", "Dim D") } ,
+                new[] { ("2", "Dim A") , ("1", "Dim B") , ("1", "Dim C") , ("0", "Dim D") } );
         items2.Length.Should().Be( 4 );
 
         items.SequenceEqual( items2 ).Should().BeTrue();

@@ -33,11 +33,11 @@ public class GenericSkeletonTests
         var boneA1 = new Bone( "A1" , "Dimension A" );
         var boneA2 = new Bone( "A2" , "Dimension A" );
 
-        var act = () => new Skeleton<double>( 12.7 , bone , boneA1 );
+        var act = () => new Skeleton<double>( true , 12.7 , bone , boneA1 );
         act.Should().Throw<ArgumentException>()
             .WithMessage( "A bone should always define its dimension name!" );
 
-        act = () => new Skeleton<double>( boneA1 , boneA2 );
+        act = () => new Skeleton<double>( true , boneA1 , boneA2 );
         act.Should().Throw<ArgumentException>()
             .WithMessage( "A bone with the same dimension name has been defined more than once!" );
     }
