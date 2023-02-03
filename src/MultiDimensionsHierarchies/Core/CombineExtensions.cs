@@ -9,12 +9,15 @@ namespace MultiDimensionsHierarchies.Core
     {
         public static IEnumerable<Skeleton> Combine( this IEnumerable<Dimension> dimensions , bool onlyRoots = false )
             => onlyRoots ?
-                dimensions.Select( d => d.Frame.Where( b => !b.HasParent() ).ToList() ).Combine()
-              : dimensions.Select( d => d.Frame.Flatten().ToArray() ).Combine();
+                dimensions.Select( d => d.Frame.Where( b => !b.HasParent() ).Strict() ).Combine()
+              : dimensions.Select( d => d.Frame.Flatten().Strict() ).Combine();
 
-        public static IEnumerable<Skeleton> Combine( this IEnumerable<IEnumerable<Bone>> dimensions )
-            => dimensions.Aggregate<IEnumerable<Bone> , IEnumerable<Skeleton>>( new[] { new Skeleton() } ,
-                ( skels , bones ) => skels.Cartesian( bones , ( s , b ) => s.Add( b ) ) );
+        public static IEnumerable<Skeleton> Combine( this IEnumerable<Seq<Bone>> dimensions )
+            => dimensions
+                .Aggregate<Seq<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
+                    ( lists , bones ) => lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                .AsParallel()
+                .Select( l => new Skeleton( l ) );
 
         public static IEnumerable<Skeleton> Extract( this IEnumerable<Skeleton> skeletons , params string[] concepts )
             => skeletons.Select( s => s.Extract( concepts ) ).Distinct();

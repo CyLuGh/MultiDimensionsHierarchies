@@ -539,4 +539,25 @@ public class SkeletonFactoryTests
         skeletons = SkeletonFactory.FastBuild( items , parser , evaluator , Seq.create( dimA , dimB ) , checkTargets: targets );
         skeletons.Length.Should().Be( 1 );
     }
+
+    [Fact]
+    public void FastTagBuild()
+    {
+        var dimA = SkeletonTests.GetDimension( "Dim A" );
+        var dimB = SkeletonTests.GetDimension( "Dim B" );
+
+        var mapped = new[]
+        {
+            new ComponentMapper( "Dim A:1.1|Dim B:2" , 4) ,
+            new ComponentMapper( "Dim A:1.2|Dim B:2.3" , 7 ),
+            new ComponentMapper( "Dim A:1.1|Dim B:2" , 5)
+        };
+
+        var evaluator = ( ComponentMapper t ) => t.Value;
+
+        var skeletons = SkeletonFactory.FastTagBuild( mapped  , evaluator , Seq.create( dimA , dimB ) );
+        skeletons.Length.Should().Be( mapped.Length );
+
+        skeletons.All( s => s.Item2.Bones.Length == 2 ).Should().BeTrue();
+    }
 }

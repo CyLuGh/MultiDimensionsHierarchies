@@ -1,0 +1,1436 @@
+[
+    {
+        "Country": "Afghanistan",
+        "Code": "AFG",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Aland Islands",
+        "Code": "ALA",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Albania",
+        "Code": "ALB",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Algeria",
+        "Code": "DZA",
+        "Region": "Arab States",
+        "Global": "South"
+    },
+    {
+        "Country": "American Samoa",
+        "Code": "ASM",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Andorra",
+        "Code": "AND",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Angola",
+        "Code": "AGO",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Anguilla",
+        "Code": "AIA",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Antarctica",
+        "Code": "ATA",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Antigua and Barbuda",
+        "Code": "ATG",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Argentina",
+        "Code": "ARG",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Armenia",
+        "Code": "ARM",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Aruba",
+        "Code": "ABW",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Australia",
+        "Code": "AUS",
+        "Region": "Asia & Pacific",
+        "Global": "North"
+    },
+    {
+        "Country": "Austria",
+        "Code": "AUT",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Azerbaijan",
+        "Code": "AZE",
+        "Region": "Asia & Pacific",
+        "Global": "North"
+    },
+    {
+        "Country": "Bahamas",
+        "Code": "BHS",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Bahrain",
+        "Code": "BHR",
+        "Region": "Arab States",
+        "Global": "South"
+    },
+    {
+        "Country": "Bangladesh",
+        "Code": "BGD",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Barbados",
+        "Code": "BRB",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Belarus",
+        "Code": "BLR",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Belgium",
+        "Code": "BEL",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Belize",
+        "Code": "BLZ",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Benin",
+        "Code": "BEN",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Bermuda",
+        "Code": "BMU",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Bhutan",
+        "Code": "BTN",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Bolivia",
+        "Code": "BOL",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Bosnia and Herzegovina",
+        "Code": "BIH",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Botswana",
+        "Code": "BWA",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Bouvet Island",
+        "Code": "BVT",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Brazil",
+        "Code": "BRA",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "British Indian Ocean Territory",
+        "Code": "IOT",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Brunei Darussalam",
+        "Code": "BRN",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Bulgaria",
+        "Code": "BGR",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Burkina Faso",
+        "Code": "BFA",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Burundi",
+        "Code": "BDI",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Cambodia",
+        "Code": "KHM",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Cameroon",
+        "Code": "CMR",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Canada",
+        "Code": "CAN",
+        "Region": "North America",
+        "Global": "North"
+    },
+    {
+        "Country": "Cayman Islands",
+        "Code": "CYM",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Central African Republic",
+        "Code": "CAF",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Chad",
+        "Code": "TCD",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Chile",
+        "Code": "CHL",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "China",
+        "Code": "CHN",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Christmas Island",
+        "Code": "CXR",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Cocos (Keeling) Islands",
+        "Code": "CCK",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Colombia",
+        "Code": "COL",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Comoros",
+        "Code": "COM",
+        "Region": "Arab States",
+        "Global": "South"
+    },
+    {
+        "Country": "Congo",
+        "Code": "COG",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Cook Islands",
+        "Code": "COK",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Costa Rica",
+        "Code": "CRI",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Côte d'Ivoire",
+        "Code": "CIV",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Croatia",
+        "Code": "HRV",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Cuba",
+        "Code": "CUB",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Cyprus",
+        "Code": "CYP",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Czech Republic",
+        "Code": "CZE",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Denmark",
+        "Code": "DNK",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Democratic Republic of the Congo",
+        "Code": "COD",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Djibouti",
+        "Code": "DJI",
+        "Region": "Arab States",
+        "Global": "South"
+    },
+    {
+        "Country": "Dominica",
+        "Code": "DMA",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Dominican Republic",
+        "Code": "DOM",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Ecuador",
+        "Code": "ECU",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Egypt",
+        "Code": "EGY",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "El Salvador",
+        "Code": "SLV",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Equatorial Guinea",
+        "Code": "GNQ",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Eritrea",
+        "Code": "ERI",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Estonia",
+        "Code": "EST",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Eswatini",
+        "Code": "SWZ",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Ethiopia",
+        "Code": "ETH",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Falkland Islands (Malvinas)",
+        "Code": "FLK",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Faroe Islands",
+        "Code": "FRO",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Fiji",
+        "Code": "FJI",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Finland",
+        "Code": "FIN",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "France",
+        "Code": "FRA",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "French Guiana",
+        "Code": "GUF",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "French Polynesia",
+        "Code": "PYF",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "French Southern Territories",
+        "Code": "ATF",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Gabon",
+        "Code": "GAB",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Gambia",
+        "Code": "GMB",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Georgia",
+        "Code": "GEO",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Germany",
+        "Code": "DEU",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Ghana",
+        "Code": "GHA",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Gibraltar",
+        "Code": "GIB",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Greece",
+        "Code": "GRC",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Greenland",
+        "Code": "GRL",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Grenada",
+        "Code": "GRD",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Guadeloupe",
+        "Code": "GLP",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Guam",
+        "Code": "GUM",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Guatemala",
+        "Code": "GTM",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Guernsey",
+        "Code": "GGY",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Guinea",
+        "Code": "GIN",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Guinea-Bissau",
+        "Code": "GNB",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Guyana",
+        "Code": "GUY",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Haiti",
+        "Code": "HTI",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Heard Island and McDonald Islands",
+        "Code": "HMD",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Holy See",
+        "Code": "VAT",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Honduras",
+        "Code": "HND",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Hungary",
+        "Code": "HUN",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Iceland",
+        "Code": "ISL",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "India",
+        "Code": "IND",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Indonesia",
+        "Code": "IDN",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Iran",
+        "Code": "IRN",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Iraq",
+        "Code": "IRQ",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Ireland",
+        "Code": "IRL",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Isle of Man",
+        "Code": "IMN",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Israel",
+        "Code": "ISR",
+        "Region": "Middle East",
+        "Global": "North"
+    },
+    {
+        "Country": "Italy",
+        "Code": "ITA",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Jamaica",
+        "Code": "JAM",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Japan",
+        "Code": "JPN",
+        "Region": "Asia & Pacific",
+        "Global": "North"
+    },
+    {
+        "Country": "Jersey",
+        "Code": "JEY",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Jordan",
+        "Code": "JOR",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Kazakhstan",
+        "Code": "KAZ",
+        "Region": "Asia & Pacific",
+        "Global": "North"
+    },
+    {
+        "Country": "Kenya",
+        "Code": "KEN",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Kiribati",
+        "Code": "KIR",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Kuwait",
+        "Code": "KWT",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Republic of Korea",
+        "Code": "KOR",
+        "Region": "Asia & Pacific",
+        "Global": "North"
+    },
+    {
+        "Country": "Kyrgyzstan",
+        "Code": "KGZ",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Lao People's Democratic Republic",
+        "Code": "LAO",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Latvia",
+        "Code": "LVA",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Lebanon",
+        "Code": "LBN",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Lesotho",
+        "Code": "LSO",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Liberia",
+        "Code": "LBR",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Libya",
+        "Code": "LBY",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Liechtenstein",
+        "Code": "LIE",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Lithuania",
+        "Code": "LTU",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Luxembourg",
+        "Code": "LUX",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Macedonia",
+        "Code": "MKD",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Madagascar",
+        "Code": "MDG",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Malawi",
+        "Code": "MWI",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Malaysia",
+        "Code": "MYS",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Maldives",
+        "Code": "MDV",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Mali",
+        "Code": "MLI",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Malta",
+        "Code": "MLT",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Marshall Islands",
+        "Code": "MHL",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Martinique",
+        "Code": "MTQ",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Mauritania",
+        "Code": "MRT",
+        "Region": "Arab States",
+        "Global": "South"
+    },
+    {
+        "Country": "Mauritius",
+        "Code": "MUS",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Mayotte",
+        "Code": "MYT",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Mexico",
+        "Code": "MEX",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Micronesia",
+        "Code": "FSM",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Moldova",
+        "Code": "MDA",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Monaco",
+        "Code": "MCO",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Mongolia",
+        "Code": "MNG",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Montenegro",
+        "Code": "MNE",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Montserrat",
+        "Code": "MSR",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Morocco",
+        "Code": "MAR",
+        "Region": "Arab States",
+        "Global": "South"
+    },
+    {
+        "Country": "Mozambique",
+        "Code": "MOZ",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Myanmar",
+        "Code": "MMR",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Namibia",
+        "Code": "NAM",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Nauru",
+        "Code": "NRU",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Nepal",
+        "Code": "NPL",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Netherlands",
+        "Code": "NLD",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "New Caledonia",
+        "Code": "NCL",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "New Zealand",
+        "Code": "NZL",
+        "Region": "Asia & Pacific",
+        "Global": "North"
+    },
+    {
+        "Country": "Nicaragua",
+        "Code": "NIC",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Niger",
+        "Code": "NER",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Nigeria",
+        "Code": "NGA",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Niue",
+        "Code": "NIU",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Norfolk Island",
+        "Code": "NFK",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Northern Mariana Islands",
+        "Code": "MNP",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Norway",
+        "Code": "NOR",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Oman",
+        "Code": "OMN",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Pakistan",
+        "Code": "PAK",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Palau",
+        "Code": "PLW",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Palestinian Territory",
+        "Code": "PSE",
+        "Region": "Arab States",
+        "Global": "South"
+    },
+    {
+        "Country": "Panama",
+        "Code": "PAN",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Papua New Guinea",
+        "Code": "PNG",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Paraguay",
+        "Code": "PRY",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Peru",
+        "Code": "PER",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Philippines",
+        "Code": "PHL",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Poland",
+        "Code": "POL",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Pitcairn Islands",
+        "Code": "PCN",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Portugal",
+        "Code": "PRT",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Puerto Rico",
+        "Code": "PRI",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Qatar",
+        "Code": "QAT",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Reunion",
+        "Code": "REU",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Romania",
+        "Code": "ROU",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Russian Federation",
+        "Code": "RUS",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Rwanda",
+        "Code": "RWA",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Saint Barthelemy",
+        "Code": "BLM",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Saint Helena",
+        "Code": "SHN",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Saint Kitts and Nevis",
+        "Code": "KNA",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Saint Lucia",
+        "Code": "LCA",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Saint Martin",
+        "Code": "MAF",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Saint Pierre and Miquelon",
+        "Code": "SPM",
+        "Region": "North America",
+        "Global": "North"
+    },
+    {
+        "Country": "Saint Vincent and the Grenadines",
+        "Code": "VCT",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Samoa",
+        "Code": "WSM",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "San Marino",
+        "Code": "SMR",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Sao Tome and Principe",
+        "Code": "STP",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Saudi Arabia",
+        "Code": "SAU",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Senegal",
+        "Code": "SEN",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Serbia",
+        "Code": "SRB",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Seychelles",
+        "Code": "SYC",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Sierra Leone",
+        "Code": "SLE",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Singapore",
+        "Code": "SGP",
+        "Region": "Asia & Pacific",
+        "Global": "North"
+    },
+    {
+        "Country": "Slovakia",
+        "Code": "SVK",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Slovenia",
+        "Code": "SVN",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Solomon Islands",
+        "Code": "SLB",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Somalia",
+        "Code": "SOM",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "South Africa",
+        "Code": "ZAF",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "South Georgia and the South Sandwich Islands",
+        "Code": "SGS",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "South Sudan",
+        "Code": "SSD",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Spain",
+        "Code": "ESP",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Sri Lanka",
+        "Code": "LKA",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Sudan",
+        "Code": "SDN",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Suriname",
+        "Code": "SUR",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Svalbard and Jan Mayen Islands",
+        "Code": "SJM",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Sweden",
+        "Code": "SWE",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Switzerland",
+        "Code": "CHE",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Syrian Arab Republic",
+        "Code": "SYR",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Tajikistan",
+        "Code": "TJK",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Tanzania",
+        "Code": "TZA",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Thailand",
+        "Code": "THA",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Timor-Leste",
+        "Code": "TLS",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Togo",
+        "Code": "TGO",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Tokelau",
+        "Code": "TKL",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Tonga",
+        "Code": "TON",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Trinidad and Tobago",
+        "Code": "TTO",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Tunisia",
+        "Code": "TUN",
+        "Region": "Arab States",
+        "Global": "South"
+    },
+    {
+        "Country": "Turkey",
+        "Code": "TUR",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "Turkmenistan",
+        "Code": "TKM",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Turks and Caicos Islands",
+        "Code": "TCA",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Tuvalu",
+        "Code": "TUV",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Uganda",
+        "Code": "UGA",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Ukraine",
+        "Code": "UKR",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "United Arab Emirates",
+        "Code": "ARE",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "United Kingdom",
+        "Code": "GBR",
+        "Region": "Europe",
+        "Global": "North"
+    },
+    {
+        "Country": "United States",
+        "Code": "USA",
+        "Region": "North America",
+        "Global": "North"
+    },
+    {
+        "Country": "United States Minor Outlying Islands",
+        "Code": "UMI",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Uruguay",
+        "Code": "URY",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Uzbekistan",
+        "Code": "UZB",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Vanuatu",
+        "Code": "VUT",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Venezuela",
+        "Code": "VEN",
+        "Region": "South/Latin America",
+        "Global": "South"
+    },
+    {
+        "Country": "Vietnam",
+        "Code": "VNM",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Wallis and Futuna",
+        "Code": "WLF",
+        "Region": "Asia & Pacific",
+        "Global": "South"
+    },
+    {
+        "Country": "Western Sahara",
+        "Code": "ESH",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Yemen",
+        "Code": "YEM",
+        "Region": "Middle East",
+        "Global": "South"
+    },
+    {
+        "Country": "Zambia",
+        "Code": "ZMB",
+        "Region": "Africa",
+        "Global": "South"
+    },
+    {
+        "Country": "Zimbabwe",
+        "Code": "ZWE",
+        "Region": "Africa",
+        "Global": "South"
+    }
+]

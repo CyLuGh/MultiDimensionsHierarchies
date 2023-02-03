@@ -33,7 +33,7 @@ namespace Benchmark
 
             //Console.WriteLine( "Building targets" );
             Targets = Dimensions.Take( DimensionsCount )
-                .Select( d => d.Flatten().Where( b => b.Depth <= 3 ).ToArray() )
+                .Select( d => d.Flatten().Where( b => b.Depth <= 3 ) )
                 .Combine()
                 .AsParallel()
                 .Take( TargetsCount )

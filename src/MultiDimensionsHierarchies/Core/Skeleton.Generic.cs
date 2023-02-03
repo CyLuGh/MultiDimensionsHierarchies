@@ -40,6 +40,18 @@ namespace MultiDimensionsHierarchies.Core
         public Skeleton( T value , params Bone[] bones )
             : this( value , new Skeleton( bones ) ) { }
 
+        public Skeleton( bool check , IEnumerable<Bone> bones )
+        : this( new Skeleton( check , bones ) ) { }
+
+        public Skeleton( bool check , params Bone[] bones )
+            : this( new Skeleton( check , bones ) ) { }
+
+        public Skeleton( bool check , T value , IEnumerable<Bone> bones )
+       : this( value , new Skeleton( check , bones ) ) { }
+
+        public Skeleton( bool check , T value , params Bone[] bones )
+            : this( value , new Skeleton( check , bones ) ) { }
+
         public Skeleton<T> Add( Bone addedBone )
             => Add( new[] { addedBone } );
 
@@ -76,8 +88,6 @@ namespace MultiDimensionsHierarchies.Core
             return With( value: t );
         }
 
-        
-        
         public bool Equals( Skeleton<T> other )
         {
             if ( other is null ) return false;

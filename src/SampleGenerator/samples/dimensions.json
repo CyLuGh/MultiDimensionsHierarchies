@@ -1,0 +1,161 @@
+[
+    {
+        "Name": "COOKING",
+        "Members": [
+            {
+                "Id": 0,
+                "Name": "ANY",
+                "Weight": 1
+            },
+            {
+                "Id": 1,
+                "Name": "AIR-DRIED",
+                "ParentId": 0,
+                "Weight": 1
+            },
+            {
+                "Id": 2,
+                "Name": "GREASE",
+                "ParentId": 0,
+                "Weight": 1
+            },
+            {
+                "Id": 3,
+                "Name": "BEEF",
+                "ParentId": 2,
+                "Weight": 1
+            },
+            {
+                "Id": 4,
+                "Name": "DUCK",
+                "ParentId": 2,
+                "Weight": 1
+            },
+            {
+                "Id": 5,
+                "Name": "OVEN",
+                "ParentId": 0,
+                "Weight": 1
+            },
+            {
+                "Id": 6,
+                "Name": "OIL",
+                "ParentId": 0,
+                "Weight": 1
+            },
+            {
+                "Id": 7,
+                "Name": "OLIVE",
+                "ParentId": 6,
+                "Weight": 1
+            },
+            {
+                "Id": 8,
+                "Name": "RAPESEED",
+                "ParentId": 6,
+                "Weight": 1
+            },
+            {
+                "Id": 9,
+                "Name": "SUNFLOWER",
+                "ParentId": 6,
+                "Weight": 1
+            },
+            {
+                "Id": 10,
+                "Name": "PEANUT",
+                "ParentId": 6,
+                "Weight": 1
+            },
+            {
+                "Id": 11,
+                "Name": "PIG",
+                "ParentId": 2,
+                "Weight": 1
+            }
+        ]
+    },
+    {
+        "Name": "SHAPE",
+        "Members": [
+            {
+                "Id": 0,
+                "Name": "*"
+            },
+            {
+                "Id": 1,
+                "Name": "SMALL",
+                "ParentId": 0
+            },
+            {
+                "Id": 2,
+                "Name": "BIG",
+                "ParentId": 0
+            },
+            {
+                "Id": 3,
+                "Name": "HEXAGON",
+                "ParentId": 0
+            },
+            {
+                "Id": 4,
+                "Name": "OTHER",
+                "ParentId": 0
+            },
+            {
+                "Id": 5,
+                "Name": "?"
+            }
+        ]
+    },
+    {
+        "Name": "MODE",
+        "Members": [
+            {
+                "Id": 0,
+                "Name": "HOME"
+            },
+            {
+                "Id": 1,
+                "Name": "TAKEAWAY"
+            },
+            {
+                "Id": 2,
+                "Name": "RESTAURANT"
+            },
+            {
+                "Id": 3,
+                "Name": "DELIVERY"
+            }
+        ]
+    },
+    {
+        "Name": "SEX",
+        "Members": [
+            {
+                "Id": 0,
+                "Name": "ALL"
+            },
+            {
+                "Id": 1,
+                "Name": "UNDISCLOSED",
+                "ParentId": 0
+            },
+            {
+                "Id": 2,
+                "Name": "F",
+                "ParentId": 0
+            },
+            {
+                "Id": 3,
+                "Name": "M",
+                "ParentId": 0
+            },
+            {
+                "Id": 4,
+                "Name": "X",
+                "ParentId": 0
+            }
+        ]
+    }
+]
