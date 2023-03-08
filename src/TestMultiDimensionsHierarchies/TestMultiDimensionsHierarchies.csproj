@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MultiDimensionsHierarchies\MultiDimensionsHierarchies.csproj" />
+    <ProjectReference Include="..\SampleGenerator\SampleGenerator.csproj" />
   </ItemGroup>
 
 </Project>

@@ -16,9 +16,10 @@ namespace MultiDimensionsHierarchies
         /// <param name="targets"></param>
         /// <param name="aggregator"></param>
         /// <returns></returns>
-        public static IEnumerable<Skeleton<T>> StreamAggregateResults<T>( Seq<IMappedComponents<T>> baseData ,
+        public static IEnumerable<Skeleton<T>> StreamAggregateResults<T,U>( Seq<U> baseData ,
                                                                  LanguageExt.HashSet<Skeleton> targets ,
                                                                  Func<IEnumerable<T> , T> aggregator )
+                                                                 where U : IMappedComponents<T>
         {
             if ( baseData.Length == 0 || targets.Length == 0 )
                 return Seq<Skeleton<T>>.Empty;
@@ -41,11 +42,11 @@ namespace MultiDimensionsHierarchies
                     .Select( s => s.Add( uniqueTargetBaseBones ) );
         }
 
-        private static (Seq<IMappedComponents<T>>, LanguageExt.HashSet<Skeleton>) SimplifyTargets<T>(
-            Seq<IMappedComponents<T>> baseData ,
+        private static (Seq<U>, LanguageExt.HashSet<Skeleton>) SimplifyTargets<T,U>(
+            Seq<U> baseData ,
             LanguageExt.HashSet<Skeleton> targets ,
             Seq<Bone> uniqueTargetBaseBones ,
-            Func<IEnumerable<T> , T> groupAggregator )
+            Func<IEnumerable<T> , T> groupAggregator ) where U : IMappedComponents<T>
         {
             var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();
             var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, Set: HashSet.createRange( b.Descendants().Select( x => x.Label ) )) );
@@ -56,7 +57,7 @@ namespace MultiDimensionsHierarchies
                 .Select( d => new MappedComponentsItem<T>( d , uniqueDimensions ) )
                 .GroupAggregate( groupAggregator )
                 .ToSeq()
-                .Cast<IMappedComponents<T>>()
+                .Cast<U>()
                 .Strict();
 
             var hash = HashSet.createRange( targets.Select( s => s.Except( uniqueDimensions ) ) );

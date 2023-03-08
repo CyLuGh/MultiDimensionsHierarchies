@@ -13,6 +13,7 @@ public class Generator
 
     private Seq<Sample> _samples;
     private Seq<Skeleton<int>> _skeletons;
+    private Seq<MappedComponentsItem<int>> _mappedComponents;
 
     public Seq<Dimension> Dimensions { get; }
 
@@ -30,6 +31,27 @@ public class Generator
             if ( _samples.IsEmpty ) _samples = GenerateDataSample();
 
             return _samples;
+        }
+    }
+
+    public Seq<MappedComponentsItem<int>> MappedComponents
+    {
+        get
+        {
+            if ( _mappedComponents.IsEmpty )
+            {
+                var dimensions = Dimensions.Take( _dimensionsCount );
+                _mappedComponents = Samples
+                    .AsParallel()
+                    .Select( s =>
+                    {
+                        var map = HashMap.createRange( dimensions.Select( d => (d.Name, s.Get( d.Name )) ) );
+                        return new MappedComponentsItem<int>( s.Value , map );
+                    } )
+                    .ToSeq();
+            }
+
+            return _mappedComponents;
         }
     }
 

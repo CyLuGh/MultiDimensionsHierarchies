@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace MultiDimensionsHierarchies.Core
 {
-    internal class MappedComponentsItem<T> : IMappedComponents<T>
+    public class MappedComponentsItem<T> : IMappedComponents<T>
     {
         public Option<T> Value { get; }
         public HashMap<string , string> Components { get; }
