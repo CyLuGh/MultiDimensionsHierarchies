@@ -35,7 +35,7 @@ namespace MultiDimensionsHierarchies
         None = 255
     }
 
-    public static class Aggregator
+    public static partial class Aggregator
     {
         /// <summary>
         /// Apply aggregator to inputs according to included hierarchies.
