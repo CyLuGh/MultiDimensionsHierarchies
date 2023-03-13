@@ -15,6 +15,9 @@ namespace MultiDimensionsHierarchies.Core
         public Option<Bone> Parent { get; }
         public Seq<Bone> Children { get; private set; }
 
+        public Seq<Bone> Siblings
+            => Parent.Match( p => p.Children , () => Seq<Bone>.Empty );
+
         public Bone( string label , string dimensionName )
         {
             DimensionName = dimensionName;

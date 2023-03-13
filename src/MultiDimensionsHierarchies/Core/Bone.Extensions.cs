@@ -34,5 +34,11 @@ namespace MultiDimensionsHierarchies.Core
 
         public static string ToComposedString( this Seq<Bone> bones )
             => string.Join( ":" , bones.OrderBy( b => b.DimensionName ).Select( b => b.FullPath ) );
+
+        public static Seq<Bone> GetSiblings( this Bone bone , Dimension dimension )
+            => bone.Parent.Match( p => p.Children , () => dimension.Frame );
+
+        public static Seq<Bone> GetSiblings( this Bone bone , Option<Dimension> dimension )
+            => dimension.Match( d => bone.GetSiblings( d ) , () => Seq<Bone>.Empty );
     }
 }

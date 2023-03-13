@@ -142,5 +142,15 @@ namespace MultiDimensionsHierarchies.Core
                 .AsParallel()
                 .Select<Skeleton<T> , Either<Skeleton , Skeleton<T>>>( s => s.Key.CheckBones( bonesPerDimension ) ? s : s.Key ).ToSeq();
         }
+
+        public static Seq<Skeleton> GetSiblings( this Skeleton skeleton , Seq<Dimension> dimensions )
+        {
+            var siblings = skeleton.Bones.Select( b => b.GetSiblings( dimensions.Find( d => d.Name.Equals( b.DimensionName ) ) ) );
+
+            return siblings.Combine()
+                .AsParallel()
+                .Where( s => skeleton.Bones.Intersect( s.Bones ).Any() )
+                .ToSeq();
+        }
     }
 }
