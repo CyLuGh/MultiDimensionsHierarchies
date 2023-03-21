@@ -11,26 +11,19 @@ AnsiConsole.WriteLine( "Welcome to MDH demo" );
 var generator = new Generator( 100000 , 6 );
 //
 // var samples = generator.Skeletons;
-var targets = LanguageExt.HashSet.createRange( generator.GenerateTargets( 10000 ) );
+var targets = LanguageExt.HashSet.createRange( generator.GenerateTargets( 1000 ) );
 
 var samples = generator.Skeletons;
-var mappedSamples = generator.MappedComponents;
-
-var watchMap = Stopwatch.StartNew();
-var mapperResults = Aggregator.StreamAggregateResults<int , MappedComponentsItem<int>>( mappedSamples , targets , numbers => numbers.Sum() )
-    .OrderBy( s => s.Key.FullPath )
-    .ToSeq();
-watchMap.Stop();
 
 var watchSkels = Stopwatch.StartNew();
-var results = Aggregator.StreamAggregateResults( samples , targets , numbers => numbers.Sum() )
+var results = Aggregator.StreamAggregateResults( samples , targets , numbers => numbers.Sum(), group:true )
     .OrderBy( s => s.Key.FullPath )
-    .ToSeq();
+    .ToSeq()
+    .Strict();
 watchSkels.Stop();
 
+AnsiConsole.WriteLine( "Skeletons took {0}" , watchSkels.Elapsed  );
 
-
-AnsiConsole.WriteLine( "Skeletons took {0} Mapped took {1}" , watchSkels.Elapsed , watchMap.Elapsed );
 
 // AnsiConsole.WriteLine("{0} {1}", samples[0], targets[0]);
 //

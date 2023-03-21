@@ -282,10 +282,10 @@ namespace MultiDimensionsHierarchies
             Func<T , double , T> weightEffect )
         {
             var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();
-            var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, b.Descendants()) ).ToHashMap();
+            var dataFilter = uniqueTargetBaseBones.Select( b =>  (b.DimensionName, Set: HashSet.createRange( b.Descendants() ) ) );
 
             var simplifiedData = baseData
-               .Where( d => dataFilter.All( i => i.Value.Contains( d.Bones.Find( b => b.DimensionName.Equals( i.Key ) ).Some( b => b ).None( () => Bone.None ) ) ) )
+               .Where( d => dataFilter.All( i => i.Set.Contains( d.Bones.Find( b => b.DimensionName == i.DimensionName).Some( b => b ).None( () => Bone.None ) ) ) )
                .Select( d => d.Except( uniqueDimensions ) )
                .GroupBy( x => x.Key )
                .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
@@ -620,11 +620,14 @@ namespace MultiDimensionsHierarchies
                 return Array.Empty<Skeleton<T>>();
 
             return targets
-                .AsParallel()
-                .WithDegreeOfParallelism( boneIndex < 3 ? Environment.ProcessorCount : 1 )
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
-                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , groupAggregator , weightEffect , boneIndex + 1 , dimensionsCount ) );
+                    GroupTargets( g.ToArray() , 
+                        data.AsParallel().Where( s => s.Key.HasAnyBone( g.Key.DimensionName, g.Key.DescendantsHashSet() ) ).ToSeq().Strict() , 
+                        groupAggregator , 
+                        weightEffect , 
+                        boneIndex + 1 , 
+                        dimensionsCount ) );
         }
 
         private static IEnumerable<SkeletonsAccumulator<T>> GroupTargets<T>( Skeleton[] targets ,
@@ -640,11 +643,13 @@ namespace MultiDimensionsHierarchies
                 return Array.Empty<SkeletonsAccumulator<T>>();
 
             return targets
-                .AsParallel()
-                .WithDegreeOfParallelism( boneIndex < 3 ? Environment.ProcessorCount : 1 )
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
-                    GroupTargets( g.ToArray() , data.Where( s => s.Key.HasAnyBone( g.Key.Descendants() ) ).ToSeq() , aggregator , boneIndex + 1 , dimensionsCount ) );
+                    GroupTargets( g.ToArray() , 
+                        data.AsParallel().Where( s => s.Key.HasAnyBone( g.Key.DimensionName, g.Key.DescendantsHashSet() ) ).ToSeq().Strict() , 
+                        aggregator , 
+                        boneIndex + 1 , 
+                        dimensionsCount ) );
         }
     }
 }

@@ -70,7 +70,10 @@ namespace MultiDimensionsHierarchies.Core
 
         public bool HasBone( Bone b ) => Bones.Contains( b );
 
-        public bool HasAnyBone( Seq<Bone> bones ) => bones.Any( b => Bones.Contains( b ) );
+        public bool HasAnyBone( string dimensionName , LanguageExt.HashSet<Bone> bones )
+            => bones.Contains( GetBone( dimensionName ) ); 
+        public bool HasAnyBone( Seq<Bone> bones ) => Bones.Intersect( bones ).Any(); 
+            //=> bones.Any( b => Bones.Contains( b ) );
 
         public bool CheckBones( Dictionary<string , LanguageExt.HashSet<Bone>> bonesPerDimension )
         {
@@ -443,6 +446,7 @@ namespace MultiDimensionsHierarchies.Core
         public Bone GetBone( int index ) => index < Bones.Length ? Bones[index] : Bone.None;
 
         public Bone GetBone( string dimensionName ) =>
-            Bones.Find( b => b.DimensionName.Equals( dimensionName ) ).Match( b => b , () => Bone.None );
+            Bones.Find( b => b.DimensionName.Equals( dimensionName ) )
+                .Match( b => b , () => Bone.None );
     }
 }

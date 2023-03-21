@@ -137,6 +137,15 @@ namespace MultiDimensionsHierarchies.Core
             return _descendants;
         }
 
+        private LanguageExt.HashSet<Bone> _descendantsHashSet = LanguageExt.HashSet<Bone>.Empty;
+
+        public LanguageExt.HashSet<Bone> DescendantsHashSet()
+        {
+            if ( _descendantsHashSet.IsEmpty )
+                _descendantsHashSet = Prelude.Atom( HashSet.createRange( Descendants() ) );
+            return _descendantsHashSet;
+        }
+
         private Seq<Bone> _ancestors = Seq.empty<Bone>();
 
         public Seq<Bone> Ancestors()

@@ -10,9 +10,9 @@ using System.Collections.Generic;
 
 namespace Benchmark;
 
-[SimpleJob( RuntimeMoniker.Net70 , iterationCount: 5, warmupCount: 2 )]
+[SimpleJob( RuntimeMoniker.Net70 , iterationCount: 5 , warmupCount: 2 )]
 [MemoryDiagnoser( false )]
-[Orderer(SummaryOrderPolicy.FastestToSlowest)]
+[Orderer( SummaryOrderPolicy.FastestToSlowest )]
 [RankColumn]
 public class SampleBenchmark
 {
@@ -24,19 +24,19 @@ public class SampleBenchmark
     public static IEnumerable<DataArgument> BenchmarkArguments()
     {
         /* Test dimensions increase */
-        yield return new DataArgument( 50_000 , 3 , 10_000 );
-        yield return new DataArgument( 50_000 , 4 , 10_000 );
-        yield return new DataArgument( 50_000 , 5 , 10_000 );
-        yield return new DataArgument( 50_000 , 6 , 10_000 );
+        //yield return new DataArgument( 50_000 , 3 , 10_000 );
+        //yield return new DataArgument( 50_000 , 4 , 10_000 );
+        //yield return new DataArgument( 50_000 , 5 , 10_000 );
+        //yield return new DataArgument( 50_000 , 6 , 10_000 );
 
         /* Test sample increase */
         yield return new DataArgument( 100_000 , 6 , 10_000 );
-        yield return new DataArgument( 200_000 , 6 , 10_000 );
-        yield return new DataArgument( 300_000 , 6 , 10_000 );
+        //yield return new DataArgument( 200_000 , 6 , 10_000 );
+        //yield return new DataArgument( 300_000 , 6 , 10_000 );
 
         /* Test targets increase */
-        yield return new DataArgument( 100_000 , 6 , 20_000 );
-        yield return new DataArgument( 100_000 , 6 , 50_000 );
+        //yield return new DataArgument( 100_000 , 6 , 20_000 );
+        //yield return new DataArgument( 100_000 , 6 , 50_000 );
     }
 }
 
@@ -62,7 +62,7 @@ public class DataArgument : IDisposable
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
+        GC.SuppressFinalize( this );
     }
 
     public override string ToString()
