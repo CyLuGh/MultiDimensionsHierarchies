@@ -1,4 +1,5 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using System.Diagnostics;
+// See https://aka.ms/new-console-template for more information
 
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
@@ -7,11 +8,21 @@ using Spectre.Console;
 
 AnsiConsole.WriteLine( "Welcome to MDH demo" );
 
-var generator = new Generator( 1000 , 6 );
+var generator = new Generator( 100000 , 6 );
 //
 // var samples = generator.Skeletons;
-var targets = generator.GenerateTargets( 5000 );
+var targets = LanguageExt.HashSet.createRange( generator.GenerateTargets( 1000 ) );
 
+var samples = generator.Skeletons;
+
+var watchSkels = Stopwatch.StartNew();
+var results = Aggregator.StreamAggregateResults( samples , targets , numbers => numbers.Sum(), group:true )
+    .OrderBy( s => s.Key.FullPath )
+    .ToSeq()
+    .Strict();
+watchSkels.Stop();
+
+AnsiConsole.WriteLine( "Skeletons took {0}" , watchSkels.Elapsed  );
 
 
 // AnsiConsole.WriteLine("{0} {1}", samples[0], targets[0]);

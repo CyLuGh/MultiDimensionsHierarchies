@@ -15,6 +15,9 @@ namespace MultiDimensionsHierarchies.Core
         public Option<Bone> Parent { get; }
         public Seq<Bone> Children { get; private set; }
 
+        public Seq<Bone> Siblings
+            => Parent.Match( p => p.Children , () => Seq<Bone>.Empty );
+
         public Bone( string label , string dimensionName )
         {
             DimensionName = dimensionName;
@@ -132,6 +135,15 @@ namespace MultiDimensionsHierarchies.Core
             if ( _descendants.IsEmpty )
                 _descendants = Prelude.Atom( BuildDescendants().ToSeq().Strict() );
             return _descendants;
+        }
+
+        private LanguageExt.HashSet<Bone> _descendantsHashSet = LanguageExt.HashSet<Bone>.Empty;
+
+        public LanguageExt.HashSet<Bone> DescendantsHashSet()
+        {
+            if ( _descendantsHashSet.IsEmpty )
+                _descendantsHashSet = Prelude.Atom( HashSet.createRange( Descendants() ) );
+            return _descendantsHashSet;
         }
 
         private Seq<Bone> _ancestors = Seq.empty<Bone>();

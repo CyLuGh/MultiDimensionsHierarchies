@@ -10,9 +10,9 @@ using System.Collections.Generic;
 
 namespace Benchmark;
 
-[SimpleJob( RuntimeMoniker.Net70 , iterationCount: 5, warmupCount: 2 )]
+[SimpleJob( RuntimeMoniker.Net70 , iterationCount: 5 , warmupCount: 2 )]
 [MemoryDiagnoser( false )]
-[Orderer(SummaryOrderPolicy.FastestToSlowest)]
+[Orderer( SummaryOrderPolicy.FastestToSlowest )]
 [RankColumn]
 public class SampleBenchmark
 {
@@ -62,7 +62,7 @@ public class DataArgument : IDisposable
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
+        GC.SuppressFinalize( this );
     }
 
     public override string ToString()
