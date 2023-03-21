@@ -1,7 +1,6 @@
 ﻿using LanguageExt;
 using MoreLinq;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,6 +15,7 @@ namespace MultiDimensionsHierarchies.Core
         private Skeleton( IOrderedEnumerable<Bone> sortedBones )
         {
             Bones = Arr.createRange( sortedBones );
+            _hashCode = ComputeHashCode();
         }
 
         public Skeleton( IEnumerable<Bone> bones ) : this( bones.OrderBy( x => x.DimensionName ) )
@@ -382,17 +382,19 @@ namespace MultiDimensionsHierarchies.Core
             return obj.GetType() == this.GetType() && Equals( (Skeleton) obj );
         }
 
-        private int? _hashCode;
+        private readonly int _hashCode;
 
-        public override int GetHashCode()
+        public override int GetHashCode() => _hashCode;
+
+        private int ComputeHashCode()
         {
-            if ( _hashCode.HasValue ) return _hashCode.Value;
             unchecked
             {
-                var hashCode = Bones.Count;
-                foreach ( var bone in Bones ) hashCode += bone.GetHashCode();
-                _hashCode = hashCode;
-                return hashCode;
+                var hash = Bones.Count;
+                foreach ( var bone in Bones )
+                    hash += bone.GetHashCode();
+
+                return hash;
             }
         }
 
