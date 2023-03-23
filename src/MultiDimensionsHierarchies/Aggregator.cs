@@ -282,10 +282,10 @@ namespace MultiDimensionsHierarchies
             Func<T , double , T> weightEffect )
         {
             var uniqueDimensions = uniqueTargetBaseBones.Select( u => u.DimensionName ).ToArray();
-            var dataFilter = uniqueTargetBaseBones.Select( b =>  (b.DimensionName, Set: HashSet.createRange( b.Descendants() ) ) );
+            var dataFilter = uniqueTargetBaseBones.Select( b => (b.DimensionName, Set: HashSet.createRange( b.Descendants() )) );
 
             var simplifiedData = baseData
-               .Where( d => dataFilter.All( i => i.Set.Contains( d.Bones.Find( b => b.DimensionName == i.DimensionName).Some( b => b ).None( () => Bone.None ) ) ) )
+               .Where( d => dataFilter.All( i => i.Set.Contains( d.Bones.Find( b => b.DimensionName == i.DimensionName ).Some( b => b ).None( () => Bone.None ) ) ) )
                .Select( d => d.Except( uniqueDimensions ) )
                .GroupBy( x => x.Key )
                .Select( g => g.Aggregate( g.Key , groupAggregator , weightEffect ) )
@@ -622,11 +622,11 @@ namespace MultiDimensionsHierarchies
             return targets
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
-                    GroupTargets( g.ToArray() , 
-                        data.AsParallel().Where( s => s.Key.HasAnyBone( g.Key.DimensionName, g.Key.DescendantsHashSet() ) ).ToSeq().Strict() , 
-                        groupAggregator , 
-                        weightEffect , 
-                        boneIndex + 1 , 
+                    GroupTargets( g.ToArray() ,
+                        data.AsParallel().Where( s => s.Key.HasAnyBone( boneIndex , g.Key.DescendantsHashSet() ) ).ToSeq().Strict() ,
+                        groupAggregator ,
+                        weightEffect ,
+                        boneIndex + 1 ,
                         dimensionsCount ) );
         }
 
@@ -645,10 +645,10 @@ namespace MultiDimensionsHierarchies
             return targets
                 .GroupBy( s => s.GetBone( boneIndex ) )
                 .SelectMany( g =>
-                    GroupTargets( g.ToArray() , 
-                        data.AsParallel().Where( s => s.Key.HasAnyBone( g.Key.DimensionName, g.Key.DescendantsHashSet() ) ).ToSeq().Strict() , 
-                        aggregator , 
-                        boneIndex + 1 , 
+                    GroupTargets( g.ToArray() ,
+                        data.AsParallel().Where( s => s.Key.HasAnyBone( boneIndex , g.Key.DescendantsHashSet() ) ).ToSeq().Strict() ,
+                        aggregator ,
+                        boneIndex + 1 ,
                         dimensionsCount ) );
         }
     }
