@@ -9,7 +9,6 @@ It is quite easy to do some aggregates along a single hierarchy through recursiv
 Let's look at a simple example with three dimensions.
 
 ```mermaid
-%%{init: {'theme':'base'}}%%
 flowchart TD
 
 subgraph Dimension C
@@ -28,7 +27,6 @@ end
 These very simple dimensions can be combined to create $3^3$ items, which can be linked as below. This shows the complexity of going through these combinations, which will grow exponentially as dimensions are added and get more complex.
 
 ```mermaid
-%%{init: {'theme':'base'}}%%
 flowchart TD
 
 A1:B1:C1 --- A2:B1:C1
@@ -111,8 +109,6 @@ By combining the **Bone** elements, each element can be identified in the hierar
 These **Skeleton**s should only be constructed through the factory pattern, as the use of direct references is essential.
 
 ```mermaid
-%%{init: {'theme':'base'}}%%
-
 flowchart LR
 
 subgraph Dimension C
@@ -156,8 +152,6 @@ A3:B3:C3 -..- A3B3C3
 !!!
 
 ```mermaid
-%%{init: {'theme':'base'}}%%
-
 flowchart LR
 
 subgraph Raw[Raw data]
