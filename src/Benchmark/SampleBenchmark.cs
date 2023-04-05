@@ -17,26 +17,40 @@ namespace Benchmark;
 public class SampleBenchmark
 {
     [Benchmark]
-    [ArgumentsSource( nameof( BenchmarkArguments ) )]
-    public AggregationResult<int> BenchTopDownGroup( DataArgument argument ) =>
+    [ArgumentsSource( nameof( BenchmarkScaleArguments ) )]
+    public AggregationResult<int> BenchScaling( DataArgument argument ) =>
         Aggregator.Aggregate( Method.TopDownGroup , argument.Samples , ( a , b ) => a + b , argument.Targets );
 
-    public static IEnumerable<DataArgument> BenchmarkArguments()
+    public static IEnumerable<DataArgument> BenchmarkScaleArguments()
     {
-        /* Test dimensions increase */
-        yield return new DataArgument( 50_000 , 3 , 10_000 );
-        yield return new DataArgument( 50_000 , 4 , 10_000 );
-        yield return new DataArgument( 50_000 , 5 , 10_000 );
-        yield return new DataArgument( 50_000 , 6 , 10_000 );
+        yield return new DataArgument( 10_000 , 4 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 20_000 , 4 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 4 , 20_000 , DimensionIdentifier.Cooking );
 
-        /* Test sample increase */
-        yield return new DataArgument( 100_000 , 6 , 10_000 );
-        yield return new DataArgument( 200_000 , 6 , 10_000 );
-        yield return new DataArgument( 300_000 , 6 , 10_000 );
+        yield return new DataArgument( 10_000 , 5 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 20_000 , 5 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 5 , 20_000 , DimensionIdentifier.Cooking );
 
-        /* Test targets increase */
-        yield return new DataArgument( 100_000 , 6 , 20_000 );
-        yield return new DataArgument( 100_000 , 6 , 50_000 );
+        yield return new DataArgument( 10_000 , 6 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 20_000 , 6 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 6 , 20_000 , DimensionIdentifier.Cooking );
+
+        yield return new DataArgument( 10_000 , 4 , 10_000 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 20_000 , 4 , 10_000 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 10_000 , 4 , 20_000 , DimensionIdentifier.Countries );
+
+        yield return new DataArgument( 10_000 , 5 , 10_000 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 20_000 , 5 , 10_000 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 10_000 , 5 , 20_000 , DimensionIdentifier.Countries );
+
+        yield return new DataArgument( 10_000 , 7 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 8 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 9 , 10_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 10 , 10_000 , DimensionIdentifier.Cooking );
+
+        yield return new DataArgument( 100_000 , 6 , 100_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 200_000 , 6 , 100_000 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 100_000 , 6 , 200_000 , DimensionIdentifier.Cooking );
     }
 }
 
@@ -45,17 +59,19 @@ public class DataArgument : IDisposable
     public int SampleSize { get; }
     public int TargetsCount { get; }
     public int DimensionsCount { get; }
+    public Option<DimensionIdentifier> DimensionIdentifier { get; }
 
     public Seq<Skeleton> Targets { get; }
     public Seq<Skeleton<int>> Samples { get; }
 
-    public DataArgument( int sampleSize , int dimensionsCount , int targetsCount )
+    public DataArgument( int sampleSize , int dimensionsCount , int targetsCount , Option<DimensionIdentifier> dimensionIdentifier )
     {
         this.DimensionsCount = dimensionsCount;
         this.TargetsCount = targetsCount;
         this.SampleSize = sampleSize;
+        this.DimensionIdentifier = dimensionIdentifier;
 
-        var generator = new Generator( sampleSize , dimensionsCount );
+        var generator = dimensionIdentifier.Match( o => new Generator( sampleSize , o , dimensionsCount ) , () => new Generator( sampleSize , dimensionsCount ) );
         Samples = generator.Skeletons.Strict();
         Targets = generator.GenerateTargets( targetsCount ).Strict();
     }
@@ -66,5 +82,5 @@ public class DataArgument : IDisposable
     }
 
     public override string ToString()
-        => $"D {DimensionsCount} S {SampleSize} T {TargetsCount}";
+        => $"D{DimensionsCount} S{SampleSize} T{TargetsCount} {DimensionIdentifier.Match( o => (int) o , () => -1 )}";
 }

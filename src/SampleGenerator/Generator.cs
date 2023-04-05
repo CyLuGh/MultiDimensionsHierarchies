@@ -6,12 +6,15 @@ using Newtonsoft.Json;
 
 namespace SampleGenerator;
 
+public enum DimensionIdentifier { Countries = 1, Cooking = 2 }
+
 public class Generator
 {
     private readonly int _sampleSize;
     private readonly int _dimensionsCount;
+    private readonly Option<DimensionIdentifier> _uniqueDimensionSynthetic;
 
-    private Seq<Sample> _samples;
+    private Seq<ISample> _samples;
     private Seq<Skeleton<int>> _skeletons;
     private Seq<MappedComponentsItem<int>> _mappedComponents;
 
@@ -21,10 +24,19 @@ public class Generator
     {
         _sampleSize = sampleSize;
         _dimensionsCount = dimensionsCount;
+        _uniqueDimensionSynthetic = Option<DimensionIdentifier>.None;
         Dimensions = CreateDimensions();
     }
 
-    public Seq<Sample> Samples
+    public Generator( int sampleSize , DimensionIdentifier identifier , int dimensionsCount )
+    {
+        _sampleSize = sampleSize;
+        _dimensionsCount = dimensionsCount;
+        _uniqueDimensionSynthetic = identifier;
+        Dimensions = CreateDimensions( identifier , dimensionsCount );
+    }
+
+    public Seq<ISample> Samples
     {
         get
         {
@@ -126,19 +138,39 @@ public class Generator
         return sample;
     }
 
-    private Seq<Sample> GenerateDataSample()
+    private Seq<ISample> GenerateDataSample()
     {
-        return GenerateDataSample( Dimensions , _sampleSize );
+        return _uniqueDimensionSynthetic.IsSome
+            ? GenerateUniqueDataSample( Dimensions , _sampleSize )
+            : GenerateDataSample( Dimensions , _sampleSize );
     }
 
-    private static Seq<Sample> GenerateDataSample( Seq<Dimension> dimensions , int sampleSize )
+    private static Seq<ISample> GenerateUniqueDataSample( Seq<Dimension> dimensions , int sampleSize )
     {
-        Randomizer.Seed = new Random( sampleSize ); // So that samples of the same size always generate the same data
+        var leaves = dimensions[0].Leaves().Select( b => b.Label ).Distinct().OrderBy( x => x ).ToSeq().Strict();
 
+        var sampler = new Faker<SyntheticSample>()
+            .UseSeed( sampleSize ) // So that samples of the same size always generate the same data
+            .CustomInstantiator( f =>
+            {
+                var items = Enumerable.Range( 0 , dimensions.Length )
+                    .Select( _ => f.PickRandom<string>( leaves ) )
+                    .ToArray();
+                return new SyntheticSample( items );
+            } );
+
+        return Seq.createRange( sampler.Generate( sampleSize ) )
+                .Cast<ISample>();
+    }
+
+    private static Seq<ISample> GenerateDataSample( Seq<Dimension> dimensions , int sampleSize )
+    {
         var leaves = HashMap.createRange( dimensions.Select( d =>
             (d.Name, d.Leaves().Select( b => b.Label ).Distinct().OrderBy( x => x ).ToSeq().Strict()) ) );
 
-        var sampler = new Faker<Sample>().RuleFor( o => o.Consumer , f => f.PickRandom<string>( leaves["Consumers"] ) )
+        var sampler = new Faker<Sample>()
+            .UseSeed( sampleSize ) // So that samples of the same size always generate the same data
+            .RuleFor( o => o.Consumer , f => f.PickRandom<string>( leaves["Consumers"] ) )
             .RuleFor( o => o.Producer , f => f.PickRandom<string>( leaves["Producers"] ) )
             .RuleFor( o => o.Cooking , f => f.PickRandom<string>( leaves["COOKING"] ) )
             .RuleFor( o => o.Shape , f => f.PickRandom<string>( leaves["SHAPE"] ) )
@@ -146,7 +178,8 @@ public class Generator
             .RuleFor( o => o.Sex , f => f.PickRandom<string>( leaves["SEX"] ) )
             .RuleFor( o => o.Value , f => f.Random.Int( min: 0 , max: 50 ) );
 
-        return Seq.createRange( sampler.Generate( sampleSize ) );
+        return Seq.createRange( sampler.Generate( sampleSize ) )
+                .Cast<ISample>();
     }
 
     public static Seq<Dimension> CreateDimensions()
@@ -160,10 +193,34 @@ public class Generator
             dimensions[3] );
     }
 
+    public static Seq<Dimension> CreateDimensions( DimensionIdentifier identifier , int dimensionsCount )
+    {
+        switch ( identifier )
+        {
+            case DimensionIdentifier.Countries:
+                var countriesInfo = GetCountriesInfo();
+                return Enumerable.Range( 0 , dimensionsCount )
+                    .Select( i => BuildGeoDimension( $"{i + 1}" , countriesInfo ) )
+                    .ToSeq();
+
+            case DimensionIdentifier.Cooking:
+                var input = GetDimensionInputs().Find( o => o.Name?.Equals( "COOKING" , StringComparison.OrdinalIgnoreCase ) == true );
+                return input
+                    .Some( inp => Enumerable.Range( 0 , dimensionsCount )
+                        .Select( i => DimensionFactory.BuildWithParentLink( $"{i + 1}" , inp.Members , x => x.Id ,
+                            x => x.ParentId ?? Option<int>.None , x => x.Name ) )
+                        .ToSeq() )
+                    .None( () => Seq<Dimension>.Empty );
+
+            default:
+                return Seq<Dimension>.Empty;
+        }
+    }
+
     private static Seq<Dimension> BuildDimensions( Seq<DimensionInput> inputs )
     {
         return inputs.Select( input => DimensionFactory.BuildWithParentLink( input.Name , input.Members , x => x.Id ,
-            x => x.ParentId.HasValue ? x.ParentId.Value : Option<int>.None , x => x.Name ) );
+            x => x.ParentId ?? Option<int>.None , x => x.Name ) );
     }
 
     private static Dimension BuildGeoDimension( string name , Seq<CountryInfo> countries )

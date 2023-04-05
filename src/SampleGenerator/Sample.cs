@@ -1,6 +1,6 @@
 ﻿namespace SampleGenerator;
 
-public class Sample
+public class Sample : ISample
 {
     public string? Producer { get; set; }
     public string? Consumer { get; set; }
@@ -17,12 +17,12 @@ public class Sample
     public string? Get( string variable ) =>
         variable switch
         {
-            "Producers" => Producer ,
-            "Consumers" => Consumer ,
-            "COOKING" => Cooking ,
-            "SHAPE" => Shape ,
-            "MODE" => Mode ,
-            "SEX" => Sex ,
+            "Producers" => Producer,
+            "Consumers" => Consumer,
+            "COOKING" => Cooking,
+            "SHAPE" => Shape,
+            "MODE" => Mode,
+            "SEX" => Sex,
             _ => string.Empty
         };
 }
