@@ -2,13 +2,14 @@
 
 [![NuGet](https://raw.githubusercontent.com/NuGet/Media/main/Images/MainLogo/32x32/nuget_32.png)](https://www.nuget.org/packages/MultiDimensionsHierarchies/) [![CodeQL](https://github.com/CyLuGh/MultiDimensionsHierarchies/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/CyLuGh/MultiDimensionsHierarchies/actions/workflows/codeql-analysis.yml) [![CodeFactor](https://www.codefactor.io/repository/github/cylugh/multidimensionshierarchies/badge)](https://www.codefactor.io/repository/github/cylugh/multidimensionshierarchies) 
 
-### Exponential growth problem
+### A rapidly growing problem
 
 It is quite easy to do some aggregates along a single hierarchy through recursive methods. It is still easy enough with two hierarchies. But what happens when there are *n* hierarchies to iterate through?
 
-Let's look at a simple example with three dimensions.
+Let's look at a simple example with three dimensions, each with a single element on three hierarchical levels.
 
 ```mermaid
+%%{init: {'theme':'base'}}%%
 flowchart TD
 
 subgraph Dimension C
@@ -24,9 +25,10 @@ subgraph Dimension A
 end
 ```
 
-These very simple dimensions can be combined to create $3^3$ items, which can be linked as below. This shows the complexity of going through these combinations, which will grow exponentially as dimensions are added and get more complex.
+These very simple dimensions can be combined to create $3^3 = 27$ items, which can be linked as below. This shows the complexity of going through these combinations, which will grow exponentially as dimensions are added and get more complex.
 
 ```mermaid
+%%{init: {'theme':'base'}}%%
 flowchart TD
 
 A1:B1:C1 --- A2:B1:C1
@@ -85,6 +87,11 @@ A2:B3:C1 --- A3:B3:C1
 A2:B3:C1 --- A2:B3:C2
 ```
 
+This problem will grow when we add dimensions or when this dimensions get more elements.
+
+- If we were to add a fourth similar dimension, we'd have $3^4 = 81$ possible items. A fifth would lead us to $3^5 = 243$ elements. So, adding a dimension can have an *exponential* influence on the elements that can be found in the hierarchies.
+- If we had a fourth element to our hierarchies, we get $4^3 = 64$ items. A fifth element in the hierarchies would mean $5^3 = 125$ items. Elements in hierarchies will have a *geometric* influence.
+
 ### MultiDimensionsHierarchies library
 
 This library provides a way of handling such problem, by simplifying the way we can go through the data. It still has limitation as very complex and numerous dimensions may very well enduce very long computation or run out of memory.
@@ -109,6 +116,8 @@ By combining the **Bone** elements, each element can be identified in the hierar
 These **Skeleton**s should only be constructed through the factory pattern, as the use of direct references is essential.
 
 ```mermaid
+%%{init: {'theme':'base'}}%%
+
 flowchart LR
 
 subgraph Dimension C
@@ -152,6 +161,8 @@ A3:B3:C3 -..- A3B3C3
 !!!
 
 ```mermaid
+%%{init: {'theme':'base'}}%%
+
 flowchart LR
 
 subgraph Raw[Raw data]
@@ -201,6 +212,7 @@ To efficiently retrieve components, each dimension is handled separately, progre
 
 To finalize the results, the algorithm adds back the previously removed dimensions with their single asked value.
 
+
 ##### Without targets
 
 The first step will simply aggregate the items with the same key so it can limit the base data if it hasn't been optimized before the call.
@@ -215,3 +227,55 @@ The algorithm will go through each item and determine each of his ancestor items
 The algorithm has an alternative mode where it does not apply the aggregation method right away but keep tracks of the participating components. An extra parameter is then required: the list of dimensions that shouldn't be simplified to keep discrimination of components possible.
 
 This way of using the algorithm allows the computation of derived information such as primary confidentiality.
+
+#### Benchmarking
+
+##### Aggregation with targets
+
+| Dimensions | Elements in dimension | Max elements | Source items count | Target items count | Average execution time | Scaling |
+| --: | --: | --: | --: | --: | --: | --: | 
+| 4 | 12 | 20,736 | 10,000 | 10,000 | 676 ms | 1 |
+| 4 | 12 | 20,736 | 20,000 | 10,000 | 796 ms | 1.18 |
+| 4 | 12 | 20,736 | 10,000 | 20,000 | 940 ms | 1.39 |
+
+| Dimensions | Elements in dimension | Max elements | Source items count | Target items count | Average execution time | Scaling |
+| --: | --: | --: | --: | --: | --: | --: | 
+| 5 | 12 | 248,832 | 10,000 | 10,000 | 1,659 ms | 1 |
+| 5 | 12 | 248,832 | 10,000 | 20,000 | 2,395 ms | 1.44 |
+| 5 | 12 | 248,832 | 20,000 | 10,000 | 2,850 ms | 1.71 |
+
+| Dimensions | Elements in dimension | Max elements | Source items count | Target items count | Average execution time | Scaling |
+| --: | --: | --: | --: | --: | --: | --: | 
+| 6 | 12 | 2,985,984 | 10,000 | 10,000 | 2,605 ms | 1 |
+| 6 | 12 | 2,985,984 | 10,000 | 20,000 | 3,891 ms | 1.49 |
+| 6 | 12 | 2,985,984 | 20,000 | 10,000 | 4,616 ms | 1.77 |
+
+| Dimensions | Elements in dimension | Max elements | Source items count | Target items count | Average execution time | Scaling |
+| --: | --: | --: | --: | --: | --: | --: | 
+| 6 | 12 | 2,985,984 | 100,000 | 100,000 | 48.34 s | 1 |
+| 6 | 12 | 2,985,984 | 100,000 | 200,000 | 60.83 s | 1.26 |
+| 6 | 12 | 2,985,984 | 200,000 | 100,000 | 81.33 s | 1.68 |
+
+| Dimensions | Elements in dimension | Max elements | Source items count | Target items count | Average execution time | Scaling | Scaling to n-1 |
+| --: | --: | --: | --: | --: | --: | --: | --: | 
+| 4 | 12 | 20,736 | 10,000 | 10,000 | 676 ms | 1 | - |
+| 5 | 12 | 248,832 | 10,000 | 10,000 | 1,659 ms | 2.45 | 2.45 |
+| 6 | 12 | 2,985,984 | 10,000 | 10,000 | 2,605 ms | 3.85 | 1.57 |
+| 7 | 12 | 35,831,808 | 10,000 | 10,000 | 3,223 ms | 4.77 | 1.23 |
+| 8 | 12 | 429,981,696 | 10,000 | 10,000 | 4,594 ms | 6.80 | 1.42 |
+| 9 | 12 | 5,159,780,352 | 10,000 | 10,000 | 5,931 ms | 8.77 | 1.29 |
+| 10 | 12 | 61,917,364,224 | 10,000 | 10,000 | 7,580 ms | 11.21 | 1.27 |
+
+| Dimensions | Elements in dimension | Max elements | Source items count | Target items count | Average execution time | Scaling |
+| --: | --: | --: | --: | --: | --: | --: | 
+| 4 | 251 | 3,969,126,001 | 10,000 | 10,000 | 2,277 ms | 1 |
+| 4 | 251 | 3,969,126,001 | 10,000 | 20,000 | 3,466 ms | 1.52 |
+| 4 | 251 | 3,969,126,001 | 20,000 | 10,000 | 4,626 ms | 2.04 |
+
+| Dimensions | Elements in dimension | Max elements | Source items count | Target items count | Average execution time | Scaling |
+| --: | --: | --: | --: | --: | --: | --: | 
+| 5 | 251 | 996,250,626,251 | 10,000 | 10,000 | 3,689 ms | 1 |
+| 5 | 251 | 996,250,626,251 | 10,000 | 20,000 | 5,260 ms | 1.42 |
+| 5 | 251 | 996,250,626,251 | 20,000 | 10,000 | 6,365 ms | 1.72 |
+
+We can see the volume of source data has more influence on performance than the number of targets to be computed. Both still are below a linear influence, as even if we double the amount of items, we almost never double the execution time.  These tests are also a worst case scenario: data are randomly generated and should be equally dispersed in the dimensions. In a real world case, data are often unbalanced, which make the algorithm more efficient.
