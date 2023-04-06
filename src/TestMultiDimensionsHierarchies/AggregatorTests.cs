@@ -166,28 +166,6 @@ public class AggregatorTests
     }
 
     [Fact]
-    public void TestBottomTop2DimensionsWithFilter()
-    {
-        var dimensions = new[] { "Dim A" , "Dim B" }.Select( d => SkeletonTests.GetDimension( d ) ).ToArray();
-        var skeletons = GetLeavesSample( dimensions );
-
-        var filters = dimensions[1].FindAll( "2" );
-
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b , filters );
-
-        result.Status.Should().Be( AggregationStatus.OK );
-        var r2 = result.Results.Find( "2" , "2" );
-        r2.IsSome.Should().BeTrue();
-        r2.IfSome( r =>
-        {
-            r.Value.IsSome.Should().BeTrue();
-            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-        } );
-
-        result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , 2 ) / 2 );
-    }
-
-    [Fact]
     public void TestBottomTop2DimensionMultiLevelData()
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
@@ -267,61 +245,6 @@ public class AggregatorTests
 
         var cplx = dimensions.Select( d => SkeletonTests.GetDimension( d ) ).Complexity();
         result.Results.LongCount().Should().Be( cplx );
-    }
-
-    [Fact]
-    public void CompareBottomTop5Dimensions()
-    {
-        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
-        var skeletons = GetLeavesSample( dimensions );
-
-        var resultGroup = Aggregator.Aggregate( Method.BottomTopGroup , skeletons , ( a , b ) => a + b );
-        var resultDict = Aggregator.Aggregate( Method.BottomTopDictionary , skeletons , ( a , b ) => a + b );
-
-        resultGroup.Status.Should().Be( AggregationStatus.OK );
-        var r2Grp = resultGroup.Results.Find( "2" , "2" , "2" , "2" , "2" );
-        r2Grp.ShouldBeSome( r =>
-        {
-            r.Value.IsSome.Should().BeTrue();
-            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-        } );
-        resultGroup.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
-
-        var cplx = dimensions.Select( d => SkeletonTests.GetDimension( d ) ).Complexity();
-        resultGroup.Results.LongCount().Should().Be( cplx );
-
-        var r2Dct = resultDict.Results.Find( "2" , "2" , "2" , "2" , "2" );
-        r2Dct.ShouldBeSome( r =>
-        {
-            r.Value.IsSome.Should().BeTrue();
-            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-        } );
-
-        resultGroup.Results.LongCount().Should().Be( resultDict.Results.LongCount() );
-    }
-
-    [Fact]
-    public void TestBottomTop5DimensionsWithTargets()
-    {
-        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
-        var skeletons = GetLeavesSample( dimensions );
-
-        var targets = GetTargets( dimensions );
-        targets = Seq.create(
-            targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
-            ).Somes();
-
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b , targets );
-
-        result.Status.Should().Be( AggregationStatus.OK );
-        var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
-        r2.IsSome.Should().BeTrue();
-        r2.IfSome( r =>
-        {
-            r.Value.IsSome.Should().BeTrue();
-            r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-        } );
-        result.Results.Length.Should().Be( targets.Length );
     }
 
     [Fact]

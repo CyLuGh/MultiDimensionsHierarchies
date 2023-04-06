@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using LanguageExt;
+
 // See https://aka.ms/new-console-template for more information
 
 using MultiDimensionsHierarchies;
@@ -8,21 +10,27 @@ using Spectre.Console;
 
 AnsiConsole.WriteLine( "Welcome to MDH demo" );
 
-
-var generator = new Generator( 100000 , 6 );
+var generator = new Generator( 100_000 , DimensionIdentifier.Cooking , 6 );
 
 var samples = generator.Skeletons;
-var targets = LanguageExt.HashSet.createRange( generator.GenerateTargets( 1000 ) );
 
-var watchSkels = Stopwatch.StartNew();
-var results = Aggregator.StreamAggregateResults( samples , targets , numbers => numbers.Sum() , group: true )
-    .OrderBy( s => s.Key.FullPath )
-    .ToSeq()
-    .Strict();
-watchSkels.Stop();
+var watch = Stopwatch.StartNew();
+//  Aggregator.GroupAccumulate( samples , Seq<Seq<Bone>>.Empty ,numbers => numbers.Sum(), ( i , w ) => (int) ( i * w ) , 0 , 6 );
+var test = Aggregator.Aggregate( samples , ( a , b ) => a + b , numbers => numbers.Sum() , ( i , w ) => (int) ( i * w ) );
 
-AnsiConsole.WriteLine( "Skeletons took {0}" , watchSkels.Elapsed );
+AnsiConsole.WriteLine( test.Results.Length );
+AnsiConsole.WriteLine( watch.Elapsed.ToString() );
 
+// var targets = LanguageExt.HashSet.createRange( generator.GenerateTargets( 1000 ) );
+
+// var watchSkels = Stopwatch.StartNew();
+// var results = Aggregator.StreamAggregateResults( samples , targets , numbers => numbers.Sum() , group: true )
+//     .OrderBy( s => s.Key.FullPath )
+//     .ToSeq()
+//     .Strict();
+// watchSkels.Stop();
+
+// AnsiConsole.WriteLine( "Skeletons took {0}" , watchSkels.Elapsed );
 
 // AnsiConsole.WriteLine("{0} {1}", samples[0], targets[0]);
 //

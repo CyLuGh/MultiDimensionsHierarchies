@@ -143,6 +143,20 @@ namespace MultiDimensionsHierarchies.Core
                 .Select<Skeleton<T> , Either<Skeleton , Skeleton<T>>>( s => s.Key.CheckBones( bonesPerDimension ) ? s : s.Key ).ToSeq();
         }
 
+        public static Seq<Skeleton<T>> Filter<T>( this IEnumerable<Skeleton<T>> skeletons , IEnumerable<Skeleton> targets )
+        {
+            var bonesPerDimension = targets
+                .AsParallel()
+                .SelectMany( s => s.Bones )
+                .GroupBy( b => b.DimensionName )
+                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
+
+            return skeletons
+               .AsParallel()
+               .Where( s => s.Key.CheckBones( bonesPerDimension ) )
+               .ToSeq();
+        }
+
         public static Seq<Skeleton> GetSiblings( this Skeleton skeleton , Seq<Dimension> dimensions )
         {
             var siblings = skeleton.Bones.Select( b => b.GetSiblings( dimensions.Find( d => d.Name.Equals( b.DimensionName ) ) ) );

@@ -19,6 +19,9 @@ namespace MultiDimensionsHierarchies.Core
                 .AsParallel()
                 .Select( l => new Skeleton( l ) );
 
+        public static Seq<Skeleton> CombineSeq( this Seq<Seq<Bone>> dimensions )
+            => dimensions.Combine().ToSeq().Strict();
+
         public static IEnumerable<Skeleton> Extract( this IEnumerable<Skeleton> skeletons , params string[] concepts )
             => skeletons.Select( s => s.Extract( concepts ) ).Distinct();
     }
