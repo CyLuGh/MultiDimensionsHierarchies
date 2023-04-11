@@ -10,7 +10,7 @@ using Spectre.Console;
 
 AnsiConsole.WriteLine( "Welcome to MDH demo" );
 
-var generator = new Generator( 100_000 , DimensionIdentifier.Cooking , 6 );
+var generator = new Generator( 10_000 , DimensionIdentifier.Cooking , 6 );
 
 var samples = generator.Skeletons;
 
