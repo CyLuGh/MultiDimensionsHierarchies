@@ -10,13 +10,13 @@ using Spectre.Console;
 
 AnsiConsole.WriteLine( "Welcome to MDH demo" );
 
-var generator = new Generator( 10_000 , DimensionIdentifier.Cooking , 6 );
+var generator = new Generator( 10_000 , DimensionIdentifier.Cooking , 5 );
 
 var samples = generator.Skeletons;
 
 var watch = Stopwatch.StartNew();
 //  Aggregator.GroupAccumulate( samples , Seq<Seq<Bone>>.Empty ,numbers => numbers.Sum(), ( i , w ) => (int) ( i * w ) , 0 , 6 );
-var test = Aggregator.Aggregate( samples , ( a , b ) => a + b , numbers => numbers.Sum() , ( i , w ) => (int) ( i * w ) );
+var test = Aggregator.Aggregate( samples , ( a , b ) => a + b , ( i , w ) => (int) ( i * w ) );
 
 AnsiConsole.WriteLine( test.Results.Length );
 AnsiConsole.WriteLine( watch.Elapsed.ToString() );

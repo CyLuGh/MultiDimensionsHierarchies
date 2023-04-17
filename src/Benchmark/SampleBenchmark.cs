@@ -19,8 +19,13 @@ public class SampleBenchmark
 {
     [Benchmark]
     [ArgumentsSource( nameof( BenchmarkDownTop ) )]
-    public AggregationResult<int> BenchDownTop( DataArgument argument ) =>
-        Aggregator.Aggregate( argument.Samples , ( a , b ) => a + b , ds => ds.Sum() );
+    public AggregationResult<int> BenchDownTopGroup( DataArgument argument ) =>
+        Aggregator.Aggregate( argument.Samples , ds => ds.Sum() );
+
+    [Benchmark]
+    [ArgumentsSource( nameof( BenchmarkDownTop ) )]
+    public AggregationResult<int> BenchDownTopMap( DataArgument argument ) =>
+        Aggregator.Aggregate( argument.Samples , ( a , b ) => a + b );
 
     // [Benchmark]
     // [ArgumentsSource( nameof( BenchmarkScaleArguments ) )]
@@ -61,25 +66,24 @@ public class SampleBenchmark
 
     public static IEnumerable<DataArgument> BenchmarkDownTop()
     {
-        // yield return new DataArgument( 10_000 , 4 , 1 , DimensionIdentifier.Cooking );
-        // yield return new DataArgument( 20_000 , 4 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 4 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 20_000 , 4 , 1 , DimensionIdentifier.Cooking );
 
-        // yield return new DataArgument( 10_000 , 5 , 1 , DimensionIdentifier.Cooking );
-        // yield return new DataArgument( 20_000 , 5 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 5 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 20_000 , 5 , 1 , DimensionIdentifier.Cooking );
 
-        // yield return new DataArgument( 10_000 , 6 , 1 , DimensionIdentifier.Cooking );
-        // yield return new DataArgument( 20_000 , 6 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 10_000 , 6 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 20_000 , 6 , 1 , DimensionIdentifier.Cooking );
 
-        // yield return new DataArgument( 10_000 , 4 , 1 , DimensionIdentifier.Countries );
-        // yield return new DataArgument( 20_000 , 4 , 1 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 10_000 , 4 , 1 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 20_000 , 4 , 1 , DimensionIdentifier.Countries );
 
-        // yield return new DataArgument( 10_000 , 5 , 1 , DimensionIdentifier.Countries );
-        // yield return new DataArgument( 20_000 , 5 , 1 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 10_000 , 5 , 1 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 20_000 , 5 , 1 , DimensionIdentifier.Countries );
 
         yield return new DataArgument( 1_000 , 7 , 1 , DimensionIdentifier.Cooking );
         yield return new DataArgument( 1_000 , 8 , 1 , DimensionIdentifier.Cooking );
         yield return new DataArgument( 1_000 , 9 , 1 , DimensionIdentifier.Cooking );
-        // yield return new DataArgument( 1_000 , 10 , 1 , DimensionIdentifier.Cooking );
     }
 }
 
