@@ -103,7 +103,7 @@ public class AggregatorTests
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetLeavesSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b );
+        var result = Aggregator.Aggregate( skeletons , ( a , b ) => a + b );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" );
@@ -121,7 +121,7 @@ public class AggregatorTests
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b );
+        var result = Aggregator.Aggregate( skeletons , ( a , b ) => a + b );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r1 = result.Results.Find( "1" );
@@ -147,7 +147,7 @@ public class AggregatorTests
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b );
+        var result = Aggregator.Aggregate( skeletons , ( a , b ) => a + b );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" );
@@ -170,7 +170,7 @@ public class AggregatorTests
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b );
+        var result = Aggregator.Aggregate( skeletons , ( a , b ) => a + b );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r1 = result.Results.Find( "1" , "1" );
@@ -196,25 +196,7 @@ public class AggregatorTests
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" };
         var skeletons = GetLeavesSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b );
-
-        result.Status.Should().Be( AggregationStatus.OK );
-        var r2 = result.Results.Find( "2" , "2" , "2" );
-        r2.IsSome.Should().BeTrue();
-        r2.ShouldBeSome( r =>
-        {
-            r.Value.IsSome.Should().BeTrue();
-            r.Value.ShouldBeSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-        } );
-        result.Results.Where( s => s.IsRoot() ).Count().Should().Be( (int) Math.Pow( 2 , dimensions.Length ) );
-    }
-
-    [Fact]
-    public void TestBottomTop3DimensionsWithoutCache()
-    {
-        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" };
-        var skeletons = GetLeavesSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b , useCachedSkeletons: false );
+        var result = Aggregator.Aggregate( skeletons , ( a , b ) => a + b );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" , "2" );
@@ -232,7 +214,7 @@ public class AggregatorTests
     {
         var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
         var skeletons = GetLeavesSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b );
+        var result = Aggregator.Aggregate( skeletons , ( a , b ) => a + b );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
@@ -253,7 +235,7 @@ public class AggregatorTests
         var dimensions = new[] { "Dim A" };
         var skeletons = GetLeavesSample( dimensions );
         var targets = GetTargets( dimensions );
-        var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
+        var result = Aggregator.Aggregate(  skeletons, targets , ( a , b ) => a + b  );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" );
@@ -276,7 +258,7 @@ public class AggregatorTests
         targets = Seq.create(
             targets.Find( "1" ) , targets.Find( "2" )
             ).Somes();
-        var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
+        var result = Aggregator.Aggregate( skeletons , targets , ( a , b ) => a + b );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" );
@@ -295,7 +277,7 @@ public class AggregatorTests
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesSample( dimensions );
         var targets = GetTargets( dimensions );
-        var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
+        var result = Aggregator.Aggregate( skeletons , targets , ( a , b ) => a + b );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" );
@@ -318,7 +300,7 @@ public class AggregatorTests
         targets = Seq.create(
             targets.Find( "1" , "2" ) , targets.Find( "2" , "2" )
             ).Somes();
-        var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
+        var result = Aggregator.Aggregate(  skeletons, targets , ( a , b ) => a + b  );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" );
@@ -337,12 +319,12 @@ public class AggregatorTests
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesSample( dimensions );
         var targets = GetTargets( dimensions );
-        var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
+        var result = Aggregator.Aggregate(  skeletons , targets, ( a , b ) => a + b  );
 
         GetTargets( dimensions[1] ).Find( "1.2" ).IfSome( tgt =>
         {
             var targets2 = GetTargets( dimensions[0] ).Select( s => s.Add( tgt ) );
-            var result2 = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets2 );
+            var result2 = Aggregator.Aggregate(  skeletons , targets2, ( a , b ) => a + b  );
 
             var test = from r in result.Results.Find( "2" , "1.2" )
                        from r2 in result2.Results.Find( "2" , "1.2" )
@@ -350,51 +332,6 @@ public class AggregatorTests
             test.ShouldBeSome( t => t.Should().BeTrue() );
         } );
     }
-
-    //[Fact]
-    //public void TestTopDown5Dimensions()
-    //{
-    //    var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
-    //    var skeletons = GetLeavesSample( dimensions );
-    //    var targets = GetTargets( dimensions );
-    //    targets = targets.Take( 10000 )
-    //        .ConcatFast( targets.Find( "2" , "2" , "2" , "2" , "2" ) )
-    //        .ToSeq();
-    //    var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
-
-    //    result.Status.Should().Be( AggregationStatus.OK );
-    //    var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
-    //    r2.IsSome.Should().BeTrue();
-    //    r2.IfSome( r =>
-    //    {
-    //        r.Value.IsSome.Should().BeTrue();
-    //        r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-    //    } );
-    //    result.Results.Length.Should().Be( targets.Length );
-    //}
-
-    //[Fact]
-    //public void TestTopDownGroup5Dimensions()
-    //{
-    //    var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
-    //    var skeletons = GetLeavesSample( dimensions );
-    //    var targets = GetTargets( dimensions );
-    //    targets = targets.Take( 10000 )
-    //        .ConcatFast( targets.Find( "2" , "2" , "2" , "2" , "2" ) )
-    //        .ToSeq();
-
-    //    var result = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets );
-
-    //    result.Status.Should().Be( AggregationStatus.OK );
-    //    var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
-    //    r2.IsSome.Should().BeTrue();
-    //    r2.IfSome( r =>
-    //    {
-    //        r.Value.IsSome.Should().BeTrue();
-    //        r.Value.IfSome( v => v.Should().Be( GetExpectedResult( 18 , dimensions.Length , 4 ) ) );
-    //    } );
-    //    result.Results.Length.Should().Be( targets.Length );
-    //}
 
     [Fact]
     public void TestTopDown5DimensionsSubSelect()
@@ -405,7 +342,7 @@ public class AggregatorTests
         targets = Seq.create(
             targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
             ).Somes();
-        var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b , targets );
+        var result = Aggregator.Aggregate( skeletons, targets , ( a , b ) => a + b  );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
@@ -427,7 +364,7 @@ public class AggregatorTests
         targets = Seq.create(
             targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
             ).Somes();
-        var result = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets );
+        var result = Aggregator.Aggregate(  skeletons , targets, ( a , b ) => a + b  );
 
         result.Status.Should().Be( AggregationStatus.OK );
         var r2 = result.Results.Find( "2" , "2" , "2" , "2" , "2" );
@@ -445,7 +382,7 @@ public class AggregatorTests
     {
         var dimensions = new[] { "Dim A" };
         var skeletons = GetLeavesWeightSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b ,
+        var result = Aggregator.Aggregate(  skeletons , ( a , b ) => a + b ,
             weightEffect: ( t , w ) => t * w );
 
         result.Status.Should().Be( AggregationStatus.OK );
@@ -465,8 +402,8 @@ public class AggregatorTests
         var skeletons = GetLeavesWeightSample( dimensions );
         var targets = GetWeightTargets( dimensions ).FindAll( "2" );
 
-        var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b ,
-            targets ,
+        var result = Aggregator.Aggregate(  skeletons , targets ,
+            ( a , b ) => a + b ,
             weightEffect: ( t , w ) => t * w );
 
         result.Status.Should().Be( AggregationStatus.OK );
@@ -484,7 +421,7 @@ public class AggregatorTests
     {
         var dimensions = new[] { "Dim A" , "Dim B" };
         var skeletons = GetLeavesWeightSample( dimensions );
-        var result = Aggregator.Aggregate( Method.BottomTop , skeletons , ( a , b ) => a + b ,
+        var result = Aggregator.Aggregate( skeletons , ( a , b ) => a + b ,
             weightEffect: ( t , w ) => t * w );
 
         result.Status.Should().Be( AggregationStatus.OK );
@@ -503,8 +440,8 @@ public class AggregatorTests
         var skeletons = GetLeavesWeightSample( dimensions );
         var targets = GetWeightTargets( dimensions ).FindAll( "2" , "2" );
 
-        var result = Aggregator.Aggregate( Method.TopDown , skeletons , ( a , b ) => a + b ,
-            targets ,
+        var result = Aggregator.Aggregate( skeletons ,targets ,
+            ( a , b ) => a + b ,
             weightEffect: ( t , w ) => t * w );
 
         result.Status.Should().Be( AggregationStatus.OK );
@@ -516,22 +453,22 @@ public class AggregatorTests
         } );
     }
 
-    [Fact]
-    public void TestCheckUse()
-    {
-        var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
-        var skeletons = GetLeavesSample( dimensions );
-        var targets = GetTargets( dimensions );
-        targets = Seq.create(
-            targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
-            ).Somes();
+    // [Fact]
+    // public void TestCheckUse()
+    // {
+    //     var dimensions = new[] { "Dim A" , "Dim B" , "Dim C" , "Dim D" , "Dim E" };
+    //     var skeletons = GetLeavesSample( dimensions );
+    //     var targets = GetTargets( dimensions );
+    //     targets = Seq.create(
+    //         targets.Find( "1" , "2" , "2" , "2" , "2" ) , targets.Find( "2" , "2" , "2" , "2" , "2" )
+    //         ).Somes();
 
-        var resultsWithoutCheckUse = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets , checkUse: false );
-        var resultsWithCheckUse = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets , checkUse: true );
+    //     var resultsWithoutCheckUse = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets , checkUse: false );
+    //     var resultsWithCheckUse = Aggregator.Aggregate( Method.TopDownGroup , skeletons , ( a , b ) => a + b , targets , checkUse: true );
 
-        resultsWithCheckUse.Results.Length.Should().Be( resultsWithoutCheckUse.Results.Length );
-        resultsWithCheckUse.Results.OrderBy( x => x.Key )
-            .SequenceEqual( resultsWithoutCheckUse.Results.OrderBy( x => x.Key ) )
-            .Should().BeTrue();
-    }
+    //     resultsWithCheckUse.Results.Length.Should().Be( resultsWithoutCheckUse.Results.Length );
+    //     resultsWithCheckUse.Results.OrderBy( x => x.Key )
+    //         .SequenceEqual( resultsWithoutCheckUse.Results.OrderBy( x => x.Key ) )
+    //         .Should().BeTrue();
+    // }
 }
