@@ -115,7 +115,6 @@ public class Generator
 
         var targets = tgts.ToSeq();
 
-        // var sampling = (int) Math.Round( (double) size / _dimensionsCount , MidpointRounding.ToPositiveInfinity );
         var sampling = (int) Math.Round( targets.Count * .2 , MidpointRounding.ToPositiveInfinity );
 
         var sample = targets
