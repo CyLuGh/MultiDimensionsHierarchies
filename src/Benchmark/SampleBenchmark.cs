@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
-using BenchmarkDotNet.Order;
 using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
@@ -13,8 +12,6 @@ namespace Benchmark;
 
 [SimpleJob( RuntimeMoniker.Net70 , iterationCount: 5 , warmupCount: 2 )]
 [MemoryDiagnoser( false )]
-[Orderer( SummaryOrderPolicy.FastestToSlowest )]
-[RankColumn]
 public class SampleBenchmark
 {
     [Benchmark]
@@ -27,10 +24,10 @@ public class SampleBenchmark
     public AggregationResult<int> BenchDownTopMap( DataArgument argument ) =>
         Aggregator.Aggregate( argument.Samples , ( a , b ) => a + b );
 
-    // [Benchmark]
-    // [ArgumentsSource( nameof( BenchmarkScaleArguments ) )]
-    // public AggregationResult<int> BenchTopDown( DataArgument argument ) =>
-    //     Aggregator.Aggregate( argument.Samples , argument.Targets , ( a , b ) => a + b , ds => ds.Sum() );
+    [Benchmark]
+    [ArgumentsSource( nameof( BenchmarkScaleArguments ) )]
+    public AggregationResult<int> BenchTopDown( DataArgument argument ) =>
+        Aggregator.Aggregate( argument.Samples , argument.Targets , ( a , b ) => a + b , ds => ds.Sum() );
 
     public static IEnumerable<DataArgument> BenchmarkScaleArguments()
     {
@@ -72,15 +69,14 @@ public class SampleBenchmark
         yield return new DataArgument( 10_000 , 5 , 1 , DimensionIdentifier.Cooking );
         yield return new DataArgument( 20_000 , 5 , 1 , DimensionIdentifier.Cooking );
 
-        yield return new DataArgument( 10_000 , 6 , 1 , DimensionIdentifier.Cooking );
-        yield return new DataArgument( 20_000 , 6 , 1 , DimensionIdentifier.Cooking );
-
         yield return new DataArgument( 10_000 , 4 , 1 , DimensionIdentifier.Countries );
         yield return new DataArgument( 20_000 , 4 , 1 , DimensionIdentifier.Countries );
 
         yield return new DataArgument( 10_000 , 5 , 1 , DimensionIdentifier.Countries );
         yield return new DataArgument( 20_000 , 5 , 1 , DimensionIdentifier.Countries );
 
+        yield return new DataArgument( 1_000 , 5 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 1_000 , 6 , 1 , DimensionIdentifier.Cooking );
         yield return new DataArgument( 1_000 , 7 , 1 , DimensionIdentifier.Cooking );
         yield return new DataArgument( 1_000 , 8 , 1 , DimensionIdentifier.Cooking );
         yield return new DataArgument( 1_000 , 9 , 1 , DimensionIdentifier.Cooking );
