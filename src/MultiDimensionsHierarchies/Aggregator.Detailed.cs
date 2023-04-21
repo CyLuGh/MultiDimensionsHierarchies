@@ -112,7 +112,9 @@ namespace MultiDimensionsHierarchies
 
             var uniqueTargetBaseBones = targets.SelectMany( t => t.Bones ).GroupBy( b => b.DimensionName ).Where( g => !dimensionsToPreserve.Contains( g.Key ) && g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) ).Select( g => g.First() ).ToSeq();
 
-            var (simplifiedData, simplifiedTargets) = uniqueTargetBaseBones.Any() ? SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , ( t , _ ) => t ) : (baseData, targets);
+            var (simplifiedData, simplifiedTargets) = uniqueTargetBaseBones.Any()
+                ? SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , ( t , _ ) => t ) 
+                : (baseData, targets);
 
             return GroupTargets( simplifiedTargets.ToArray() , simplifiedData , aggregator , 0 , simplifiedData[0].Key.Bones.Length )
                 .Select( s => new SkeletonsAccumulator<T>( s.Key.Add( uniqueTargetBaseBones ) , s.Components , s.Aggregator ) );
@@ -120,5 +122,14 @@ namespace MultiDimensionsHierarchies
 
         private static IEnumerable<SkeletonsAccumulator<T>> StreamSourceDetailedAggregateResults<T>( Seq<Skeleton<T>> baseData , LanguageExt.HashSet<Skeleton> targets , Func<IEnumerable<(T, double)> , T> aggregator )
             => GroupTargets( targets.ToArray() , baseData , aggregator , 0 , baseData[0].Key.Bones.Length );
+
+        private static IEnumerable<SkeletonsAccumulator<T>> GroupTargets<T>( Skeleton[] targets , Seq<Skeleton<T>> data , Func<IEnumerable<(T, double)> , T> aggregator , int boneIndex , int dimensionsCount )
+        {
+            if ( targets.Length == 1 && boneIndex == dimensionsCount ) return new[] { new SkeletonsAccumulator<T>( targets[0] , data.Select( s => (Skeleton.ComputeResultingWeight( s.Key , targets[0] ), s) ) , aggregator ) };
+
+            if ( boneIndex >= dimensionsCount ) return Array.Empty<SkeletonsAccumulator<T>>();
+
+            return targets.GroupBy( s => s.GetBone( boneIndex ) ).SelectMany( g => GroupTargets( g.ToArray() , data.AsParallel().Where( s => s.Key.HasAnyBone( boneIndex , g.Key.DescendantsHashSet() ) ).ToSeq().Strict() , aggregator , boneIndex + 1 , dimensionsCount ) );
+        }
     }
 }
