@@ -83,23 +83,11 @@ public class SampleBenchmark
     }
 }
 
-public class DataArgument : IDisposable
+public record DataArgument( int SampleSize , int TargetsCount , int DimensionsCount , Option<DimensionIdentifier> DimensionIdentifier , Seq<Skeleton> Targets , Seq<Skeleton<int>> Samples ) : IDisposable
 {
-    public int SampleSize { get; }
-    public int TargetsCount { get; }
-    public int DimensionsCount { get; }
-    public Option<DimensionIdentifier> DimensionIdentifier { get; }
-
-    public Seq<Skeleton> Targets { get; }
-    public Seq<Skeleton<int>> Samples { get; }
-
     public DataArgument( int sampleSize , int dimensionsCount , int targetsCount , Option<DimensionIdentifier> dimensionIdentifier )
+        : this( sampleSize , targetsCount , dimensionsCount , dimensionIdentifier , default , default )
     {
-        this.DimensionsCount = dimensionsCount;
-        this.TargetsCount = targetsCount;
-        this.SampleSize = sampleSize;
-        this.DimensionIdentifier = dimensionIdentifier;
-
         var generator = dimensionIdentifier.Match( o => new Generator( sampleSize , o , dimensionsCount ) , () => new Generator( sampleSize , dimensionsCount ) );
         Samples = generator.Skeletons.Strict();
         Targets = generator.GenerateTargets( targetsCount ).Strict();

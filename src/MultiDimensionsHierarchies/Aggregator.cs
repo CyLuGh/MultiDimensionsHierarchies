@@ -10,6 +10,15 @@ namespace MultiDimensionsHierarchies
 {
     public static partial class Aggregator
     {
+        /// <summary>
+        /// Compute every aggregate from base input data. This method is the <b>slowest</b> option but has the less memory growth.
+        /// Computing all aggregates is time consuming, prefer using the method with defined targets if possible.
+        /// </summary>
+        /// <typeparam name="T">Type of data that will be aggregated.</typeparam>
+        /// <param name="inputs">Data to be aggregated, with their hierarchical information.</param>
+        /// <param name="groupAggregator">How a group of T should be aggregated to create a new T result.</param>
+        /// <param name="weightEffect"><i>Optional.</i> How relative weight between hierarchical elements should be applied. No effect by default.</param>
+        /// <returns>Aggregation result, with valid aggregations, status and information message.</returns>
         public static AggregationResult<T> Aggregate<T>( IEnumerable<Skeleton<T>> inputs , Func<IEnumerable<T> , T> groupAggregator , Func<T , double , T> weightEffect = null )
         {
             /* Aggregate base data that might have common keys */
@@ -20,6 +29,15 @@ namespace MultiDimensionsHierarchies
             return DownTopGroupAggregate( groupedInputs , groupAggregator , weightEffect );
         }
 
+        /// <summary>
+        /// Compute every aggregate from base input data. This method is <b>faster</b> option but can consume more memory.
+        /// Computing all aggregates is time consuming, prefer using the method with defined targets if possible.
+        /// </summary>
+        /// <typeparam name="T">Type of data that will be aggregated.</typeparam>
+        /// <param name="inputs">Data to be aggregated, with their hierarchical information.</param>
+        /// <param name="aggregator">How two instances of T should be aggregated to create a new T result.</param>
+        /// <param name="weightEffect"><i>Optional.</i> How relative weight between hierarchical elements should be applied. No effect by default.</param>
+        /// <returns>Aggregation result, with valid aggregations, status and information message.</returns>
         public static AggregationResult<T> Aggregate<T>( IEnumerable<Skeleton<T>> inputs , Func<T , T , T> aggregator , Func<T , double , T> weightEffect = null )
         {
             /* Aggregate base data that might have common keys */
@@ -31,6 +49,16 @@ namespace MultiDimensionsHierarchies
             return DownTopHashMapAggregate( groupedInputs , aggregator , weightEffect );
         }
 
+        /// <summary>
+        /// Compute aggregates defined by a set of targets.
+        /// </summary>
+        /// <typeparam name="T">Type of data that will be aggregated.</typeparam>
+        /// <param name="inputs">Data to be aggregated, with their hierarchical information.</param>
+        /// <param name="targets">Defined set of targeted aggregation, with their hierarchical information.</param>
+        /// <param name="aggregator">How two instances of T should be aggregated to create a new T result.</param>
+        /// <param name="groupAggregator"><i>Optional.</i> How a group of T should be aggregated to create a new T result.</param>
+        /// <param name="weightEffect"><i>Optional.</i> How relative weight between hierarchical elements should be applied. No effect by default.</param>
+        /// <returns>Aggregation result, with valid aggregations, status and information message.</returns>
         public static AggregationResult<T> Aggregate<T>( IEnumerable<Skeleton<T>> inputs , IEnumerable<Skeleton> targets , Func<T , T , T> aggregator , Func<IEnumerable<T> , T> groupAggregator = null , Func<T , double , T> weightEffect = null )
         {
             var targetsHash = HashSet.createRange( targets );
@@ -46,6 +74,16 @@ namespace MultiDimensionsHierarchies
             return TopDownAggregate( groupedInputs , targetsHash , groupAggregator , weightEffect );
         }
 
+        /// <summary>
+        /// Compute aggregates defined by a set of targets.
+        /// </summary>
+        /// <typeparam name="T">Type of data that will be aggregated.</typeparam>
+        /// <param name="baseData">Data to be aggregated, with their hierarchical information.</param>
+        /// <param name="targets">Defined set of targeted aggregation, with their hierarchical information.</param>
+        /// <param name="groupAggregator">How a group of T should be aggregated to create a new T result.</param>
+        /// <param name="weightEffect"><i>Optional.</i> How relative weight between hierarchical elements should be applied. No effect by default.</param>
+        /// <param name="checkUse">Whether or not the algorithm should filter base data to only include relevant items. False by default.</param>
+        /// <returns>Enumerable of aggregation results.</returns>
         public static IEnumerable<Skeleton<T>> StreamAggregateResults<T>( Seq<Skeleton<T>> baseData , LanguageExt.HashSet<Skeleton> targets , Func<IEnumerable<T> , T> groupAggregator , Func<T , double , T> weightEffect = null , bool checkUse = false )
         {
             if ( baseData.Length == 0 || targets.Length == 0 ) return Seq<Skeleton<T>>.Empty;
@@ -100,8 +138,6 @@ namespace MultiDimensionsHierarchies
 
             return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
-
-
 
         private static AggregationResult<T> DownTopGroupAggregate<T>( Seq<Skeleton<T>> data , Func<IEnumerable<T> , T> groupAggregator , Func<T , double , T> weightEffect )
         {

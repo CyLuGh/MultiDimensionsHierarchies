@@ -9,6 +9,13 @@ namespace MultiDimensionsHierarchies
 {
     public static partial class Aggregator
     {
+        /// <summary>
+        /// Gather from base input data every elements needed to compute aggregates.
+        /// </summary>
+        /// <typeparam name="T">Type of data that will be aggregated.</typeparam>
+        /// <param name="inputs">Data to be aggregated, with their hierarchical information.</param>
+        /// <param name="aggregator">How T elements should have their relative weights applied and be aggregated together to create a new T.</param>
+        /// <returns>Detailed aggregation result, with valid aggregations, status and information message.</returns>
         public static DetailedAggregationResult<T> DetailedAggregate<T>(
             IEnumerable<Skeleton<T>> inputs ,
             Func<IEnumerable<(T value, double weight)> , T> aggregator )
@@ -29,22 +36,19 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        private static AtomHashMap<Skeleton , Seq<(double, Skeleton<T>)>> HashmapDetailedAccumulate<T>( IEnumerable<Skeleton<T>> inputs )
-        {
-            var hashMap = Prelude.AtomHashMap<Skeleton , Seq<(double, Skeleton<T>)>>();
-            inputs.AsParallel()
-                .ForAll( sourceSkeleton =>
-                {
-                    foreach ( var ancestor in sourceSkeleton.Key.Ancestors() )
-                    {
-                        var resultingWeight = Skeleton.ComputeResultingWeight( sourceSkeleton.Key , ancestor );
-                        hashMap.AddOrUpdate( ancestor , some => some.Add( (resultingWeight, sourceSkeleton) ) ,
-                            () => Seq.create( (resultingWeight, sourceSkeleton) ) );
-                    }
-                } );
-            return hashMap;
-        }
-
+        /// <summary>
+        /// Gather from base input data every elements needed to compute a defined set of aggregates.
+        /// </summary>
+        /// <typeparam name="T">Type of data that will be aggregated.</typeparam>
+        /// <param name="inputs">Data to be aggregated, with their hierarchical information.</param>
+        /// <param name="targets">Defined set of targeted aggregation, with their hierarchical information.</param>
+        /// <param name="aggregator">How T elements should have their relative weights applied and be aggregated together to create a new T.</param>
+        /// <param name="groupAggregator">How a group of T should be aggregated to create a new T result.</param>
+        /// <param name="simplifyData"><i>Optional.</i> Whether or not the simplification part of the algorithm should be applied or not. If set to true, the components in the results may not reflect
+        /// the content from the input, but an aggregation of them. True by default.</param>
+        /// <param name="dimensionsToPreserve"><i>Optional.</i> Dimensions that should be excluded from the simplification.</param>
+        /// <param name="checkUse"><i>Optional.</i> Whether or not the algorithm should filter base data to only include relevant items. False by default.</param>
+        /// <returns>Detailed aggregation result, with valid aggregations, status and information message. False by default.</returns>
         public static DetailedAggregationResult<T> DetailedAggregate<T>(
             IEnumerable<Skeleton<T>> inputs ,
             IEnumerable<Skeleton> targets ,
@@ -62,6 +66,48 @@ namespace MultiDimensionsHierarchies
             var groupedInputs = inputs.GroupBy( x => x.Key ).Select( g => g.Aggregate( g.Key , groupAggregator ) ).ToSeq();
 
             return DetailedTopDownAggregate( groupedInputs , targetsHash , aggregator , groupAggregator , simplifyData , dimensionsToPreserve , checkUse );
+        }
+
+        /// <summary>
+        /// Gather from base input data every elements needed to compute a defined set of aggregates.
+        /// </summary>
+        /// <typeparam name="T">Type of data that will be aggregated.</typeparam>
+        /// <param name="baseData">Data to be aggregated, with their hierarchical information.</param>
+        /// <param name="targets">Defined set of targeted aggregation, with their hierarchical information.</param>
+        /// <param name="aggregator">How T elements should have their relative weights applied and be aggregated together to create a new T.</param>
+        /// <param name="simplifyData"><i>Optional.</i> Whether or not the simplification part of the algorithm should be applied or not. If set to true, the components in the results may not reflect
+        /// the content from the input, but an aggregation of them. True by default.</param>
+        /// <param name="dimensionsToPreserve"><i>Optional.</i> Dimensions that should be excluded from the simplification.</param>
+        /// <param name="groupAggregator">How a group of T should be aggregated to create a new T result.</param>
+        /// <param name="checkUse"><i>Optional.</i> Whether or not the algorithm should filter base data to only include relevant items. False by default.</param>
+        /// <returns>Enumerable of aggregation results.</returns>
+        public static IEnumerable<SkeletonsAccumulator<T>> StreamDetailedAggregateResults<T>( Seq<Skeleton<T>> baseData , LanguageExt.HashSet<Skeleton> targets , Func<IEnumerable<(T, double)> , T> aggregator , bool simplifyData = false , string[] dimensionsToPreserve = null , Func<IEnumerable<T> , T> groupAggregator = null , bool checkUse = false )
+        {
+            if ( baseData.Length == 0 || targets.Length == 0 ) return Seq<SkeletonsAccumulator<T>>.Empty;
+
+            baseData = checkUse ? baseData.CheckUse( targets ).Rights() : baseData;
+
+            if ( baseData.Length == 0 ) return Seq<SkeletonsAccumulator<T>>.Empty;
+
+            return simplifyData
+                ? StreamSimplifiedDetailedAggregateResults( baseData , targets , aggregator , dimensionsToPreserve , groupAggregator )
+                : StreamSourceDetailedAggregateResults( baseData , targets , aggregator );
+        }
+
+        private static AtomHashMap<Skeleton , Seq<(double, Skeleton<T>)>> HashmapDetailedAccumulate<T>( IEnumerable<Skeleton<T>> inputs )
+        {
+            var hashMap = Prelude.AtomHashMap<Skeleton , Seq<(double, Skeleton<T>)>>();
+            inputs.AsParallel()
+                .ForAll( sourceSkeleton =>
+                {
+                    foreach ( var ancestor in sourceSkeleton.Key.Ancestors() )
+                    {
+                        var resultingWeight = Skeleton.ComputeResultingWeight( sourceSkeleton.Key , ancestor );
+                        hashMap.AddOrUpdate( ancestor , some => some.Add( (resultingWeight, sourceSkeleton) ) ,
+                            () => Seq.create( (resultingWeight, sourceSkeleton) ) );
+                    }
+                } );
+            return hashMap;
         }
 
         private static DetailedAggregationResult<T> DetailedTopDownAggregate<T>(
@@ -85,19 +131,6 @@ namespace MultiDimensionsHierarchies
             return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
         }
 
-        public static IEnumerable<SkeletonsAccumulator<T>> StreamDetailedAggregateResults<T>( Seq<Skeleton<T>> baseData , LanguageExt.HashSet<Skeleton> targets , Func<IEnumerable<(T, double)> , T> aggregator , bool simplifyData = false , string[] dimensionsToPreserve = null , Func<IEnumerable<T> , T> groupAggregator = null , bool checkUse = false )
-        {
-            if ( baseData.Length == 0 || targets.Length == 0 ) return Seq<SkeletonsAccumulator<T>>.Empty;
-
-            baseData = checkUse ? baseData.CheckUse( targets ).Rights() : baseData;
-
-            if ( baseData.Length == 0 ) return Seq<SkeletonsAccumulator<T>>.Empty;
-
-            return simplifyData
-                ? StreamSimplifiedDetailedAggregateResults( baseData , targets , aggregator , dimensionsToPreserve , groupAggregator )
-                : StreamSourceDetailedAggregateResults( baseData , targets , aggregator );
-        }
-
         private static IEnumerable<SkeletonsAccumulator<T>> StreamSimplifiedDetailedAggregateResults<T>( Seq<Skeleton<T>> baseData ,
             LanguageExt.HashSet<Skeleton> targets ,
             Func<IEnumerable<(T, double)> , T> aggregator ,
@@ -113,7 +146,7 @@ namespace MultiDimensionsHierarchies
             var uniqueTargetBaseBones = targets.SelectMany( t => t.Bones ).GroupBy( b => b.DimensionName ).Where( g => !dimensionsToPreserve.Contains( g.Key ) && g.Distinct().Count() == 1 && !g.Any( b => b.HasWeightElement() ) ).Select( g => g.First() ).ToSeq();
 
             var (simplifiedData, simplifiedTargets) = uniqueTargetBaseBones.Any()
-                ? SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , ( t , _ ) => t ) 
+                ? SimplifyTargets( baseData , targets , uniqueTargetBaseBones , groupAggregator , ( t , _ ) => t )
                 : (baseData, targets);
 
             return GroupTargets( simplifiedTargets.ToArray() , simplifiedData , aggregator , 0 , simplifiedData[0].Key.Bones.Length )
