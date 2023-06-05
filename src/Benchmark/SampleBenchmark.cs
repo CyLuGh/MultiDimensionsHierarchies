@@ -29,6 +29,14 @@ public class SampleBenchmark
     public AggregationResult<int> BenchTopDown( DataArgument argument ) =>
         Aggregator.Aggregate( argument.Samples , argument.Targets , ( a , b ) => a + b , ds => ds.Sum() );
 
+    [Benchmark]
+    [ArgumentsSource( nameof( BenchmarkScaleArguments ) )]
+    public DetailedAggregationResult<int> BenchTopDownDetailed( DataArgument argument ) =>
+        Aggregator.DetailedAggregate( argument.Samples ,
+            argument.Targets ,
+            data => (int) data.Sum( t => t.value * t.weight ) ,
+            ds => ds.Sum() );
+
     public static IEnumerable<DataArgument> BenchmarkScaleArguments()
     {
         yield return new DataArgument( 10_000 , 4 , 10_000 , DimensionIdentifier.Cooking );

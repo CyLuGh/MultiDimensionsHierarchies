@@ -3,6 +3,7 @@ using LanguageExt;
 using LanguageExt.UnitTesting;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
+using SampleGenerator;
 using System;
 using System.Linq;
 using Xunit;
@@ -251,6 +252,77 @@ namespace TestMultiDimensionsHierarchies
                 r.Value.ShouldBeSome( v => v.Should()
                     .Be( 207 ) );
             } );
+        }
+
+        [Fact]
+        public void TestStripDimension()
+        {
+            var generator = new Generator( 1000 , 3 );
+            var targets = generator.GenerateTargets( 100 );
+
+            var allDim = DimensionFactory.BuildWithParentLink( "Test" ,
+                new[] { ("A", "ALL") , ("B", "ALL") , ("C", "ALL") , ("D", "ALL") } ,
+                t => t.Item1 ,
+                t => t.Item2 );
+            var allDimLeaves = allDim.Leaves().ToArr();
+            var allTargets = targets.Select( s => s.Add( allDim.Frame.First() ) );
+
+            var data = generator.Skeletons.Select( ( s , i ) => s.Add( allDimLeaves[i % allDimLeaves.Length] ) ).ToSeq();
+
+            var allResults = Aggregator.DetailedAggregate( data , allTargets , data => data.Sum( t => t.value ) , ds => ds.Sum() , true , new[] { "Test" } )
+                    .Results.Map( s => s.Except( "Test" ) );
+
+            var subDim1 = DimensionFactory.BuildWithParentLink( "Test" ,
+                new[] { ("A", "ALL") , ("B", "ALL") } ,
+                t => t.Item1 ,
+                t => t.Item2 );
+            var subDim1Leaves = subDim1.Leaves().ToArr();
+            var subDim1Targets = targets.Select( s => s.Add( allDim.Frame.First() ) );
+
+            var subData1 = generator.Skeletons.Select( ( s , i ) => (s, i) )
+                .Where( t => t.i % allDimLeaves.Length <= 1 )
+                .Select( t => t.s.Add( subDim1Leaves[t.i % allDimLeaves.Length] ) ).ToSeq();
+
+            var subDim1Results = Aggregator.DetailedAggregate( subData1 , subDim1Targets , data => data.Sum( t => t.value ) , ds => ds.Sum() , true , new[] { "Test" } )
+                    .Results.Map( s => s.Except( "Test" ) );
+
+            var subDim2 = DimensionFactory.BuildWithParentLink( "Test" ,
+                new[] { ("C", "ALL") , ("D", "ALL") } ,
+                t => t.Item1 ,
+                t => t.Item2 );
+            var subDim2Leaves = subDim2.Leaves().ToArr();
+            var subDim2Targets = targets.Select( s => s.Add( allDim.Frame.First() ) );
+
+            var subData2 = generator.Skeletons.Select( ( s , i ) => (s, i) )
+                .Where( t => ( t.i % allDimLeaves.Length ) - 2 <= 1 && ( t.i % allDimLeaves.Length ) - 2 >= 0 )
+                .Select( t => t.s.Add( subDim2Leaves[( t.i % allDimLeaves.Length ) - 2] ) ).ToSeq();
+
+            var subDim2Results = Aggregator.DetailedAggregate( subData2 , subDim2Targets , data => data.Sum( t => t.value ) , ds => ds.Sum() , true , new[] { "Test" } )
+                    .Results.Map( s => s.Except( "Test" ) );
+
+            var merged = subDim1Results.Concat( subDim2Results )
+                .GroupBy( x => x.Key )
+                .Select( g => new SkeletonsAccumulator<int>( g.Key , g.SelectMany( x => x.Components ) , g.First().Aggregator ) )
+                .ToArr();
+
+            allResults.Length.Should().Be( merged.Length );
+
+            foreach ( var t in targets )
+            {
+                var check = from a in allResults.Find( x => x.Key.Equals( t ) )
+                            from m in merged.Find( x => x.Key.Equals( t ) )
+                            select (a.Value, m.Value);
+
+                check.ShouldBeSome( t =>
+                {
+                    var (va, vm) = t;
+                    var test = from a in va
+                               from m in vm
+                               select a - m;
+
+                    test.ShouldBeSome( i => i.Should().Be( 0 ) );
+                } );
+            }
         }
     }
 }

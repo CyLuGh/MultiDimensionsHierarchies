@@ -32,4 +32,19 @@ public class SampleGeneratorTests
 
         results.SequenceEqual( mapperResults ).Should().Be( true );
     }
+
+    [Fact]
+    public void TestAggregatorAndAccumulater()
+    {
+        var generator = new Generator( 1000 , 4 );
+        var targets = generator.GenerateTargets( 1 );
+        var samples = generator.Skeletons;
+
+        var agg = Aggregator.Aggregate( samples , targets , ( a , b ) => a + b , @is => @is.Sum( i => i ) );
+        var detailed = Aggregator.DetailedAggregate( samples , targets , @is => @is.Sum( t => t.value ) , @is => @is.Sum( i => i ) );
+        Assert.Equivalent( agg.Results[0].Value , detailed.Results[0].Value );
+
+        detailed = Aggregator.DetailedAggregate( samples , targets , @is => @is.Sum( t => t.value ) , @is => @is.Sum( i => i ) , simplifyData: true );
+        Assert.Equivalent( agg.Results[0].Value , detailed.Results[0].Value );
+    }
 }

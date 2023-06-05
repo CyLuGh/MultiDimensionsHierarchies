@@ -64,6 +64,7 @@ namespace MultiDimensionsHierarchies
 
             /* Aggregate base data that might have common keys */
             var groupedInputs = inputs.GroupBy( x => x.Key ).Select( g => g.Aggregate( g.Key , groupAggregator ) ).ToSeq();
+            dimensionsToPreserve ??= Array.Empty<string>();
 
             return DetailedTopDownAggregate( groupedInputs , targetsHash , aggregator , groupAggregator , simplifyData , dimensionsToPreserve , checkUse );
         }
@@ -88,6 +89,8 @@ namespace MultiDimensionsHierarchies
             baseData = checkUse ? baseData.CheckUse( targets ).Rights() : baseData;
 
             if ( baseData.Length == 0 ) return Seq<SkeletonsAccumulator<T>>.Empty;
+
+            dimensionsToPreserve ??= Array.Empty<string>();
 
             return simplifyData
                 ? StreamSimplifiedDetailedAggregateResults( baseData , targets , aggregator , dimensionsToPreserve , groupAggregator )
