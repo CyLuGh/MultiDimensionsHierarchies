@@ -6,7 +6,7 @@ namespace MultiDimensionsHierarchies.Core
 {
     public class SkeletonsAccumulator<T>
     {
-        public Skeleton Key { get; }
+        public Skeleton Key { get; private init; }
         private Option<T> _value;
 
         public Option<T> Value
@@ -21,8 +21,11 @@ namespace MultiDimensionsHierarchies.Core
             }
         }
 
-        public Arr<(double weight, Skeleton<T> data)> Components { get; }
-        public Func<IEnumerable<(T value, double weight)> , T> Aggregator { get; }
+        public Arr<(double weight, Skeleton<T> data)> Components { get; private init; }
+        public Func<IEnumerable<(T value, double weight)> , T> Aggregator { get; private init; }
+
+        private SkeletonsAccumulator()
+        { }
 
         public SkeletonsAccumulator( Skeleton key , IEnumerable<(double, Skeleton<T>)> data , Func<IEnumerable<(T value, double weight)> , T> aggregator )
         {
@@ -31,7 +34,25 @@ namespace MultiDimensionsHierarchies.Core
             Aggregator = aggregator;
         }
 
+        public SkeletonsAccumulator<T> With( Skeleton key )
+            => new() { Key = key , Components = this.Components , Aggregator = this.Aggregator };
+
         public int Count => Components.Count;
         public Arr<Bone> Bones => Key.Bones;
+
+        public SkeletonsAccumulator<T> Add( Bone addedBone )
+            => Add( new[] { addedBone } );
+
+        public SkeletonsAccumulator<T> Add( IEnumerable<Bone> addedBones )
+            => With( Key.Add( addedBones ) );
+
+        public SkeletonsAccumulator<T> Concat( params Bone[] bones )
+            => With( Key.Concat( bones ) );
+
+        public SkeletonsAccumulator<T> Extract( params string[] dimensions )
+            => With( Key.Extract( dimensions ) );
+
+        public SkeletonsAccumulator<T> Except( params string[] dimensions )
+            => With( Key.Except( dimensions ) );
     }
 }

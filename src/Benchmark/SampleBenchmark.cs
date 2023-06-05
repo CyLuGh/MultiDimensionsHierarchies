@@ -1,25 +1,41 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
-using BenchmarkDotNet.Order;
 using LanguageExt;
 using MultiDimensionsHierarchies;
 using MultiDimensionsHierarchies.Core;
 using SampleGenerator;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Benchmark;
 
 [SimpleJob( RuntimeMoniker.Net70 , iterationCount: 5 , warmupCount: 2 )]
 [MemoryDiagnoser( false )]
-[Orderer( SummaryOrderPolicy.FastestToSlowest )]
-[RankColumn]
 public class SampleBenchmark
 {
     [Benchmark]
+    [ArgumentsSource( nameof( BenchmarkDownTop ) )]
+    public AggregationResult<int> BenchDownTopGroup( DataArgument argument ) =>
+        Aggregator.Aggregate( argument.Samples , ds => ds.Sum() );
+
+    [Benchmark]
+    [ArgumentsSource( nameof( BenchmarkDownTop ) )]
+    public AggregationResult<int> BenchDownTopMap( DataArgument argument ) =>
+        Aggregator.Aggregate( argument.Samples , ( a , b ) => a + b );
+
+    [Benchmark]
     [ArgumentsSource( nameof( BenchmarkScaleArguments ) )]
-    public AggregationResult<int> BenchScaling( DataArgument argument ) =>
-        Aggregator.Aggregate( Method.TopDownGroup , argument.Samples , ( a , b ) => a + b , argument.Targets );
+    public AggregationResult<int> BenchTopDown( DataArgument argument ) =>
+        Aggregator.Aggregate( argument.Samples , argument.Targets , ( a , b ) => a + b , ds => ds.Sum() );
+
+    [Benchmark]
+    [ArgumentsSource( nameof( BenchmarkScaleArguments ) )]
+    public DetailedAggregationResult<int> BenchTopDownDetailed( DataArgument argument ) =>
+        Aggregator.DetailedAggregate( argument.Samples ,
+            argument.Targets ,
+            data => (int) data.Sum( t => t.value * t.weight ) ,
+            ds => ds.Sum() );
 
     public static IEnumerable<DataArgument> BenchmarkScaleArguments()
     {
@@ -52,25 +68,34 @@ public class SampleBenchmark
         yield return new DataArgument( 200_000 , 6 , 100_000 , DimensionIdentifier.Cooking );
         yield return new DataArgument( 100_000 , 6 , 200_000 , DimensionIdentifier.Cooking );
     }
+
+    public static IEnumerable<DataArgument> BenchmarkDownTop()
+    {
+        yield return new DataArgument( 10_000 , 4 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 20_000 , 4 , 1 , DimensionIdentifier.Cooking );
+
+        yield return new DataArgument( 10_000 , 5 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 20_000 , 5 , 1 , DimensionIdentifier.Cooking );
+
+        yield return new DataArgument( 10_000 , 4 , 1 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 20_000 , 4 , 1 , DimensionIdentifier.Countries );
+
+        yield return new DataArgument( 10_000 , 5 , 1 , DimensionIdentifier.Countries );
+        yield return new DataArgument( 20_000 , 5 , 1 , DimensionIdentifier.Countries );
+
+        yield return new DataArgument( 1_000 , 5 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 1_000 , 6 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 1_000 , 7 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 1_000 , 8 , 1 , DimensionIdentifier.Cooking );
+        yield return new DataArgument( 1_000 , 9 , 1 , DimensionIdentifier.Cooking );
+    }
 }
 
-public class DataArgument : IDisposable
+public record DataArgument( int SampleSize , int TargetsCount , int DimensionsCount , Option<DimensionIdentifier> DimensionIdentifier , Seq<Skeleton> Targets , Seq<Skeleton<int>> Samples ) : IDisposable
 {
-    public int SampleSize { get; }
-    public int TargetsCount { get; }
-    public int DimensionsCount { get; }
-    public Option<DimensionIdentifier> DimensionIdentifier { get; }
-
-    public Seq<Skeleton> Targets { get; }
-    public Seq<Skeleton<int>> Samples { get; }
-
     public DataArgument( int sampleSize , int dimensionsCount , int targetsCount , Option<DimensionIdentifier> dimensionIdentifier )
+        : this( sampleSize , targetsCount , dimensionsCount , dimensionIdentifier , default , default )
     {
-        this.DimensionsCount = dimensionsCount;
-        this.TargetsCount = targetsCount;
-        this.SampleSize = sampleSize;
-        this.DimensionIdentifier = dimensionIdentifier;
-
         var generator = dimensionIdentifier.Match( o => new Generator( sampleSize , o , dimensionsCount ) , () => new Generator( sampleSize , dimensionsCount ) );
         Samples = generator.Skeletons.Strict();
         Targets = generator.GenerateTargets( targetsCount ).Strict();

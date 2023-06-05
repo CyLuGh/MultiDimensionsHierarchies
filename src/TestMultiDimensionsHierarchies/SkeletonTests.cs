@@ -108,46 +108,6 @@ public class SkeletonTests
     }
 
     [Fact]
-    public void TestAncestorsCache()
-    {
-        var dimA = GetDimension( "Dim A" );
-        var dimB = GetDimension( "Dim B" );
-        var dimC = GetDimension( "Dim C" );
-
-        var cache = Prelude.AtomHashMap<string , Skeleton>();
-
-        dimA.Find( "2.1" )
-            .ShouldBeSome( boneA =>
-            {
-                dimB.Find( "1.1" )
-                    .ShouldBeSome( boneB =>
-                    {
-                        var skeleton = new Skeleton( boneA , boneB );
-
-                        var ancestors = skeleton.Ancestors( cache );
-                        ancestors.Length.Should().Be( 4 );
-                    } );
-
-                dimB.Find( "1.1.1" )
-                    .ShouldBeSome( boneB =>
-                    {
-                        var skeleton = new Skeleton( boneA , boneB );
-
-                        var ancestors = skeleton.Ancestors( cache );
-                        ancestors.Length.Should().Be( 6 );
-
-                        dimC.Find( "1.1.1.1" )
-                            .ShouldBeSome( boneC =>
-                            {
-                                skeleton = new Skeleton( boneA , boneB , boneC );
-                                ancestors = skeleton.Ancestors( cache );
-                                ancestors.Length.Should().Be( 24 );
-                            } );
-                    } );
-            } );
-    }
-
-    [Fact]
     public void TestAncestorsFilters()
     {
         var dimA = GetDimension( "Dim A" );

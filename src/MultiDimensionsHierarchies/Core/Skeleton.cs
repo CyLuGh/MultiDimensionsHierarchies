@@ -77,7 +77,6 @@ namespace MultiDimensionsHierarchies.Core
             => bones.Contains( GetBone( index ) );
 
         public bool HasAnyBone( Seq<Bone> bones ) => Bones.Intersect( bones ).Any();
-        //=> bones.Any( b => Bones.Contains( b ) );
 
         public bool CheckBones( Dictionary<string , LanguageExt.HashSet<Bone>> bonesPerDimension )
         {
@@ -109,20 +108,13 @@ namespace MultiDimensionsHierarchies.Core
 
         private Seq<Skeleton> _ancestors = Seq.empty<Skeleton>();
 
-        public Seq<Skeleton> Ancestors() => Ancestors( Option<AtomHashMap<string , Skeleton>>.None );
+        public Seq<Skeleton> Ancestors() => Ancestors( Seq<Bone>.Empty );
 
-        public Seq<Skeleton> Ancestors( Option<AtomHashMap<string , Skeleton>> cache ) =>
-            Ancestors( Seq<Bone>.Empty , cache );
-
-        public Seq<Skeleton> Ancestors( Seq<Bone> filters ) =>
-            Ancestors( filters , Option<AtomHashMap<string , Skeleton>>.None );
-
-        public Seq<Skeleton> Ancestors( Seq<Bone> filters , Option<AtomHashMap<string , Skeleton>> cache )
+        public Seq<Skeleton> Ancestors( Seq<Bone> filters )
         {
             if ( _ancestors.IsEmpty )
             {
-                _ancestors = cache.Some( atomCache => Prelude.Atom( BuildAncestors( atomCache ).ToSeq().Strict() ) )
-                    .None( () => Prelude.Atom( BuildAncestors().ToSeq().Strict() ) );
+                _ancestors = Prelude.Atom( BuildAncestors().ToSeq().Strict() );
             }
 
             if ( filters.IsEmpty ) return _ancestors;
@@ -133,31 +125,10 @@ namespace MultiDimensionsHierarchies.Core
             return _ancestors.Where( s => s.HasDimensions( checks ) );
         }
 
-        internal IEnumerable<Skeleton> BuildFilteredSkeletons( HashMap<string , LanguageExt.HashSet<Bone>> filters ) =>
-            Bones.Select( x =>
-                {
-                    var ancestors = from set in filters.Find( x.DimensionName )
-                                    select x.Ancestors().Where( o => set.Contains( o ) );
-                    return ancestors.Match( a => a , () => Seq<Bone>.Empty );
-                } )
-                .Aggregate<Seq<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
-                    ( lists , bones ) => lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
-                .Select( l => new Skeleton( l ) );
-
-        private IEnumerable<Skeleton> BuildAncestors( AtomHashMap<string , Skeleton> cache ) =>
-            Bones.Select( x => x.Ancestors().ToArray() )
-                .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
-                    ( lists , bones ) => lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
-                .Select( l =>
-                {
-                    var key = l.ToComposedString();
-                    return cache.FindOrAdd( key , new Skeleton( l ) );
-                } );
-
         private IEnumerable<Skeleton> BuildAncestors() =>
             Bones.Select( x => x.Ancestors().ToArray() )
-                .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
-                    ( lists , bones ) => lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { Seq<Bone>.Empty } ,
+                    ( sequences , bones ) => sequences.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
                 .Select( l => new Skeleton( l ) );
 
         private Seq<Skeleton> _descendants = Seq.empty<Skeleton>();
@@ -165,27 +136,14 @@ namespace MultiDimensionsHierarchies.Core
         private IEnumerable<Skeleton> BuildDescendants() =>
             Bones.Select( x => x.Descendants().ToArray() )
                 .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
-                    ( lists , bones ) => lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
+                    ( sequences , bones ) => sequences.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
                 .Select( l => new Skeleton( l ) );
 
-        private IEnumerable<Skeleton> BuildDescendants( AtomHashMap<string , Skeleton> cache ) =>
-            Bones.Select( x => x.Descendants().ToArray() )
-                .Aggregate<IEnumerable<Bone> , IEnumerable<Seq<Bone>>>( new[] { new Seq<Bone>() } ,
-                    ( lists , bones ) => lists.Cartesian( bones , ( l , b ) => l.Add( b ) ) )
-                .Select( l =>
-                {
-                    var key = l.ToComposedString();
-                    return cache.FindOrAdd( key , new Skeleton( l ) );
-                } );
-
-        public Seq<Skeleton> Descendants() => Descendants( Option<AtomHashMap<string , Skeleton>>.None );
-
-        public Seq<Skeleton> Descendants( Option<AtomHashMap<string , Skeleton>> cache )
+        public Seq<Skeleton> Descendants()
         {
             if ( _descendants.IsEmpty )
             {
-                _descendants = cache.Some( atomCache => Prelude.Atom( BuildDescendants( atomCache ).ToSeq().Strict() ) )
-                    .None( () => Prelude.Atom( BuildDescendants().ToSeq().Strict() ) );
+                _descendants = Prelude.Atom( BuildDescendants().ToSeq().Strict() );
             }
 
             return _descendants;

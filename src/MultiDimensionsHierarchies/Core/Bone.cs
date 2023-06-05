@@ -155,8 +155,14 @@ namespace MultiDimensionsHierarchies.Core
             return _ancestors;
         }
 
-        public Seq<Bone> Ancestors( Seq<Bone> filters )
-            => filters.IsEmpty ? Ancestors() : Ancestors().Intersect( filters ).ToSeq();
+        private LanguageExt.HashSet<Bone> _ancestorsHashSet = LanguageExt.HashSet<Bone>.Empty;
+
+        public LanguageExt.HashSet<Bone> AncestorsHashSet()
+        {
+            if ( _ancestorsHashSet.IsEmpty )
+                _ancestorsHashSet = Prelude.Atom( HashSet.createRange( Ancestors() ) );
+            return _ancestorsHashSet;
+        }
 
         private IEnumerable<Bone> FetchLeaves()
         {
@@ -260,7 +266,7 @@ namespace MultiDimensionsHierarchies.Core
                 if ( currentBone.Equals( ancestorBone ) )
                     return 1d; /* Always weight 1 when compared to itself */
 
-                var ancestors = currentBone.Ancestors();
+                var ancestors = currentBone.AncestorsHashSet();
                 if ( !ancestors.Contains( ancestorBone ) )
                     return 0d; /* Shouldn't have any weight to an unrelated element */
 
