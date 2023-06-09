@@ -14,11 +14,12 @@ public static class Program
 
     public static void Main( string[] args )
     {
-        BenchmarkRunner.Run<SampleBenchmark>();
+        //BenchmarkRunner.Run<SampleBenchmark>();
+        BenchmarkRunner.Run<BuilderBenchmark>();
         //BenchmarkRunner.Run<TargetedAggregate>();
         //BenchmarkRunner.Run<HeuristicAggregate>();
         // BenchmarkRunner.Run<SkelFactory>();
 
         //ManualBenchmark();
-    } 
+    }
 }

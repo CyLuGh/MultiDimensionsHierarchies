@@ -4,6 +4,7 @@ using MoreLinq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace MultiDimensionsHierarchies.Core
 {
@@ -417,12 +418,12 @@ namespace MultiDimensionsHierarchies.Core
             IEnumerable<Skeleton> checkTargets = null
         )
         {
-            var skeletons = FastParse( inputs , parser , evaluator , dimensions );
+            var skeletons = FastParse( inputs , parser , evaluator , dimensions ).ToSeq().Strict();
 
             if ( groupAggregator != null )
             {
                 skeletons = skeletons.GroupBy( x => x.Key )
-                    .Select( g => g.Aggregate( g.Key , groupAggregator ) );
+                    .Select( g => g.Aggregate( g.Key , groupAggregator ) ).ToSeq().Strict();
             }
 
             if ( checkTargets != null )
@@ -434,10 +435,12 @@ namespace MultiDimensionsHierarchies.Core
                                 .GroupBy( b => b.DimensionName )
                                 .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
 
-                skeletons = skeletons.Where( s => s.Key.CheckBones( bonesPerDimension ) );
+                skeletons = skeletons
+                    .AsParallel()
+                    .Where( s => s.Key.CheckBones( bonesPerDimension ) ).ToSeq().Strict();
             }
 
-            return skeletons.ToSeq();
+            return skeletons;
         }
 
         internal static ParallelQuery<Skeleton<TO>> FastParse<TI, TO>(

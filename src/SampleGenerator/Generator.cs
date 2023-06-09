@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 
 namespace SampleGenerator;
 
-public enum DimensionIdentifier { Countries = 1, Cooking = 2 }
+public enum DimensionIdentifier
+{ Countries = 1, Cooking = 2 }
 
 public class Generator
 {
@@ -158,7 +159,7 @@ public class Generator
                 return new SyntheticSample( items );
             } );
 
-        return Seq.createRange( sampler.Generate( sampleSize ) )
+        return Seq.createRange( sampler.GenerateLazy( sampleSize ).AsParallel() )
                 .Cast<ISample>();
     }
 
@@ -177,7 +178,7 @@ public class Generator
             .RuleFor( o => o.Sex , f => f.PickRandom<string>( leaves["SEX"] ) )
             .RuleFor( o => o.Value , f => f.Random.Int( min: 0 , max: 50 ) );
 
-        return Seq.createRange( sampler.Generate( sampleSize ) )
+        return Seq.createRange( sampler.GenerateLazy( sampleSize ).AsParallel() )
                 .Cast<ISample>();
     }
 
