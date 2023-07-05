@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 namespace MultiDimensionsHierarchies
 {
@@ -136,7 +137,20 @@ namespace MultiDimensionsHierarchies
                 return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
             } );
 
-            return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+            return f.Match( res => res , exc =>
+            {
+                var ex = exc;
+                var sb = new StringBuilder();
+                sb.AppendLine( ex.Message );
+
+                while ( ex.InnerException != null )
+                {
+                    ex = ex.InnerException;
+                    sb.AppendLine( ex.Message );
+                }
+
+                return new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , sb.ToString() );
+            } );
         }
 
         private static AggregationResult<T> DownTopGroupAggregate<T>( Seq<Skeleton<T>> data , Func<IEnumerable<T> , T> groupAggregator , Func<T , double , T> weightEffect )
@@ -154,7 +168,20 @@ namespace MultiDimensionsHierarchies
                 return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , res , "Process OK" );
             } );
 
-            return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+            return f.Match( res => res , exc =>
+            {
+                var ex = exc;
+                var sb = new StringBuilder();
+                sb.AppendLine( ex.Message );
+                
+                while ( ex.InnerException != null )
+                {
+                    ex = ex.InnerException;
+                    sb.AppendLine( ex.Message );
+                }
+
+                return new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , sb.ToString() );
+            } );
         }
 
         private static AggregationResult<T> DownTopHashMapAggregate<T>( Seq<Skeleton<T>> data , Func<T , T , T> aggregator , Func<T , double , T> weightEffect )
@@ -170,7 +197,20 @@ namespace MultiDimensionsHierarchies
                 return new AggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , res , "Process OK" );
             } );
 
-            return f.Match( res => res , exc => new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+            return f.Match( res => res , exc =>
+            {
+                var ex = exc;
+                var sb = new StringBuilder();
+                sb.AppendLine( ex.Message );
+
+                while ( ex.InnerException != null )
+                {
+                    ex = ex.InnerException;
+                    sb.AppendLine( ex.Message );
+                }
+
+                return new AggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , sb.ToString() );
+            } );
         }
 
         private static AtomHashMap<Skeleton , Option<T>> HashMapAccumulate<T>( Seq<Skeleton<T>> data , Func<T , T , T> aggregator , Func<T , double , T> weightEffect )
