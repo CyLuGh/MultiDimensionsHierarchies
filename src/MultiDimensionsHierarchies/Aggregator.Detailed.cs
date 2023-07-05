@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 namespace MultiDimensionsHierarchies
 {
@@ -33,7 +34,20 @@ namespace MultiDimensionsHierarchies
                 return new DetailedAggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
             } );
 
-            return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+            return f.Match( res => res , exc =>
+            {
+                var ex = exc;
+                var sb = new StringBuilder();
+                sb.AppendLine( ex.Message );
+
+                while ( ex.InnerException != null )
+                {
+                    ex = ex.InnerException;
+                    sb.AppendLine( ex.Message );
+                }
+
+                return new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , sb.ToString() );
+            } );
         }
 
         /// <summary>
@@ -131,7 +145,20 @@ namespace MultiDimensionsHierarchies
                 return new DetailedAggregationResult<T>( AggregationStatus.OK , stopWatch.Elapsed , results );
             } );
 
-            return f.Match( res => res , exc => new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , exc.Message ) );
+            return f.Match( res => res , exc =>
+            {
+                var ex = exc;
+                var sb = new StringBuilder();
+                sb.AppendLine( ex.Message );
+
+                while ( ex.InnerException != null )
+                {
+                    ex = ex.InnerException;
+                    sb.AppendLine( ex.Message );
+                }
+
+                return new DetailedAggregationResult<T>( AggregationStatus.ERROR , TimeSpan.Zero , sb.ToString() );
+            } );
         }
 
         private static IEnumerable<SkeletonsAccumulator<T>> StreamSimplifiedDetailedAggregateResults<T>( Seq<Skeleton<T>> baseData ,

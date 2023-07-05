@@ -133,10 +133,9 @@ namespace MultiDimensionsHierarchies.Core
         public static Seq<Either<Skeleton , Skeleton<T>>> CheckUse<T>( this IEnumerable<Skeleton<T>> skeletons , IEnumerable<Skeleton> targets )
         {
             var bonesPerDimension = targets
-                .AsParallel()
                 .SelectMany( s => s.Bones )
                 .GroupBy( b => b.DimensionName )
-                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
+                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Select( x => x ).Distinct().Flatten().Distinct() ) );
 
             return skeletons
                 .AsParallel()
@@ -149,7 +148,7 @@ namespace MultiDimensionsHierarchies.Core
                 .AsParallel()
                 .SelectMany( s => s.Bones )
                 .GroupBy( b => b.DimensionName )
-                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Flatten().Distinct() ) );
+                .ToDictionary( g => g.Key , g => HashSet.createRange( g.Select( x => x ).Distinct().Flatten().Distinct() ) );
 
             return skeletons
                .AsParallel()
