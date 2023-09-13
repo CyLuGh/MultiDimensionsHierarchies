@@ -36,6 +36,14 @@ namespace MultiDimensionsHierarchies.Core
         public Seq<Bone> FindAll( string label )
             => Frame.Flatten().Where( b => b.Label.Equals( label ) );
 
+        public Seq<Dimension> SplitRoots( bool useIndexSuffix = false , string newName = "" )
+        {
+            var name = string.IsNullOrWhiteSpace( newName ) ? Name : newName;
+            return Frame
+                .Map( ( idx , b ) => new Dimension( useIndexSuffix ? $"{name} {idx}" : name , Seq.create( b ) ) )
+                .ToSeq();
+        }
+
         private int? _hashCode;
 
         public override int GetHashCode()
